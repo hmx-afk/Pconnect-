@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +7,6 @@
 
     <title>PiConnect</title>
 
-    <!-- Pi SDK -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 
@@ -20,42 +20,13 @@
 
     <p id="status">Not connected</p>
 
-    <script>
-        // Initialize Pi SDK for Testnet
-        Pi.init({
-            version: "2.0",
-            sandbox: true
-        });
+    <button id="payBtn" disabled>
+        Make Test Payment (0.01 π)
+    </button>
 
-        const loginBtn = document.getElementById("loginBtn");
-        const status = document.getElementById("status");
+    <p id="payStatus"></p>
 
-        loginBtn.addEventListener("click", async () => {
-            status.textContent = "Connecting...";
+    <script src="app.js"></script>
 
-            try {
-                const scopes = ["username"];
-
-                const authResult = await Pi.authenticate(
-                    scopes,
-                    onIncompletePaymentFound
-                );
-
-                console.log("User:", authResult.user);
-
-                status.textContent =
-                    "Connected ✔️ " + authResult.user.username;
-
-            } catch (error) {
-                console.error(error);
-                status.textContent =
-                    "Connection failed: " + error.message;
-            }
-        });
-
-        function onIncompletePaymentFound(payment) {
-            console.log("Incomplete payment:", payment);
-        }
-    </script>
-
-</body
+</body>
+</html>
