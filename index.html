@@ -1,1 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>PiConnect</title>
+
+    <!-- Pi SDK -->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+
+<body>
+
+    <h1>🔗 PiConnect</h1>
+
+    <p>Connect with the Pi ecosystem.</p>
+
+    <button id="loginBtn">Sign in with Pi</button>
+
+    <p id="status">Not connected</p>
+
+    <script>
+        // Initialize Pi SDK for Testnet
+        Pi.init({
+            version: "2.0",
+            sandbox: true
+        });
+
+        const loginBtn = document.getElementById("loginBtn");
+        const status = document.getElementById("status");
+
+        loginBtn.addEventListener("click", async () => {
+            status.textContent = "Connecting...";
+
+            try {
+                const scopes = ["username"];
+
+                const authResult = await Pi.authenticate(
+                    scopes,
+                    onIncompletePaymentFound
+                );
+
+                console.log("User:", authResult.user);
+
+                status.textContent =
+                    "Connected ✔️ " + authResult.user.username;
+
+            } catch (error) {
+                console.error(error);
+                status.textContent =
+                    "Connection failed: " + error.message;
+            }
+        });
+
+        function onIncompletePaymentFound(payment) {
+            console.log("Incomplete payment:", payment);
+        }
+    </script>
+
+</body>
+</html>
