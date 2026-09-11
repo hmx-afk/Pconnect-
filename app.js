@@ -1,4 +1,4 @@
-// Initialize Pi SDK for Testnet
+// Initialize Pi SDK for Production
 Pi.init({
     version: "2.0",
     sandbox: false
@@ -9,8 +9,14 @@ const status = document.getElementById("status");
 const payBtn = document.getElementById("payBtn");
 const payStatus = document.getElementById("payStatus");
 
+let accessToken = null;
+
+// -------------------------
+// Pi Authentication
+// -------------------------
 loginBtn.addEventListener("click", async () => {
     status.textContent = "Connecting...";
+    loginBtn.disabled = true;
 
     try {
         const scopes = ["username", "payments"];
@@ -22,65 +28,245 @@ loginBtn.addEventListener("click", async () => {
 
         console.log("User:", authResult.user);
 
+        // Keep the access token for authenticated backend requests
+        accessToken = authResult.accessToken;
+
         status.textContent =
             "Connected ✔️ " + authResult.user.username;
 
-        payBtn.style.display = "inline-block";
+        // Enable payment button
+        payBtn.disabled = false;
 
     } catch (error) {
-        console.error(error);
-        status.textContent =
-            "Connection failed: " + JSON.stringify(error) + " | " + error.message;
-    }
+        console.error("Authentication error:", error);
 
-    setTimeout(() => {
-        if (status.textContent === "Connecting...") {
-            status.textContent = "⚠️ Timeout - babu amsa daga Pi SDK bayan 15s";
-        }
-    }, 15000);
+        status.textContent =
+            "Connection failed: " +
+            (error.message || JSON.stringify(error));
+
+        loginBtn.disabled = false;
+    }
 });
 
-function onIncompletePaymentFound(payment) {
+// -------------------------
+// Handle incomplete payment
+// -------------------------
+async function onIncompletePaymentFound(payment) {
     console.log("Incomplete payment:", payment);
-    fetch("/api/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            paymentId: payment.identifier,
-            txid: payment.transaction ? payment.transaction.txid : null
-        })
-    });
+
+    // We only attempt completion when Pi gives us a real txid.
+    if (!payment.transaction || !payment.transaction.txid) {
+        console.log("Incomplete payment has no txid yet.");
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/complete", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                paymentId: payment.identifier,
+                txid: payment.transaction.txid
+            })
+        });
+
+        const data = await response.json();
+
+        console.log("Incomplete payment completion:", data);
+
+    } catch (error) {
+        console.error(
+            "Incomplete payment completion error:",
+            error
+        );
+    }
 }
 
+// -------------------------
+// Create Pi Payment
+// -------------------------
 payBtn.addEventListener("click", () => {
-    payStatus.textContent = "Processing payment...";
 
-    Pi.createPayment({
-        amount: 0.01,
-        memo: "Test payment for PiConnect",
-        metadata: { test: true }
-    }, {
-        onReadyForServerApproval: function (paymentId) {
-            fetch("/api/approve", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ paymentId })
-            });
+    payStatus.textContent = "Starting payment...";
+    payBtn.disabled = true;
+
+    Pi.createPayment(
+        {
+            amount: 0.01,
+            memo: "Test payment for PConnect",
+            metadata: {
+                purpose: "test_payment"
+            }
         },
-        onReadyForServerCompletion: function (paymentId, txid) {
-            fetch("/api/complete", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ paymentId, txid })
-            }).then(() => {
-                payStatus.textContent = "✔️ Payment complete!";
-            });
-        },
-        onCancel: function (paymentId) {
-            payStatus.textContent = "Payment cancelled.";
-        },
-        onError: function (error, payment) {
-            payStatus.textContent = "Payment error: " + error.message;
+        {
+
+            // -------------------------
+            // Server Approval
+            // -------------------------
+            onReadyForServerApproval: async (paymentId) => {
+
+                console.log(
+                    "Payment ready for approval:",
+                    paymentId
+                );
+
+                payStatus.textContent =
+                    "Waiting for server approval...";
+
+                try {
+                    const response = await fetch(
+                        "/api/approve",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Authorization":
+                                    `Bearer ${accessToken}`
+                            },
+                            body: JSON.stringify({
+                                paymentId
+                            })
+                        }
+                    );
+
+                    const data = await response.json();
+
+                    console.log(
+                        "Approval response:",
+                        data
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            data.error ||
+                            data.message ||
+                            "Payment approval failed"
+                        );
+                    }
+
+                    payStatus.textContent =
+                        "✔️ Payment approved. Continue in Pi Wallet.";
+
+                } catch (error) {
+
+                    console.error(
+                        "Approval error:",
+                        error
+                    );
+
+                    payStatus.textContent =
+                        "❌ Approval failed: " +
+                        error.message;
+
+                    payBtn.disabled = false;
+                }
+            },
+
+            // -------------------------
+            // Server Completion
+            // -------------------------
+            onReadyForServerCompletion: async (
+                paymentId,
+                txid
+            ) => {
+
+                console.log(
+                    "Payment ready for completion:",
+                    paymentId,
+                    txid
+                );
+
+                payStatus.textContent =
+                    "Completing payment...";
+
+                try {
+                    const response = await fetch(
+                        "/api/complete",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Authorization":
+                                    `Bearer ${accessToken}`
+                            },
+                            body: JSON.stringify({
+                                paymentId,
+                                txid
+                            })
+                        }
+                    );
+
+                    const data = await response.json();
+
+                    console.log(
+                        "Completion response:",
+                        data
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            data.error ||
+                            data.message ||
+                            "Payment completion failed"
+                        );
+                    }
+
+                    payStatus.textContent =
+                        "✔️ Payment complete!";
+
+                } catch (error) {
+
+                    console.error(
+                        "Completion error:",
+                        error
+                    );
+
+                    payStatus.textContent =
+                        "❌ Completion failed: " +
+                        error.message;
+
+                } finally {
+                    payBtn.disabled = false;
+                }
+            },
+
+            // -------------------------
+            // Cancel
+            // -------------------------
+            onCancel: (paymentId) => {
+
+                console.log(
+                    "Payment cancelled:",
+                    paymentId
+                );
+
+                payStatus.textContent =
+                    "Payment cancelled.";
+
+                payBtn.disabled = false;
+            },
+
+            // -------------------------
+            // Error
+            // -------------------------
+            onError: (error, payment) => {
+
+                console.error(
+                    "Pi payment error:",
+                    error,
+                    payment
+                );
+
+                payStatus.textContent =
+                    "❌ Payment error: " +
+                    (error.message ||
+                    JSON.stringify(error));
+
+                payBtn.disabled = false;
+            }
         }
-    });
+    );
 });
