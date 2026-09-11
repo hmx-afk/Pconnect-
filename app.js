@@ -1,7 +1,7 @@
 // Initialize Pi SDK for Testnet
 Pi.init({
     version: "2.0",
-    sandbox: true
+    sandbox: false
 });
 
 const loginBtn = document.getElementById("loginBtn");
