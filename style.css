@@ -1,0 +1,87 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f4f7fb;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 430px;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 30px 24px;
+    text-align: center;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+}
+
+.logo {
+    font-size: 42px;
+    margin-bottom: 10px;
+}
+
+h1 {
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: #667085;
+    margin-bottom: 25px;
+}
+
+.status-box {
+    background: #f7f9fc;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 18px;
+    color: #344054;
+}
+
+button {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+#loginBtn {
+    background: #111827;
+    color: white;
+}
+
+#payBtn {
+    background: #5b3cc4;
+    color: white;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#payStatus {
+    margin-top: 18px;
+    min-height: 24px;
+    font-weight: bold;
+    color: #344054;
+}
+
+.footer {
+    margin-top: 25px;
+    font-size: 13px;
+    color: #98a2b3;
+}
