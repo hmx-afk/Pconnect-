@@ -1,7 +1,7 @@
 // Initialize Pi SDK for Production
 Pi.init({
     version: "2.0",
-    sandbox: false
+    sandbox: true
 });
 
 const loginBtn = document.getElementById("loginBtn");
