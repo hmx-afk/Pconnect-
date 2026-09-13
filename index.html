@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,24 +6,42 @@
 
     <title>PiConnect</title>
 
+    <link rel="stylesheet" href="style.css">
+
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 
 <body>
 
-    <h1>🔗 PiConnect</h1>
+    <main class="container">
 
-    <p>Connect with the Pi ecosystem.</p>
+        <div class="logo">🔗</div>
 
-    <button id="loginBtn">Sign in with Pi</button>
+        <h1>PiConnect</h1>
 
-    <p id="status">Not connected</p>
+        <p class="subtitle">
+            Connect with the Pi ecosystem.
+        </p>
 
-    <button id="payBtn" disabled>
-        Make Test Payment (0.01 π)
-    </button>
+        <div class="status-box">
+            <p id="status">Not connected</p>
+        </div>
 
-    <p id="payStatus"></p>
+        <button id="loginBtn">
+            Sign in with Pi
+        </button>
+
+        <button id="payBtn" disabled>
+            Make Test Payment (0.01 π)
+        </button>
+
+        <p id="payStatus"></p>
+
+        <div class="footer">
+            PiConnect • Testnet
+        </div>
+
+    </main>
 
     <script src="app.js"></script>
 
