@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -11,10 +12,14 @@
 
     <title>PConnect</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 
     <!-- Pi SDK -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
 </head>
 
 
@@ -23,9 +28,7 @@
     <main class="app-shell">
 
 
-        <!-- =====================================
-             TOP BAR
-        ====================================== -->
+        <!-- TOP BAR -->
 
         <div class="topbar">
 
@@ -36,10 +39,7 @@
         </div>
 
 
-
-        <!-- =====================================
-             WELCOME / PI CONNECTION
-        ====================================== -->
+        <!-- WELCOME -->
 
         <section class="card">
 
@@ -53,8 +53,6 @@
             </p>
 
 
-            <!-- Pi Login -->
-
             <button
                 id="loginBtn"
                 class="btn btn-amber"
@@ -62,8 +60,6 @@
                 Sign in with Pi
             </button>
 
-
-            <!-- Payment -->
 
             <button
                 id="payBtn"
@@ -74,24 +70,17 @@
             </button>
 
 
-            <!-- Login Status -->
-
             <p id="status">
                 Not connected
             </p>
 
-
-            <!-- Payment Status -->
 
             <p id="payStatus"></p>
 
         </section>
 
 
-
-        <!-- =====================================
-             QUICK ACTIONS
-        ====================================== -->
+        <!-- QUICK ACTIONS -->
 
         <section class="card">
 
@@ -106,7 +95,7 @@
                 <!-- Browse -->
 
                 <a
-                    href="#"
+                    href="browse.html"
                     class="quick-action"
                 >
 
@@ -117,7 +106,6 @@
                     </p>
 
                 </a>
-
 
 
                 <!-- My Requests -->
@@ -136,7 +124,6 @@
                 </a>
 
 
-
                 <!-- Transactions -->
 
                 <a
@@ -151,7 +138,6 @@
                     </p>
 
                 </a>
-
 
 
                 <!-- Profile -->
@@ -169,19 +155,14 @@
 
                 </a>
 
-
             </div>
 
         </section>
 
 
-
-        <!-- =====================================
-             RECENT ACTIVITY
-        ====================================== -->
+        <!-- RECENT ACTIVITY -->
 
         <section class="card">
-
 
             <div class="topbar">
 
@@ -211,14 +192,10 @@
 
             </div>
 
-
         </section>
 
 
-
-        <!-- =====================================
-             BOTTOM NAVIGATION
-        ====================================== -->
+        <!-- BOTTOM NAVIGATION -->
 
         <nav class="bottom-nav">
 
@@ -226,7 +203,7 @@
             <!-- Home -->
 
             <a
-                href="#"
+                href="index.html"
                 class="active"
                 aria-label="Home"
             >
@@ -237,7 +214,7 @@
             <!-- Browse -->
 
             <a
-                href="#"
+                href="browse.html"
                 aria-label="Browse"
             >
                 🔎
@@ -276,14 +253,10 @@
 
         </nav>
 
-
     </main>
 
 
-
-    <!-- =====================================
-         PConnect JavaScript
-    ====================================== -->
+    <!-- PConnect JavaScript -->
 
     <script src="app.js"></script>
 
