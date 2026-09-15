@@ -1,265 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <title>PiConnect</title>
 
-    <title>PConnect</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
-    <!-- Pi SDK -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
-</head>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #222;
+            padding-bottom: 80px;
+        }
+
+        header {
+            background: #6c4cff;
+            color: white;
+            padding: 25px 20px;
+        }
+
+        header h1 {
+            margin-bottom: 8px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 25px auto;
+            padding: 0 18px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        button,
+        .action {
+            display: block;
+            width: 100%;
+            border: none;
+            background: #6c4cff;
+            color: white;
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .actions {
+            display: grid;
+            gap: 12px;
+        }
+
+        .status {
+            margin-top: 12px;
+            color: #555;
+        }
+
+        nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 14px 5px;
+            box-shadow: 0 -3px 12px rgba(0,0,0,0.08);
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #555;
+            font-size: 13px;
+            text-align: center;
+        }
+    </style>
+</head>
 
 <body>
 
-    <main class="app-shell">
+    <header>
+        <h1>🔗 PiConnect</h1>
+        <p>Connect with the Pi ecosystem.</p>
+    </header>
 
+    <div class="container">
 
-        <!-- TOP BAR -->
+        <div class="card">
 
-        <div class="topbar">
+            <h2>👋 Welcome to PiConnect</h2>
 
-            <h1>
-                🔗 PConnect
-            </h1>
-
-        </div>
-
-
-        <!-- WELCOME -->
-
-        <section class="card">
-
-            <h2 id="welcomeTitle">
-                Welcome to PConnect
-            </h2>
-
-            <p id="welcomeText">
-                Connect with trusted services
-                in the Pi ecosystem.
+            <p>
+                Connect with trusted services in the Pi ecosystem.
             </p>
 
-
-            <button
-                id="loginBtn"
-                class="btn btn-amber"
-            >
+            <button id="loginBtn">
                 Sign in with Pi
             </button>
 
-
-            <button
-                id="payBtn"
-                class="btn btn-blue"
-                disabled
-            >
-                Make Test Payment (0.01 π)
-            </button>
-
-
-            <p id="status">
+            <p id="status" class="status">
                 Not connected
             </p>
 
+        </div>
 
-            <p id="payStatus"></p>
+        <div class="card">
 
-        </section>
+            <h2>⚡ Quick Actions</h2>
 
+            <div class="actions">
 
-        <!-- QUICK ACTIONS -->
-
-        <section class="card">
-
-            <h2>
-                Quick Actions
-            </h2>
-
-
-            <div class="grid-2">
-
-
-                <!-- Browse -->
-
-                <a
-                    href="browse.html"
-                    class="quick-action"
-                >
-
-                    <i>🔎</i>
-
-                    <p>
-                        Browse
-                    </p>
-
+                <a href="browse.html" class="action">
+                    🔎 Browse Services
                 </a>
 
-
-                <!-- My Requests -->
-
-                <a
-                    href="#"
-                    class="quick-action"
-                >
-
-                    <i>📝</i>
-
-                    <p>
-                        My Requests
-                    </p>
-
+                <a href="requests.html" class="action">
+                    📋 My Requests
                 </a>
 
-
-                <!-- Transactions -->
-
-                <a
-                    href="#"
-                    class="quick-action"
-                >
-
-                    <i>💳</i>
-
-                    <p>
-                        Transactions
-                    </p>
-
+                <a href="#" class="action">
+                    💳 Transactions
                 </a>
 
-
-                <!-- Profile -->
-
-                <a
-                    href="#"
-                    class="quick-action"
-                >
-
-                    <i>👤</i>
-
-                    <p>
-                        Profile
-                    </p>
-
+                <a href="#" class="action">
+                    👤 Profile
                 </a>
 
             </div>
 
-        </section>
+        </div>
 
+        <div class="card">
 
-        <!-- RECENT ACTIVITY -->
+            <h2>🕒 Recent Activity</h2>
 
-        <section class="card">
+            <p>
+                Welcome to PiConnect.
+            </p>
 
-            <div class="topbar">
+        </div>
 
-                <h1>
-                    Recent Activity
-                </h1>
+    </div>
 
-            </div>
+    <nav>
+        <a href="index.html">🏠<br>Home</a>
 
+        <a href="browse.html">🔎<br>Browse</a>
 
-            <div class="item">
+        <a href="requests.html">📝<br>My Requests</a>
 
-                <strong>
-                    Welcome to PConnect
-                </strong>
+        <a href="#">💳<br>Payments</a>
 
+        <a href="#">👤<br>Profile</a>
+    </nav>
 
-                <p>
-                    Your Pi ecosystem journey
-                    starts here.
-                </p>
+    <script>
 
+        Pi.init({
+            version: "2.0",
+            sandbox: true
+        });
 
-                <span class="badge badge-success">
-                    Ready
-                </span>
+        const loginBtn = document.getElementById("loginBtn");
+        const status = document.getElementById("status");
 
-            </div>
+        loginBtn.addEventListener("click", async () => {
 
-        </section>
+            status.textContent = "Connecting...";
 
+            try {
 
-        <!-- BOTTOM NAVIGATION -->
+                const scopes = ["username"];
 
-        <nav class="bottom-nav">
+                const authResult = await Pi.authenticate(
+                    scopes,
+                    onIncompletePaymentFound
+                );
 
+                console.log("User:", authResult.user);
 
-            <!-- Home -->
+                status.textContent =
+                    "Connected ✔️ " + authResult.user.username;
 
-            <a
-                href="index.html"
-                class="active"
-                aria-label="Home"
-            >
-                🏠
-            </a>
+            } catch (error) {
 
+                console.error(error);
 
-            <!-- Browse -->
+                status.textContent =
+                    "Connection failed: " + error.message;
 
-            <a
-                href="browse.html"
-                aria-label="Browse"
-            >
-                🔎
-            </a>
+            }
 
+        });
 
-            <!-- Requests -->
+        function onIncompletePaymentFound(payment) {
 
-            <a
-                href="#"
-                aria-label="Requests"
-            >
-                📝
-            </a>
+            console.log("Incomplete payment:", payment);
 
+        }
 
-            <!-- Transactions -->
-
-            <a
-                href="#"
-                aria-label="Transactions"
-            >
-                💳
-            </a>
-
-
-            <!-- Profile -->
-
-            <a
-                href="#"
-                aria-label="Profile"
-            >
-                👤
-            </a>
-
-
-        </nav>
-
-    </main>
-
-
-    <!-- PConnect JavaScript -->
-
-    <script src="app.js"></script>
+    </script>
 
 </body>
-
 </html>
