@@ -19,23 +19,42 @@ export default async function handler(req, res) {
             });
         }
 
-        const request = {
-            service: service,
-            name: name,
-            contact: contact,
-            details: details,
-            payment: "Pi Network",
-            status: "Submitted",
-            reviewStatus: "Waiting for review",
-            createdAt: new Date().toISOString()
-        };
+        const response = await fetch(
+            `${process.env.SUPABASE_URL}/rest/v1/requests`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": process.env.SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+                    "Prefer": "return=representation"
+                },
+                body: JSON.stringify({
+                    service,
+                    name,
+                    contact,
+                    details,
+                    payment: "Pi Network",
+                    status: "Submitted",
+                    review_status: "Waiting for review"
+                })
+            }
+        );
 
-        console.log("New PiConnect request:", request);
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("Supabase error:", data);
+
+            return res.status(response.status).json({
+                error: "Failed to save request"
+            });
+        }
 
         return res.status(200).json({
             success: true,
-            message: "Request received successfully",
-            request: request
+            message: "Request submitted successfully",
+            request: data[0]
         });
 
     } catch (error) {
