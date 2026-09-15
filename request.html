@@ -97,14 +97,27 @@
             opacity: 0.9;
         }
 
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .message {
             display: none;
             margin-top: 18px;
             padding: 14px;
             border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .success {
             background: #e9f8ef;
             color: #16803c;
-            font-weight: bold;
+        }
+
+        .error {
+            background: #fdeaea;
+            color: #b42318;
         }
 
         nav {
@@ -147,7 +160,7 @@
                 Payment will be added later.
             </p>
 
-            <form onsubmit="submitRequest(event)">
+            <form id="requestForm">
 
                 <label for="name">
                     Your Name
@@ -181,17 +194,27 @@
                     required
                 ></textarea>
 
-                <button type="submit">
+                <button
+                    type="submit"
+                    id="submitBtn"
+                >
                     Send Request
                 </button>
 
             </form>
 
             <div
-                id="message"
-                class="message"
+                id="successMessage"
+                class="message success"
             >
                 ✅ Request submitted successfully.
+            </div>
+
+            <div
+                id="errorMessage"
+                class="message error"
+            >
+                ❌ Something went wrong. Please try again.
             </div>
 
         </div>
@@ -224,50 +247,110 @@
 
     <script>
 
-        function submitRequest(event) {
+        const form =
+            document.getElementById("requestForm");
+
+        const submitBtn =
+            document.getElementById("submitBtn");
+
+        const successMessage =
+            document.getElementById("successMessage");
+
+        const errorMessage =
+            document.getElementById("errorMessage");
+
+
+        form.addEventListener("submit", async function(event) {
 
             event.preventDefault();
 
-            const name =
-                document.getElementById("name").value;
+            successMessage.style.display = "none";
+            errorMessage.style.display = "none";
 
-            const contact =
-                document.getElementById("contact").value;
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Sending...";
 
-            const details =
-                document.getElementById("details").value;
 
-            const request = {
+            const requestData = {
 
                 service: "Web Development",
 
-                name: name,
+                name:
+                    document.getElementById("name").value.trim(),
 
-                contact: contact,
+                contact:
+                    document.getElementById("contact").value.trim(),
 
-                details: details,
-
-                payment: "Pi Network",
-
-                status: "Submitted",
-
-                reviewStatus: "Waiting for review",
-
-                createdAt: new Date().toLocaleString()
+                details:
+                    document.getElementById("details").value.trim()
 
             };
 
-            localStorage.setItem(
-                "piconnect_request",
-                JSON.stringify(request)
-            );
 
-            document.getElementById("message").style.display =
-                "block";
+            try {
 
-            document.querySelector("form").reset();
+                const response = await fetch(
+                    "/api/request",
+                    {
+                        method: "POST",
 
-        }
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify(requestData)
+                    }
+                );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.error ||
+                        "Request failed"
+                    );
+
+                }
+
+
+                successMessage.style.display = "block";
+
+                form.reset();
+
+
+                console.log(
+                    "Request response:",
+                    data
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Request error:",
+                    error
+                );
+
+                errorMessage.textContent =
+                    "❌ " + error.message;
+
+                errorMessage.style.display =
+                    "block";
+
+            } finally {
+
+                submitBtn.disabled = false;
+
+                submitBtn.textContent =
+                    "Send Request";
+
+            }
+
+        });
 
     </script>
 
