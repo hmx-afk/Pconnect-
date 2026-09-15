@@ -131,7 +131,9 @@
 <body>
 
     <header>
-        <a href="service.html">← Back to Service</a>
+        <a href="service.html">
+            ← Back to Service
+        </a>
     </header>
 
     <div class="container">
@@ -206,8 +208,8 @@
             🔎<br>Browse
         </a>
 
-        <a href="#">
-            📝<br>Post
+        <a href="requests.html">
+            📝<br>My Requests
         </a>
 
         <a href="#">
@@ -226,7 +228,44 @@
 
             event.preventDefault();
 
-            document.getElementById("message").style.display = "block";
+            const name =
+                document.getElementById("name").value;
+
+            const contact =
+                document.getElementById("contact").value;
+
+            const details =
+                document.getElementById("details").value;
+
+            const request = {
+
+                service: "Web Development",
+
+                name: name,
+
+                contact: contact,
+
+                details: details,
+
+                payment: "Pi Network",
+
+                status: "Submitted",
+
+                reviewStatus: "Waiting for review",
+
+                createdAt: new Date().toLocaleString()
+
+            };
+
+            localStorage.setItem(
+                "piconnect_request",
+                JSON.stringify(request)
+            );
+
+            document.getElementById("message").style.display =
+                "block";
+
+            document.querySelector("form").reset();
 
         }
 
