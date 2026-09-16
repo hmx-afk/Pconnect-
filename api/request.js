@@ -47,7 +47,8 @@ export default async function handler(req, res) {
             console.error("Supabase error:", data);
 
             return res.status(response.status).json({
-                error: "Failed to save request"
+                error: "Failed to save request",
+                details: data
             });
         }
 
@@ -58,11 +59,11 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-
         console.error("Request API error:", error);
 
         return res.status(500).json({
-            error: "Internal server error"
+            error: "Internal server error",
+            details: error.message
         });
     }
 }
