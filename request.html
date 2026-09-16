@@ -47,7 +47,7 @@
             background: white;
             padding: 24px;
             border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         }
 
         h1 {
@@ -93,10 +93,6 @@
             cursor: pointer;
         }
 
-        button:hover {
-            opacity: 0.9;
-        }
-
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
@@ -108,16 +104,8 @@
             padding: 14px;
             border-radius: 10px;
             font-weight: bold;
-        }
-
-        .success {
-            background: #e9f8ef;
-            color: #16803c;
-        }
-
-        .error {
-            background: #fdeaea;
-            color: #b42318;
+            line-height: 1.5;
+            word-break: break-word;
         }
 
         nav {
@@ -129,7 +117,7 @@
             display: flex;
             justify-content: space-around;
             padding: 14px 5px;
-            box-shadow: 0 -3px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08);
         }
 
         nav a {
@@ -144,9 +132,7 @@
 <body>
 
     <header>
-        <a href="service.html">
-            ← Back to Service
-        </a>
+        <a href="service.html">← Back to Service</a>
     </header>
 
     <div class="container">
@@ -160,7 +146,7 @@
                 Payment will be added later.
             </p>
 
-            <form id="requestForm">
+            <form onsubmit="submitRequest(event)">
 
                 <label for="name">
                     Your Name
@@ -204,18 +190,9 @@
             </form>
 
             <div
-                id="successMessage"
-                class="message success"
-            >
-                ✅ Request submitted successfully.
-            </div>
-
-            <div
-                id="errorMessage"
-                class="message error"
-            >
-                ❌ Something went wrong. Please try again.
-            </div>
+                id="message"
+                class="message"
+            ></div>
 
         </div>
 
@@ -247,47 +224,41 @@
 
     <script>
 
-        const form =
-            document.getElementById("requestForm");
-
-        const submitBtn =
-            document.getElementById("submitBtn");
-
-        const successMessage =
-            document.getElementById("successMessage");
-
-        const errorMessage =
-            document.getElementById("errorMessage");
-
-
-        form.addEventListener("submit", async function(event) {
+        async function submitRequest(event) {
 
             event.preventDefault();
 
-            successMessage.style.display = "none";
-            errorMessage.style.display = "none";
+            const message =
+                document.getElementById("message");
+
+            const submitBtn =
+                document.getElementById("submitBtn");
+
+            const name =
+                document.getElementById("name").value.trim();
+
+            const contact =
+                document.getElementById("contact").value.trim();
+
+            const details =
+                document.getElementById("details").value.trim();
+
+            message.style.display = "block";
+            message.style.background = "#fff3cd";
+            message.style.color = "#856404";
+            message.textContent = "⏳ Sending request...";
 
             submitBtn.disabled = true;
             submitBtn.textContent = "Sending...";
 
-
-            const requestData = {
-
-                service: "Web Development",
-
-                name:
-                    document.getElementById("name").value.trim(),
-
-                contact:
-                    document.getElementById("contact").value.trim(),
-
-                details:
-                    document.getElementById("details").value.trim()
-
-            };
-
-
             try {
+
+                const requestData = {
+                    service: "Web Development",
+                    name: name,
+                    contact: contact,
+                    details: details
+                };
 
                 const response = await fetch(
                     "/api/request",
@@ -302,55 +273,52 @@
                     }
                 );
 
-
-                const data =
-                    await response.json();
-
+                const data = await response.json();
 
                 if (!response.ok) {
 
-                    throw new Error(
-                        data.error ||
-                        "Request failed"
-                    );
+                    const detail =
+                        typeof data.details === "object"
+                            ? JSON.stringify(data.details)
+                            : data.details || "";
 
+                    throw new Error(
+                        `${data.error || "Request failed"}${
+                            detail ? " — " + detail : ""
+                        }`
+                    );
                 }
 
+                message.style.background = "#e9f8ef";
+                message.style.color = "#16803c";
 
-                successMessage.style.display = "block";
+                message.textContent =
+                    "✅ Request submitted successfully.";
 
-                form.reset();
-
-
-                console.log(
-                    "Request response:",
-                    data
-                );
-
+                document.getElementById("name").value = "";
+                document.getElementById("contact").value = "";
+                document.getElementById("details").value = "";
 
             } catch (error) {
+
+                message.style.background = "#fdeaea";
+                message.style.color = "#b42318";
+
+                message.textContent =
+                    "❌ " + error.message;
 
                 console.error(
                     "Request error:",
                     error
                 );
 
-                errorMessage.textContent =
-                    "❌ " + error.message;
-
-                errorMessage.style.display =
-                    "block";
-
             } finally {
 
                 submitBtn.disabled = false;
-
-                submitBtn.textContent =
-                    "Send Request";
+                submitBtn.textContent = "Send Request";
 
             }
-
-        });
+        }
 
     </script>
 
