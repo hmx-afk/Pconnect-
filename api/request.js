@@ -7,13 +7,16 @@ export default async function handler(req, res) {
         }
 
         const {
-            service,
             name,
             contact,
             details
-        } = req.body;
+        } = req.body || {};
 
-        if (!service || !name || !contact || !details) {
+        // This endpoint is currently for Web Development requests
+        const service = "Web Development";
+
+        // Validate required fields
+        if (!name || !contact || !details) {
             return res.status(400).json({
                 error: "Missing required fields"
             });
@@ -30,10 +33,10 @@ export default async function handler(req, res) {
                     "Prefer": "return=representation"
                 },
                 body: JSON.stringify({
-                    service,
-                    name,
-                    contact,
-                    details,
+                    service: service,
+                    name: name,
+                    contact: contact,
+                    details: details,
                     payment: "Pi Network",
                     status: "Submitted",
                     review_status: "Waiting for review"
