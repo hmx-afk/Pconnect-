@@ -12,10 +12,8 @@ export default async function handler(req, res) {
             details
         } = req.body || {};
 
-        // This endpoint is currently for Web Development requests
         const service = "Web Development";
 
-        // Validate required fields
         if (!name || !contact || !details) {
             return res.status(400).json({
                 error: "Missing required fields"
@@ -28,15 +26,15 @@ export default async function handler(req, res) {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "apikey": process.env.SUPABASE_ANON_KEY,
-                    "Authorization": `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+                    "apikey": process.env.SUPABASE_SECRET_KEY,
+                    "Authorization": `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
                     "Prefer": "return=representation"
                 },
                 body: JSON.stringify({
-                    service: service,
-                    name: name,
-                    contact: contact,
-                    details: details,
+                    service,
+                    name,
+                    contact,
+                    details,
                     payment: "Pi Network",
                     status: "Submitted",
                     review_status: "Waiting for review"
