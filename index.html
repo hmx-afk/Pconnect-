@@ -1,1 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PiConnect</title>
+
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #222;
+            padding-bottom: 80px;
+        }
+
+        header {
+            background: #6c4cff;
+            color: white;
+            padding: 25px 20px;
+        }
+
+        header h1 {
+            margin-bottom: 8px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 25px auto;
+            padding: 0 18px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        button,
+        .action {
+            display: block;
+            width: 100%;
+            border: none;
+            background: #6c4cff;
+            color: white;
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .actions {
+            display: grid;
+            gap: 12px;
+        }
+
+        .status {
+            margin-top: 12px;
+            color: #555;
+        }
+
+        nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 14px 5px;
+            box-shadow: 0 -3px 12px rgba(0,0,0,0.08);
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #555;
+            font-size: 13px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>🔗 PiConnect</h1>
+        <p>Connect with the Pi ecosystem.</p>
+    </header>
+
+    <div class="container">
+
+        <div class="card">
+
+            <h2>👋 Welcome to PiConnect</h2>
+
+            <p>
+                Connect with trusted services in the Pi ecosystem.
+            </p>
+
+            <button id="loginBtn">
+                Sign in with Pi
+            </button>
+
+            <p id="status" class="status">
+                Not connected
+            </p>
+
+        </div>
+
+        <div class="card">
+
+            <h2>⚡ Quick Actions</h2>
+
+            <div class="actions">
+
+                <a href="browse.html" class="action">
+                    🔎 Browse Services
+                </a>
+
+                <a href="requests.html" class="action">
+                    📋 My Requests
+                </a>
+
+                <a href="#" class="action">
+                    💳 Transactions
+                </a>
+
+                <a href="#" class="action">
+                    👤 Profile
+                </a>
+
+            </div>
+
+        </div>
+
+        <div class="card">
+
+            <h2>🕒 Recent Activity</h2>
+
+            <p>
+                Welcome to PiConnect.
+            </p>
+
+        </div>
+
+    </div>
+
+    <nav>
+        <a href="index.html">🏠<br>Home</a>
+
+        <a href="browse.html">🔎<br>Browse</a>
+
+        <a href="requests.html">📝<br>My Requests</a>
+
+        <a href="#">💳<br>Payments</a>
+
+        <a href="#">👤<br>Profile</a>
+    </nav>
+
+    <script>
+
+        Pi.init({
+            version: "2.0",
+            sandbox: true
+        });
+
+        const loginBtn = document.getElementById("loginBtn");
+        const status = document.getElementById("status");
+
+        loginBtn.addEventListener("click", async () => {
+
+            status.textContent = "Connecting...";
+
+            try {
+
+                const scopes = ["username"];
+
+                const authResult = await Pi.authenticate(
+                    scopes,
+                    onIncompletePaymentFound
+                );
+
+                console.log("User:", authResult.user);
+
+                status.textContent =
+                    "Connected ✔️ " + authResult.user.username;
+
+            } catch (error) {
+
+                console.error(error);
+
+                status.textContent =
+                    "Connection failed: " + error.message;
+
+            }
+
+        });
+
+        function onIncompletePaymen
 
