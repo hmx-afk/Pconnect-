@@ -82,12 +82,18 @@
             line-height: 1.6;
         }
 
-        .empty {
+        .empty,
+        .loading,
+        .error {
             background: white;
             padding: 25px;
             border-radius: 16px;
             text-align: center;
             color: #666;
+        }
+
+        .error {
+            color: #b42318;
         }
 
         nav {
@@ -125,7 +131,14 @@
             View your service requests and their current status.
         </p>
 
-        <div id="requestsContainer"></div>
+        <div id="requestsContainer">
+
+            <div class="loading">
+                <h3>Loading requests...</h3>
+                <p>Please wait.</p>
+            </div>
+
+        </div>
 
     </div>
 
@@ -155,72 +168,121 @@
 
     <script>
 
-        function loadRequests() {
+        async function loadRequests() {
 
             const container =
                 document.getElementById("requestsContainer");
 
-            const savedRequest =
-                localStorage.getItem("piconnect_request");
+            try {
 
-            if (!savedRequest) {
+                const response =
+                    await fetch("/api/requests");
+
+                const result =
+                    await response.json();
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        result.details?.message ||
+                        result.error ||
+                        "Failed to load requests"
+                    );
+                }
+
+                const requests =
+                    result.requests || [];
+
+                if (requests.length === 0) {
+
+                    container.innerHTML = `
+                        <div class="empty">
+                            <h3>No requests yet</h3>
+                            <p>
+                                You have not submitted any service requests.
+                            </p>
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                container.innerHTML =
+                    requests.map(request => {
+
+                        const submitted =
+                            request.created_at
+                                ? new Date(
+                                    request.created_at
+                                ).toLocaleString()
+                                : "Not available";
+
+                        const reviewStatus =
+                            request.review_status ||
+                            request.status ||
+                            "Waiting for review";
+
+                        return `
+
+                            <div class="card">
+
+                                <div class="service-title">
+                                    💻 ${request.service || "Service Request"}
+                                </div>
+
+                                <div class="status">
+                                    ${request.status || "Submitted"}
+                                </div>
+
+                                <p class="details">
+
+                                    <strong>Name:</strong>
+                                    ${request.name || "N/A"}
+                                    <br><br>
+
+                                    <strong>Contact:</strong>
+                                    ${request.contact || "N/A"}
+                                    <br><br>
+
+                                    <strong>Project Details:</strong>
+                                    ${request.details || "N/A"}
+                                    <br><br>
+
+                                    <strong>Payment:</strong>
+                                    ${request.payment || "Pi Network"}
+                                    <br><br>
+
+                                    <strong>Review Status:</strong>
+                                    ${reviewStatus}
+                                    <br><br>
+
+                                    <strong>Submitted:</strong>
+                                    ${submitted}
+
+                                </p>
+
+                            </div>
+
+                        `;
+
+                    }).join("");
+
+            } catch (error) {
+
+                console.error(
+                    "Load requests error:",
+                    error
+                );
 
                 container.innerHTML = `
-                    <div class="empty">
-                        <h3>No requests yet</h3>
+                    <div class="error">
+                        <h3>❌ Failed to load requests</h3>
                         <p>
-                            You have not submitted any service requests.
+                            ${error.message}
                         </p>
                     </div>
                 `;
-
-                return;
             }
-
-            const request =
-                JSON.parse(savedRequest);
-
-            container.innerHTML = `
-
-                <div class="card">
-
-                    <div class="service-title">
-                        💻 ${request.service}
-                    </div>
-
-                    <div class="status">
-                        ${request.status}
-                    </div>
-
-                    <p class="details">
-
-                        <strong>Name:</strong>
-                        ${request.name}
-                        <br><br>
-
-                        <strong>Contact:</strong>
-                        ${request.contact}
-                        <br><br>
-
-                        <strong>Project Details:</strong>
-                        ${request.details}
-                        <br><br>
-
-                        <strong>Payment:</strong>
-                        ${request.payment}
-                        <br><br>
-
-                        <strong>Status:</strong>
-                        ${request.reviewStatus}
-                        <br><br>
-
-                        <strong>Submitted:</strong>
-                        ${request.createdAt}
-
-                    </p>
-
-                </div>
-            `;
         }
 
         loadRequests();
