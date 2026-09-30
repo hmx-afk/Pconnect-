@@ -1,14 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>PiConnect</title>
 
+    <!-- Pi SDK -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <style>
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -19,7 +27,7 @@
             font-family: Arial, sans-serif;
             background: #f5f7fb;
             color: #222;
-            padding-bottom: 80px;
+            padding-bottom: 85px;
         }
 
         header {
@@ -30,6 +38,10 @@
 
         header h1 {
             margin-bottom: 8px;
+        }
+
+        header p {
+            opacity: 0.95;
         }
 
         .container {
@@ -71,6 +83,11 @@
             cursor: pointer;
         }
 
+        button:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
         .actions {
             display: grid;
             gap: 12px;
@@ -79,6 +96,15 @@
         .status {
             margin-top: 12px;
             color: #555;
+        }
+
+        .payment-card {
+            border: 2px solid #eee;
+        }
+
+        .payment-note {
+            font-size: 14px;
+            color: #777;
         }
 
         nav {
@@ -91,6 +117,7 @@
             justify-content: space-around;
             padding: 14px 5px;
             box-shadow: 0 -3px 12px rgba(0,0,0,0.08);
+            z-index: 1000;
         }
 
         nav a {
@@ -99,18 +126,35 @@
             font-size: 13px;
             text-align: center;
         }
+
+        nav a.active {
+            color: #6c4cff;
+            font-weight: bold;
+        }
+
     </style>
+
 </head>
 
 <body>
 
+    <!-- HEADER -->
     <header>
+
         <h1>🔗 PiConnect</h1>
-        <p>Connect with the Pi ecosystem.</p>
+
+        <p>
+            Connect with the Pi ecosystem.
+        </p>
+
     </header>
 
+
+    <!-- MAIN CONTENT -->
     <div class="container">
 
+
+        <!-- LOGIN CARD -->
         <div class="card">
 
             <h2>👋 Welcome to PiConnect</h2>
@@ -123,31 +167,78 @@
                 Sign in with Pi
             </button>
 
-            <p id="status" class="status">
+            <p
+                id="status"
+                class="status"
+            >
                 Not connected
             </p>
 
         </div>
 
+
+        <!-- PAYMENT CARD -->
+        <div class="card payment-card">
+
+            <h2>💳 Test Payment</h2>
+
+            <p>
+                Test a 0.01 π payment on PiConnect Testnet.
+            </p>
+
+            <button
+                id="payBtn"
+                disabled
+            >
+                Make Test Payment (0.01 π)
+            </button>
+
+            <p
+                id="payStatus"
+                class="status"
+            >
+                Sign in with Pi first.
+            </p>
+
+            <p class="payment-note">
+                Testnet payment only. No Mainnet Pi is used.
+            </p>
+
+        </div>
+
+
+        <!-- QUICK ACTIONS -->
         <div class="card">
 
             <h2>⚡ Quick Actions</h2>
 
             <div class="actions">
 
-                <a href="browse.html" class="action">
+                <a
+                    href="browse.html"
+                    class="action"
+                >
                     🔎 Browse Services
                 </a>
 
-                <a href="requests.html" class="action">
+                <a
+                    href="requests.html"
+                    class="action"
+                >
                     📋 My Requests
                 </a>
 
-                <a href="#" class="action">
+                <a
+                    href="#"
+                    class="action"
+                >
                     💳 Transactions
                 </a>
 
-                <a href="#" class="action">
+                <a
+                    href="#"
+                    class="action"
+                >
                     👤 Profile
                 </a>
 
@@ -155,6 +246,8 @@
 
         </div>
 
+
+        <!-- RECENT ACTIVITY -->
         <div class="card">
 
             <h2>🕒 Recent Activity</h2>
@@ -167,56 +260,44 @@
 
     </div>
 
+
+    <!-- BOTTOM NAVIGATION -->
     <nav>
-        <a href="index.html">🏠<br>Home</a>
 
-        <a href="browse.html">🔎<br>Browse</a>
+        <a
+            href="index.html"
+            class="active"
+        >
+            🏠<br>
+            Home
+        </a>
 
-        <a href="requests.html">📝<br>My Requests</a>
+        <a href="browse.html">
+            🔎<br>
+            Browse
+        </a>
 
-        <a href="#">💳<br>Payments</a>
+        <a href="requests.html">
+            📝<br>
+            My Requests
+        </a>
 
-        <a href="#">👤<br>Profile</a>
+        <a href="#">
+            💳<br>
+            Payments
+        </a>
+
+        <a href="#">
+            👤<br>
+            Profile
+        </a>
+
     </nav>
 
-    <script>
 
-        Pi.init({
-            version: "2.0",
-            sandbox: true
-        });
+    <!-- PConnect JavaScript -->
+    <script src="app.js"></script>
 
-        const loginBtn = document.getElementById("loginBtn");
-        const status = document.getElementById("status");
+</body>
 
-        loginBtn.addEventListener("click", async () => {
-
-            status.textContent = "Connecting...";
-
-            try {
-
-                const scopes = ["username"];
-
-                const authResult = await Pi.authenticate(
-                    scopes,
-                    onIncompletePaymentFound
-                );
-
-                console.log("User:", authResult.user);
-
-                status.textContent =
-                    "Connected ✔️ " + authResult.user.username;
-
-            } catch (error) {
-
-                console.error(error);
-
-                status.textContent =
-                    "Connection failed: " + error.message;
-
-            }
-
-        });
-
-        function onIncompletePaymen
-
+</html>
