@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Profile | PConnect</title>
+
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f0b1f;
+            color: #ffffff;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: #f5b942;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #b9b4c7;
+            font-size: 14px;
+        }
+
+        .profile-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 18px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            margin: auto;
+            border-radius: 50%;
+            background: #f5b942;
+            color: #171025;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .username {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .connected {
+            color: #5ee38a;
+            font-size: 14px;
+        }
+
+        .login-btn {
+            margin-top: 18px;
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            background: #f5b942;
+            color: #171025;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 25px;
+            font-weight: bold;
+            color: #f5b942;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #aaa3ba;
+            font-size: 13px;
+        }
+
+        .info-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .info-card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #f5b942;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid #30234d;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            color: #aaa3ba;
+        }
+
+        .value {
+            text-align: right;
+            word-break: break-word;
+        }
+
+        .message {
+            text-align: center;
+            color: #aaa3ba;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #171025;
+            border-top: 1px solid #30234d;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 5px;
+            z-index: 100;
+        }
+
+        .bottom-nav a {
+            color: #aaa3ba;
+            text-decoration: none;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .bottom-nav a.active {
+            color: #f5b942;
+        }
+
+        @media (max-width: 400px) {
+            .container {
+                padding: 15px;
+            }
+
+            .stats {
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>👤 Profile</h1>
+        <p>Your PConnect account</p>
+    </div>
+
+    <div class="profile-card">
+
+        <div class="avatar" id="avatar">
+            ?
+        </div>
+
+        <div class="username" id="username">
+            Not connected
+        </div>
+
+        <div class="connected" id="connectionStatus">
+            ⚪ Not connected
+        </div>
+
+        <button class="login-btn" id="loginBtn">
+            Sign in with Pi
+        </button>
+
+    </div>
+
+    <div class="stats">
+
+        <div class="stat-card">
+            <div class="stat-number" id="transactionCount">
+                —
+            </div>
+
+            <div class="stat-label">
+                Transactions
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-number" id="requestCount">
+                —
+            </div>
+
+            <div class="stat-label">
+                Requests
+            </div>
+        </div>
+
+    </div>
+
+    <div class="info-card">
+
+        <h2>Account Information</h2>
+
+        <div class="info-row">
+            <span class="label">Pi Username</span>
+            <span class="value" id="piUsername">
+                Not available
+            </span>
+        </div>
+
+        <div class="info-row">
+            <span class="label">Network</span>
+            <span class="value">
+                Pi Testnet
+            </span>
+        </div>
+
+        <div class="info-row">
+            <span class="label">App</span>
+            <span class="value">
+                PConnect
+            </span>
+        </div>
+
+        <div class="info-row">
+            <span class="label">Payment</span>
+            <span class="value">
+                Testnet only
+            </span>
+        </div>
+
+    </div>
+
+    <div class="message" id="message">
+        Connect with Pi to view your profile.
+    </div>
+
+</div>
+
+
+<div class="bottom-nav">
+
+    <a href="/index.html">
+        🏠<br>Home
+    </a>
+
+    <a href="/browse.html">
+        🔎<br>Browse
+    </a>
+
+    <a href="/requests.html">
+        📋<br>Requests
+    </a>
+
+    <a href="/payments.html">
+        💳<br>Payments
+    </a>
+
+    <a href="/profile.html" class="active">
+        👤<br>Profile
+    </a>
+
+</div>
+
+
+<script>
+
+    // ==========================================
+    // PConnect - Profile
+    // ==========================================
+
+    Pi.init({
+        version: "2.0",
+        sandbox: true
+    });
+
+
+    const loginBtn =
+        document.getElementById("loginBtn");
+
+    const usernameElement =
+        document.getElementById("username");
+
+    const piUsernameElement =
+        document.getElementById("piUsername");
+
+    const avatarElement =
+        document.getElementById("avatar");
+
+    const connectionStatus =
+        document.getElementById("connectionStatus");
+
+    const message =
+        document.getElementById("message");
+
+    const transactionCount =
+        document.getElementById("transactionCount");
+
+    const requestCount =
+        document.getElementById("requestCount");
+
+
+    let currentUsername = null;
+
+
+    // ==========================================
+    // LOGIN
+    // ==========================================
+
+    loginBtn.addEventListener("click", async () => {
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Connecting...";
+
+        try {
+
+            const authResult =
+                await Pi.authenticate(
+                    ["username", "payments"],
+                    function(payment) {
+                        console.log(
+                            "Incomplete payment:",
+                            payment
+                        );
+                    }
+                );
+
+            currentUsername =
+                authResult.user.username;
+
+            usernameElement.textContent =
+                currentUsername;
+
+            piUsernameElement.textContent =
+                currentUsername;
+
+            avatarElement.textContent =
+                currentUsername
+                    .charAt(0)
+                    .toUpperCase();
+
+            connectionStatus.textContent =
+                "🟢 Connected with Pi";
+
+            message.textContent =
+                "Your Pi profile is connected.";
+
+            loginBtn.textContent =
+                "Connected ✔️";
+
+            await loadTransactions();
+
+            await loadRequests();
+
+        } catch (error) {
+
+            console.error(
+                "Pi authentication error:",
+                error
+            );
+
+            connectionStatus.textContent =
+                "⚠️ Connection failed";
+
+            message.textContent =
+                "Could not connect with Pi. Please try again.";
+
+            loginBtn.textContent =
+                "Sign in with Pi";
+
+            loginBtn.disabled = false;
+        }
+
+    });
+
+
+    // ==========================================
+    // TRANSACTIONS
+    // ==========================================
+
+    async function loadTransactions() {
+
+        try {
+
+            const response =
+                await fetch("/api/transactions");
+
+            const data =
+                await response.json();
+
+            if (
+                data.success &&
+                Array.isArray(data.transactions)
+            ) {
+
+                transactionCount.textContent =
+                    data.transactions.length;
+
+            } else {
+
+                transactionCount.textContent =
+                    "0";
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Transaction loading error:",
+                error
+            );
+
+            transactionCount.textContent =
+                "0";
+        }
+    }
+
+
+    // ==========================================
+    // REQUESTS
+    // ==========================================
+
+    async function loadRequests() {
+
+        try {
+
+            const response =
+                await fetch("/api/requests");
+
+            const data =
+                await response.json();
+
+            if (
+                data.success &&
+                Array.isArray(data.requests)
+            ) {
+
+                requestCount.textContent =
+                    data.requests.length;
+
+            } else {
+
+                requestCount.textContent =
+                    "0";
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Request loading error:",
+                error
+            );
+
+            requestCount.textContent =
+                "0";
+        }
+    }
+
+</script>
+
+</body>
+</html>
