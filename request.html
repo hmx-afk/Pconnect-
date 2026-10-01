@@ -1,15 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Request Service | PiConnect</title>
+    <title>Request Service | PConnect</title>
 
     <style>
         * {
@@ -20,308 +15,481 @@
 
         body {
             font-family: Arial, sans-serif;
-            background: #f5f7fb;
-            color: #222;
+            background: #0f0b1f;
+            color: #ffffff;
+            min-height: 100vh;
             padding-bottom: 80px;
         }
 
-        header {
-            background: #6c4cff;
-            color: white;
+        .container {
+            max-width: 650px;
+            margin: auto;
             padding: 20px;
         }
 
-        header a {
-            color: white;
+        .back {
+            display: inline-block;
+            color: #aaa3ba;
             text-decoration: none;
-            font-size: 15px;
+            font-size: 14px;
+            margin-bottom: 20px;
         }
 
-        .container {
-            max-width: 700px;
-            margin: 25px auto;
-            padding: 0 18px;
+        .back:hover {
+            color: #f5b942;
         }
 
-        .card {
-            background: white;
-            padding: 24px;
+        .header {
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #f5b942;
+            font-size: 27px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #aaa3ba;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .service-box {
+            background: #1b1430;
+            border: 1px solid #30234d;
             border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            padding: 18px;
+            margin-bottom: 18px;
         }
 
-        h1 {
-            margin-bottom: 10px;
+        .service-label {
+            color: #aaa3ba;
+            font-size: 12px;
+            margin-bottom: 7px;
         }
 
-        .description {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 25px;
+        .service-name {
+            color: #f5b942;
+            font-size: 19px;
+            font-weight: bold;
+        }
+
+        .form-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 18px;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 17px;
         }
 
         label {
             display: block;
-            margin-bottom: 7px;
+            color: #ddd8e7;
+            font-size: 14px;
             font-weight: bold;
+            margin-bottom: 8px;
         }
 
         input,
         textarea {
             width: 100%;
-            padding: 13px;
-            border: 1px solid #ddd;
+            border: 1px solid #3a2d59;
             border-radius: 10px;
-            margin-bottom: 18px;
-            font-size: 15px;
-            font-family: Arial, sans-serif;
+            background: #171025;
+            color: #ffffff;
+            padding: 13px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #f5b942;
         }
 
         textarea {
-            min-height: 130px;
+            min-height: 140px;
             resize: vertical;
+            line-height: 1.5;
         }
 
-        button {
+        .submit-btn {
             width: 100%;
             border: none;
-            background: #6c4cff;
-            color: white;
+            border-radius: 11px;
             padding: 15px;
-            border-radius: 10px;
-            font-size: 16px;
+            background: #f5b942;
+            color: #171025;
+            font-size: 15px;
+            font-weight: bold;
             cursor: pointer;
         }
 
-        button:disabled {
+        .submit-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
 
-        .message {
-            display: none;
-            margin-top: 18px;
-            padding: 14px;
-            border-radius: 10px;
-            font-weight: bold;
+        .status {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
             line-height: 1.5;
-            word-break: break-word;
         }
 
-        nav {
+        .success {
+            color: #5ee38a;
+        }
+
+        .error {
+            color: #ff7676;
+        }
+
+        .notice {
+            background: #171025;
+            border: 1px solid #30234d;
+            border-radius: 12px;
+            padding: 13px;
+            margin-top: 16px;
+            color: #aaa3ba;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
+            background: #171025;
+            border-top: 1px solid #30234d;
             display: flex;
             justify-content: space-around;
-            padding: 14px 5px;
-            box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08);
+            padding: 10px 5px;
+            z-index: 100;
         }
 
-        nav a {
+        .bottom-nav a {
+            color: #aaa3ba;
             text-decoration: none;
-            color: #555;
-            font-size: 13px;
+            font-size: 11px;
             text-align: center;
+        }
+
+        .bottom-nav a.active {
+            color: #f5b942;
         }
     </style>
 </head>
 
 <body>
 
-    <header>
-        <a href="service.html">← Back to Service</a>
-    </header>
+<div class="container">
 
-    <div class="container">
+    <a href="/browse.html" class="back">
+        ← Back to Browse
+    </a>
 
-        <div class="card">
+    <div class="header">
+        <h1>📩 Request Service</h1>
 
-            <h1>📩 Request Service</h1>
+        <p>
+            Tell us what you need and submit your
+            service request to PConnect.
+        </p>
+    </div>
 
-            <p class="description">
-                Send a request for Web Development service.
-                Payment will be added later.
-            </p>
 
-            <form onsubmit="submitRequest(event)">
+    <div class="service-box">
+
+        <div class="service-label">
+            SELECTED SERVICE
+        </div>
+
+        <div class="service-name" id="serviceName">
+            Web Development
+        </div>
+
+    </div>
+
+
+    <div class="form-card">
+
+        <form id="requestForm">
+
+            <div class="form-group">
 
                 <label for="name">
-                    Your Name
+                    👤 Your Name
                 </label>
 
                 <input
                     type="text"
                     id="name"
+                    name="name"
                     placeholder="Enter your name"
                     required
                 >
 
+            </div>
+
+
+            <div class="form-group">
+
                 <label for="contact">
-                    Contact
+                    📞 Contact
                 </label>
 
                 <input
                     type="text"
                     id="contact"
-                    placeholder="Email or username"
+                    name="contact"
+                    placeholder="Phone, Telegram, email, or other contact"
                     required
                 >
 
+            </div>
+
+
+            <div class="form-group">
+
                 <label for="details">
-                    Project Details
+                    📝 Project Details
                 </label>
 
                 <textarea
                     id="details"
-                    placeholder="Describe what you need..."
+                    name="details"
+                    placeholder="Describe what you want us to build or design..."
                     required
                 ></textarea>
 
-                <button
-                    type="submit"
-                    id="submitBtn"
-                >
-                    Send Request
-                </button>
+            </div>
 
-            </form>
 
-            <div
-                id="message"
-                class="message"
-            ></div>
+            <button
+                type="submit"
+                class="submit-btn"
+                id="submitBtn"
+            >
+                📩 Submit Request
+            </button>
 
+        </form>
+
+
+        <div
+            id="status"
+            class="status"
+        ></div>
+
+
+        <div class="notice">
+            🔐 Your request will be submitted for review.
+            Payment will only be requested after the
+            service request is approved.
         </div>
 
     </div>
 
-    <nav>
+</div>
 
-        <a href="index.html">
-            🏠<br>Home
-        </a>
 
-        <a href="browse.html">
-            🔎<br>Browse
-        </a>
+<div class="bottom-nav">
 
-        <a href="requests.html">
-            📝<br>My Requests
-        </a>
+    <a href="/index.html">
+        🏠<br>Home
+    </a>
 
-        <a href="#">
-            💳<br>Payments
-        </a>
+    <a href="/browse.html">
+        🔎<br>Browse
+    </a>
 
-        <a href="#">
-            👤<br>Profile
-        </a>
+    <a href="/requests.html" class="active">
+        📋<br>Requests
+    </a>
 
-    </nav>
+    <a href="/payments.html">
+        💳<br>Payments
+    </a>
 
-    <script>
+    <a href="/profile.html">
+        👤<br>Profile
+    </a>
 
-        async function submitRequest(event) {
+</div>
+
+
+<script>
+
+    // ==========================================
+    // PConnect - Request Service
+    // ==========================================
+
+    const params =
+        new URLSearchParams(window.location.search);
+
+    const selectedService =
+        params.get("service") || "Web Development";
+
+
+    const serviceName =
+        document.getElementById("serviceName");
+
+    const requestForm =
+        document.getElementById("requestForm");
+
+    const submitBtn =
+        document.getElementById("submitBtn");
+
+    const status =
+        document.getElementById("status");
+
+
+    serviceName.textContent =
+        selectedService;
+
+
+    // ==========================================
+    // SUBMIT REQUEST
+    // ==========================================
+
+    requestForm.addEventListener(
+        "submit",
+        async function(event) {
 
             event.preventDefault();
 
-            const message =
-                document.getElementById("message");
-
-            const submitBtn =
-                document.getElementById("submitBtn");
-
             const name =
-                document.getElementById("name").value.trim();
+                document.getElementById("name")
+                    .value.trim();
 
             const contact =
-                document.getElementById("contact").value.trim();
+                document.getElementById("contact")
+                    .value.trim();
 
             const details =
-                document.getElementById("details").value.trim();
+                document.getElementById("details")
+                    .value.trim();
 
-            message.style.display = "block";
-            message.style.background = "#fff3cd";
-            message.style.color = "#856404";
-            message.textContent = "⏳ Sending request...";
+
+            if (!name || !contact || !details) {
+
+                status.className =
+                    "status error";
+
+                status.textContent =
+                    "Please complete all fields.";
+
+                return;
+            }
+
 
             submitBtn.disabled = true;
-            submitBtn.textContent = "Sending...";
+
+            submitBtn.textContent =
+                "Submitting...";
+
+            status.className =
+                "status";
+
+            status.textContent =
+                "Sending your request...";
+
 
             try {
 
-                const requestData = {
-                    service: "Web Development",
-                    name: name,
-                    contact: contact,
-                    details: details
-                };
+                const response =
+                    await fetch("/api/request", {
 
-                const response = await fetch(
-                    "/api/request",
-                    {
                         method: "POST",
 
                         headers: {
-                            "Content-Type": "application/json"
+                            "Content-Type":
+                                "application/json"
                         },
 
-                        body: JSON.stringify(requestData)
-                    }
-                );
+                        body: JSON.stringify({
 
-                const data = await response.json();
+                            service:
+                                selectedService,
 
-                if (!response.ok) {
+                            name:
+                                name,
 
-                    const detail =
-                        typeof data.details === "object"
-                            ? JSON.stringify(data.details)
-                            : data.details || "";
+                            contact:
+                                contact,
+
+                            details:
+                                details
+
+                        })
+
+                    });
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok || data.error) {
 
                     throw new Error(
-                        `${data.error || "Request failed"}${
-                            detail ? " — " + detail : ""
-                        }`
+                        data.error ||
+                        "Request submission failed."
                     );
+
                 }
 
-                message.style.background = "#e9f8ef";
-                message.style.color = "#16803c";
 
-                message.textContent =
-                    "✅ Request submitted successfully.";
+                status.className =
+                    "status success";
 
-                document.getElementById("name").value = "";
-                document.getElementById("contact").value = "";
-                document.getElementById("details").value = "";
+                status.textContent =
+                    "✔️ Request submitted successfully!";
+
+
+                requestForm.reset();
+
+                serviceName.textContent =
+                    selectedService;
+
+
+                setTimeout(function() {
+
+                    window.location.href =
+                        "/requests.html";
+
+                }, 1500);
+
 
             } catch (error) {
-
-                message.style.background = "#fdeaea";
-                message.style.color = "#b42318";
-
-                message.textContent =
-                    "❌ " + error.message;
 
                 console.error(
                     "Request error:",
                     error
                 );
 
-            } finally {
+                status.className =
+                    "status error";
+
+                status.textContent =
+                    "⚠️ " + error.message;
 
                 submitBtn.disabled = false;
-                submitBtn.textContent = "Send Request";
 
+                submitBtn.textContent =
+                    "📩 Submit Request";
             }
-        }
 
-    </script>
+        }
+    );
+
+</script>
 
 </body>
-
 </html>
