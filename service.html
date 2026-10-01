@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Web Development | PiConnect</title>
+    <title>Service Details | PConnect</title>
 
     <style>
         * {
@@ -15,158 +15,383 @@
 
         body {
             font-family: Arial, sans-serif;
-            background: #f5f7fb;
-            color: #222;
+            background: #0f0b1f;
+            color: #ffffff;
+            min-height: 100vh;
             padding-bottom: 80px;
         }
 
-        header {
-            background: #6c4cff;
-            color: white;
+        .container {
+            max-width: 650px;
+            margin: auto;
             padding: 20px;
         }
 
-        header a {
-            color: white;
+        .back {
+            display: inline-block;
+            color: #aaa3ba;
             text-decoration: none;
-            font-size: 15px;
+            font-size: 14px;
+            margin-bottom: 20px;
         }
 
-        .container {
-            max-width: 700px;
-            margin: 25px auto;
-            padding: 0 18px;
+        .back:hover {
+            color: #f5b942;
         }
 
-        .card {
-            background: white;
+        .service-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 20px;
             padding: 24px;
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 18px;
         }
 
-        .icon {
-            font-size: 45px;
+        .service-icon {
+            font-size: 50px;
             margin-bottom: 15px;
         }
 
         h1 {
-            margin-bottom: 12px;
+            font-size: 27px;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            background: #183b2a;
+            color: #5ee38a;
+            padding: 7px 11px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 18px;
         }
 
         .description {
-            color: #666;
+            color: #c5bfd2;
             line-height: 1.6;
-            margin-bottom: 20px;
+            font-size: 15px;
         }
 
-        .info {
-            background: #f1efff;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+        .section {
+            background: #171025;
+            border: 1px solid #30234d;
+            border-radius: 15px;
+            padding: 18px;
+            margin-bottom: 16px;
         }
 
-        .info p {
-            margin: 8px 0;
+        .section h2 {
+            color: #f5b942;
+            font-size: 18px;
+            margin-bottom: 13px;
         }
 
-        .available {
-            color: #16803c;
+        .section ul {
+            list-style: none;
+        }
+
+        .section li {
+            color: #c5bfd2;
+            padding: 9px 0;
+            border-bottom: 1px solid #30234d;
+            font-size: 14px;
+        }
+
+        .section li:last-child {
+            border-bottom: none;
+        }
+
+        .payment-box {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            padding: 12px 0;
+        }
+
+        .label {
+            color: #aaa3ba;
+        }
+
+        .value {
             font-weight: bold;
+        }
+
+        .pi {
+            color: #f5b942;
         }
 
         .request-btn {
             display: block;
             width: 100%;
+            padding: 15px;
+            background: #f5b942;
+            color: #171025;
+            border-radius: 11px;
             text-align: center;
             text-decoration: none;
-            background: #6c4cff;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 16px;
-            cursor: pointer;
+            font-weight: bold;
+            margin-top: 18px;
         }
 
         .request-btn:hover {
             opacity: 0.9;
         }
 
-        nav {
+        .notice {
+            text-align: center;
+            color: #aaa3ba;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 15px;
+        }
+
+        .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
+            background: #171025;
+            border-top: 1px solid #30234d;
             display: flex;
             justify-content: space-around;
-            padding: 14px 5px;
-            box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08);
+            padding: 10px 5px;
+            z-index: 100;
         }
 
-        nav a {
+        .bottom-nav a {
+            color: #aaa3ba;
             text-decoration: none;
-            color: #555;
-            font-size: 13px;
+            font-size: 11px;
             text-align: center;
+        }
+
+        .bottom-nav a.active {
+            color: #f5b942;
         }
     </style>
 </head>
 
 <body>
 
-    <header>
-        <a href="browse.html">← Back to Services</a>
-    </header>
+<div class="container">
 
-    <div class="container">
+    <a href="/browse.html" class="back">
+        ← Back to Browse
+    </a>
 
-        <div class="card">
+    <div class="service-card">
 
-            <div class="icon">💻</div>
-
-            <h1>Web Development</h1>
-
-            <p class="description">
-                Build modern websites and simple web applications
-                for individuals, businesses and projects.
-            </p>
-
-            <div class="info">
-
-                <p>
-                    <strong>Status:</strong>
-                    <span class="available">Available</span>
-                </p>
-
-                <p>
-                    <strong>Service Type:</strong>
-                    Web Development
-                </p>
-
-                <p>
-                    <strong>Payment:</strong>
-                    Pi Network
-                </p>
-
-            </div>
-
-            <a href="request.html" class="request-btn">
-                Request Service
-            </a>
-
+        <div class="service-icon" id="serviceIcon">
+            💻
         </div>
+
+        <h1 id="serviceName">
+            Web Development
+        </h1>
+
+        <span class="status">
+            AVAILABLE
+        </span>
+
+        <p class="description" id="serviceDescription">
+            Build modern websites and web applications
+            for your business, project, or community.
+        </p>
 
     </div>
 
-    <nav>
-        <a href="index.html">🏠<br>Home</a>
-        <a href="browse.html">🔎<br>Browse</a>
-        <a href="#">📝<br>Post</a>
-        <a href="#">💳<br>Payments</a>
-        <a href="#">👤<br>Profile</a>
-    </nav>
+
+    <div class="section">
+
+        <h2>🛠️ What We Offer</h2>
+
+        <ul id="serviceFeatures">
+
+            <li>🌐 Modern responsive websites</li>
+            <li>📱 Mobile-friendly design</li>
+            <li>⚡ Fast and clean web pages</li>
+            <li>🔧 Website updates and improvements</li>
+            <li>🚀 Project deployment support</li>
+
+        </ul>
+
+    </div>
+
+
+    <div class="section">
+
+        <h2>💳 Payment</h2>
+
+        <div class="payment-box">
+            <span class="label">
+                Payment method
+            </span>
+
+            <span class="value pi">
+                Pi Network
+            </span>
+        </div>
+
+        <div class="payment-box">
+            <span class="label">
+                Network
+            </span>
+
+            <span class="value">
+                Testnet
+            </span>
+        </div>
+
+        <a
+            href="/request.html?service=Web%20Development"
+            class="request-btn"
+            id="requestBtn"
+        >
+            📩 Request This Service
+        </a>
+
+        <p class="notice">
+            Payment will be requested after the service request
+            is reviewed and approved.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="bottom-nav">
+
+    <a href="/index.html">
+        🏠<br>Home
+    </a>
+
+    <a href="/browse.html" class="active">
+        🔎<br>Browse
+    </a>
+
+    <a href="/requests.html">
+        📋<br>Requests
+    </a>
+
+    <a href="/payments.html">
+        💳<br>Payments
+    </a>
+
+    <a href="/profile.html">
+        👤<br>Profile
+    </a>
+
+</div>
+
+
+<script>
+
+    // ==========================================
+    // PConnect - Service Details
+    // ==========================================
+
+    const params =
+        new URLSearchParams(window.location.search);
+
+    const selectedService =
+        params.get("service");
+
+
+    const serviceName =
+        document.getElementById("serviceName");
+
+    const serviceDescription =
+        document.getElementById("serviceDescription");
+
+    const serviceIcon =
+        document.getElementById("serviceIcon");
+
+    const serviceFeatures =
+        document.getElementById("serviceFeatures");
+
+    const requestBtn =
+        document.getElementById("requestBtn");
+
+
+    const services = {
+
+        "Web Development": {
+
+            icon: "💻",
+
+            description:
+                "Build modern websites and web applications for your business, project, or community.",
+
+            features: [
+                "🌐 Modern responsive websites",
+                "📱 Mobile-friendly design",
+                "⚡ Fast and clean web pages",
+                "🔧 Website updates and improvements",
+                "🚀 Project deployment support"
+            ]
+
+        },
+
+        "Graphic Design": {
+
+            icon: "🎨",
+
+            description:
+                "Create professional visual content for your brand, business, community, or social media.",
+
+            features: [
+                "🎨 Logo design",
+                "📱 Social media graphics",
+                "🖼️ Banners and promotional designs",
+                "✨ Brand visual concepts",
+                "📦 Digital marketing graphics"
+            ]
+
+        }
+
+    };
+
+
+    const service =
+        services[selectedService] ||
+        services["Web Development"];
+
+
+    serviceName.textContent =
+        selectedService || "Web Development";
+
+    serviceIcon.textContent =
+        service.icon;
+
+    serviceDescription.textContent =
+        service.description;
+
+
+    serviceFeatures.innerHTML = "";
+
+    service.features.forEach(feature => {
+
+        const li =
+            document.createElement("li");
+
+        li.textContent =
+            feature;
+
+        serviceFeatures.appendChild(li);
+
+    });
+
+
+    requestBtn.href =
+        "/request.html?service=" +
+        encodeURIComponent(
+            selectedService || "Web Development"
+        );
+
+</script>
 
 </body>
 </html>
