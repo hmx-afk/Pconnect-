@@ -1,15 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>My Requests | PiConnect</title>
+    <title>My Requests | PConnect</title>
 
     <style>
         * {
@@ -20,275 +15,529 @@
 
         body {
             font-family: Arial, sans-serif;
-            background: #f5f7fb;
-            color: #222;
-            padding-bottom: 80px;
-        }
-
-        header {
-            background: #6c4cff;
-            color: white;
-            padding: 20px;
-        }
-
-        header a {
-            color: white;
-            text-decoration: none;
-            font-size: 15px;
+            background: #0f0b1f;
+            color: #ffffff;
+            min-height: 100vh;
+            padding-bottom: 85px;
         }
 
         .container {
             max-width: 700px;
-            margin: 25px auto;
-            padding: 0 18px;
+            margin: auto;
+            padding: 20px;
         }
 
-        h1 {
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #666;
+        .back {
+            display: inline-block;
+            color: #aaa3ba;
+            text-decoration: none;
+            font-size: 14px;
             margin-bottom: 20px;
         }
 
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        .back:hover {
+            color: #f5b942;
         }
 
-        .service-title {
-            font-size: 20px;
+        .header {
+            margin-bottom: 22px;
+        }
+
+        .header h1 {
+            color: #f5b942;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #aaa3ba;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 15px;
+            padding: 16px;
+        }
+
+        .summary-label {
+            color: #aaa3ba;
+            font-size: 12px;
+            margin-bottom: 7px;
+        }
+
+        .summary-value {
+            color: #f5b942;
+            font-size: 23px;
             font-weight: bold;
-            margin-bottom: 12px;
+        }
+
+        .request-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+
+        .request-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .service-name {
+            color: #f5b942;
+            font-size: 19px;
+            font-weight: bold;
+        }
+
+        .submitted {
+            color: #aaa3ba;
+            font-size: 12px;
+            margin-top: 6px;
         }
 
         .status {
-            display: inline-block;
-            background: #fff3cd;
-            color: #856404;
             padding: 6px 10px;
-            border-radius: 8px;
+            border-radius: 20px;
+            background: #30234d;
+            color: #f5b942;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .info {
+            border-top: 1px solid #30234d;
+            padding-top: 14px;
+        }
+
+        .info-row {
+            margin-bottom: 12px;
+        }
+
+        .info-label {
+            color: #aaa3ba;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            color: #ffffff;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .review-box {
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 11px;
+            background: #171025;
+            border: 1px solid #30234d;
+        }
+
+        .review-label {
+            color: #aaa3ba;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+
+        .review-status {
+            color: #f5b942;
             font-size: 13px;
             font-weight: bold;
-            margin-bottom: 15px;
         }
 
-        .details {
-            color: #555;
-            line-height: 1.6;
-        }
-
-        .empty,
-        .loading,
-        .error {
-            background: white;
-            padding: 25px;
-            border-radius: 16px;
+        .empty {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 18px;
+            padding: 30px 20px;
             text-align: center;
-            color: #666;
+        }
+
+        .empty-icon {
+            font-size: 38px;
+            margin-bottom: 10px;
+        }
+
+        .empty h2 {
+            font-size: 19px;
+            margin-bottom: 8px;
+        }
+
+        .empty p {
+            color: #aaa3ba;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 18px;
+        }
+
+        .browse-btn {
+            display: inline-block;
+            text-decoration: none;
+            background: #f5b942;
+            color: #171025;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            color: #aaa3ba;
+            padding: 30px;
+            font-size: 14px;
         }
 
         .error {
-            color: #b42318;
+            background: #29151a;
+            border: 1px solid #5a2730;
+            border-radius: 14px;
+            padding: 18px;
+            text-align: center;
+            color: #ff8585;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
-        nav {
+        .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
+            background: #171025;
+            border-top: 1px solid #30234d;
             display: flex;
             justify-content: space-around;
-            padding: 14px 5px;
-            box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08);
+            padding: 10px 5px;
+            z-index: 100;
         }
 
-        nav a {
+        .bottom-nav a {
+            color: #aaa3ba;
             text-decoration: none;
-            color: #555;
-            font-size: 13px;
+            font-size: 11px;
             text-align: center;
+        }
+
+        .bottom-nav a.active {
+            color: #f5b942;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+            }
+
+            .request-top {
+                flex-direction: column;
+            }
+
+            .status {
+                align-self: flex-start;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <header>
-        <a href="index.html">← Back to Home</a>
-    </header>
+<div class="container">
 
-    <div class="container">
+    <a href="/browse.html" class="back">← Back to Browse</a>
 
+    <div class="header">
         <h1>📋 My Requests</h1>
-
-        <p class="subtitle">
-            View your service requests and their current status.
-        </p>
-
-        <div id="requestsContainer">
-
-            <div class="loading">
-                <h3>Loading requests...</h3>
-                <p>Please wait.</p>
-            </div>
-
-        </div>
-
+        <p>Track your service requests and review status.</p>
     </div>
 
-    <nav>
+    <div class="summary">
+        <div class="summary-card">
+            <div class="summary-label">TOTAL REQUESTS</div>
+            <div class="summary-value" id="totalRequests">0</div>
+        </div>
 
-        <a href="index.html">
-            🏠<br>Home
-        </a>
+        <div class="summary-card">
+            <div class="summary-label">WAITING REVIEW</div>
+            <div class="summary-value" id="waitingRequests">0</div>
+        </div>
+    </div>
 
-        <a href="browse.html">
-            🔎<br>Browse
-        </a>
+    <div id="requestsContainer">
+        <div class="loading">
+            Loading your requests...
+        </div>
+    </div>
 
-        <a href="requests.html">
-            📝<br>My Requests
-        </a>
+</div>
 
-        <a href="#">
-            💳<br>Payments
-        </a>
+<div class="bottom-nav">
+    <a href="/index.html">
+        🏠<br>Home
+    </a>
 
-        <a href="#">
-            👤<br>Profile
-        </a>
+    <a href="/browse.html">
+        🔎<br>Browse
+    </a>
 
-    </nav>
+    <a href="/requests.html" class="active">
+        📋<br>Requests
+    </a>
 
-    <script>
+    <a href="/payments.html">
+        💳<br>Payments
+    </a>
 
-        async function loadRequests() {
+    <a href="/profile.html">
+        👤<br>Profile
+    </a>
+</div>
 
-            const container =
-                document.getElementById("requestsContainer");
+<script>
 
-            try {
+async function loadRequests() {
 
-                const response =
-                    await fetch("/api/requests");
+    const container = document.getElementById("requestsContainer");
 
-                const result =
-                    await response.json();
+    try {
 
-                if (!response.ok) {
+        const response = await fetch("/api/requests");
 
-                    throw new Error(
-                        result.details?.message ||
-                        result.error ||
-                        "Failed to load requests"
-                    );
-                }
+        const data = await response.json();
 
-                const requests =
-                    result.requests || [];
-
-                if (requests.length === 0) {
-
-                    container.innerHTML = `
-                        <div class="empty">
-                            <h3>No requests yet</h3>
-                            <p>
-                                You have not submitted any service requests.
-                            </p>
-                        </div>
-                    `;
-
-                    return;
-                }
-
-                container.innerHTML =
-                    requests.map(request => {
-
-                        const submitted =
-                            request.created_at
-                                ? new Date(
-                                    request.created_at
-                                ).toLocaleString()
-                                : "Not available";
-
-                        const reviewStatus =
-                            request.review_status ||
-                            request.status ||
-                            "Waiting for review";
-
-                        return `
-
-                            <div class="card">
-
-                                <div class="service-title">
-                                    💻 ${request.service || "Service Request"}
-                                </div>
-
-                                <div class="status">
-                                    ${request.status || "Submitted"}
-                                </div>
-
-                                <p class="details">
-
-                                    <strong>Name:</strong>
-                                    ${request.name || "N/A"}
-                                    <br><br>
-
-                                    <strong>Contact:</strong>
-                                    ${request.contact || "N/A"}
-                                    <br><br>
-
-                                    <strong>Project Details:</strong>
-                                    ${request.details || "N/A"}
-                                    <br><br>
-
-                                    <strong>Payment:</strong>
-                                    ${request.payment || "Pi Network"}
-                                    <br><br>
-
-                                    <strong>Review Status:</strong>
-                                    ${reviewStatus}
-                                    <br><br>
-
-                                    <strong>Submitted:</strong>
-                                    ${submitted}
-
-                                </p>
-
-                            </div>
-
-                        `;
-
-                    }).join("");
-
-            } catch (error) {
-
-                console.error(
-                    "Load requests error:",
-                    error
-                );
-
-                container.innerHTML = `
-                    <div class="error">
-                        <h3>❌ Failed to load requests</h3>
-                        <p>
-                            ${error.message}
-                        </p>
-                    </div>
-                `;
-            }
+        if (!response.ok || data.error) {
+            throw new Error(data.error || "Failed to load requests.");
         }
 
-        loadRequests();
+        const requests = Array.isArray(data)
+            ? data
+            : (data.requests || []);
 
-    </script>
+        document.getElementById("totalRequests").textContent =
+            requests.length;
+
+        const waitingCount = requests.filter(function(request) {
+
+            const reviewStatus =
+                String(request.review_status || "").toLowerCase();
+
+            return (
+                reviewStatus.includes("waiting") ||
+                reviewStatus.includes("review")
+            );
+
+        }).length;
+
+        document.getElementById("waitingRequests").textContent =
+            waitingCount;
+
+        if (requests.length === 0) {
+
+            container.innerHTML = `
+                <div class="empty">
+
+                    <div class="empty-icon">📋</div>
+
+                    <h2>No Requests Yet</h2>
+
+                    <p>
+                        You have not submitted any service requests yet.
+                    </p>
+
+                    <a href="/browse.html" class="browse-btn">
+                        Browse Services
+                    </a>
+
+                </div>
+            `;
+
+            return;
+        }
+
+        container.innerHTML = requests.map(function(request) {
+
+            const service =
+                request.service || "Service Request";
+
+            const status =
+                request.status || "Submitted";
+
+            const reviewStatus =
+                request.review_status || "Waiting for review";
+
+            const name =
+                request.name || "Not available";
+
+            const contact =
+                request.contact || "Not available";
+
+            const details =
+                request.details || "No project details provided.";
+
+            let submitted = "Not available";
+
+            if (request.created_at) {
+
+                submitted = new Date(
+                    request.created_at
+                ).toLocaleString();
+
+            }
+
+            return `
+
+                <div class="request-card">
+
+                    <div class="request-top">
+
+                        <div>
+                            <div class="service-name">
+                                ${escapeHtml(service)}
+                            </div>
+
+                            <div class="submitted">
+                                Submitted: ${escapeHtml(submitted)}
+                            </div>
+                        </div>
+
+                        <div class="status">
+                            ${escapeHtml(status)}
+                        </div>
+
+                    </div>
+
+                    <div class="info">
+
+                        <div class="info-row">
+
+                            <div class="info-label">
+                                👤 NAME
+                            </div>
+
+                            <div class="info-value">
+                                ${escapeHtml(name)}
+                            </div>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <div class="info-label">
+                                📞 CONTACT
+                            </div>
+
+                            <div class="info-value">
+                                ${escapeHtml(contact)}
+                            </div>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <div class="info-label">
+                                📝 PROJECT DETAILS
+                            </div>
+
+                            <div class="info-value">
+                                ${escapeHtml(details)}
+                            </div>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <div class="info-label">
+                                💳 PAYMENT
+                            </div>
+
+                            <div class="info-value">
+                                ${escapeHtml(
+                                    request.payment || "Pi Network"
+                                )}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="review-box">
+
+                        <div class="review-label">
+                            REVIEW STATUS
+                        </div>
+
+                        <div class="review-status">
+                            ${escapeHtml(reviewStatus)}
+                        </div>
+
+                    </div>
+
+                </div>
+            `;
+
+        }).join("");
+
+    } catch (error) {
+
+        console.error("Requests error:", error);
+
+        container.innerHTML = `
+            <div class="error">
+                ⚠️ ${escapeHtml(error.message)}
+            </div>
+        `;
+
+    }
+
+}
+
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+loadRequests();
+
+</script>
 
 </body>
-
 </html>
+
+Yanzu ka yi haka 👇
+
+1. Buɗe GitHub → "hmx-afk/Pconnect-"
+2. Buɗe "requests.html"
+3. Ka danna Edit ✏️
+4. Ka goge tsohon code ɗin gaba ɗaya.
+5. Ka saka wannan sabon code ɗin.
+6. Commit changes.
+7. Jira Vercel ya nuna Ready.
+8. Sai ka buɗe:
+   "https://pconnect-rho.vercel.app/requests.html"
+
+A wannan karon kar mu canza wani file.
+
+Bayan ka buɗe shi, ka turo min screenshot ko abin da ya nuna. Sai mu tabbatar da My Requests kafin mu shiga mataki na gaba.
