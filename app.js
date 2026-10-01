@@ -12,24 +12,38 @@ const status = document.getElementById("status");
 const payBtn = document.getElementById("payBtn");
 const payStatus = document.getElementById("payStatus");
 
+// Store logged-in Pi user
+let currentPiUsername = null;
+
+// Service being paid for
+const currentService = "Web Development";
+
 
 // ==========================================
 // LOGIN
 // ==========================================
 
 loginBtn.addEventListener("click", async () => {
+
     status.textContent = "Connecting...";
     loginBtn.disabled = true;
 
     let loginTimeout;
 
     try {
+
         const scopes = ["username", "payments"];
 
         const timeoutPromise = new Promise((_, reject) => {
+
             loginTimeout = setTimeout(() => {
-                reject(new Error("Pi SDK authentication timeout"));
+
+                reject(
+                    new Error("Pi SDK authentication timeout")
+                );
+
             }, 15000);
+
         });
 
         const authPromise = Pi.authenticate(
@@ -46,27 +60,41 @@ loginBtn.addEventListener("click", async () => {
 
         console.log("User:", authResult.user);
 
+        // Save Pi username
+        currentPiUsername = authResult.user.username;
+
         status.textContent =
-            "Connected ✔️ " + authResult.user.username;
+            "Connected ✔️ " + currentPiUsername;
 
         payBtn.disabled = false;
 
     } catch (error) {
+
         clearTimeout(loginTimeout);
 
         console.error("Login error:", error);
 
-        if (error.message === "Pi SDK authentication timeout") {
+        if (
+            error.message ===
+            "Pi SDK authentication timeout"
+        ) {
+
             status.textContent =
                 "⚠️ Timeout - no response from Pi SDK after 15s";
+
         } else {
+
             status.textContent =
                 "Connection failed. Please try again.";
+
         }
 
     } finally {
+
         loginBtn.disabled = false;
+
     }
+
 });
 
 
@@ -75,41 +103,76 @@ loginBtn.addEventListener("click", async () => {
 // ==========================================
 
 function onIncompletePaymentFound(payment) {
-    console.log("Incomplete payment:", payment);
 
-    if (!payment || !payment.identifier) {
+    console.log(
+        "Incomplete payment:",
+        payment
+    );
+
+    if (
+        !payment ||
+        !payment.identifier
+    ) {
         return;
     }
 
-    const txid = payment.transaction?.txid;
+    const txid =
+        payment.transaction?.txid;
 
     if (!txid) {
+
         console.log(
             "Incomplete payment found, but txid is not available yet."
         );
+
         return;
     }
 
     fetch("/api/complete", {
+
         method: "POST",
+
         headers: {
             "Content-Type": "application/json"
         },
+
         body: JSON.stringify({
-            paymentId: payment.identifier,
-            txid: txid
+
+            paymentId:
+                payment.identifier,
+
+            txid: txid,
+
+            pi_username:
+                currentPiUsername,
+
+            service:
+                currentService
+
         })
+
     })
+
         .then(res => res.json())
+
         .then(data => {
-            console.log("Incomplete payment handled:", data);
+
+            console.log(
+                "Incomplete payment handled:",
+                data
+            );
+
         })
+
         .catch(err => {
+
             console.error(
                 "Incomplete payment cleanup failed:",
                 err
             );
+
         });
+
 }
 
 
@@ -117,190 +180,289 @@ function onIncompletePaymentFound(payment) {
 // PAYMENT
 // ==========================================
 
-payBtn.addEventListener("click", () => {
+payBtn.addEventListener(
+    "click",
+    () => {
 
-    const amount = 0.01;
+        const amount = 0.01;
 
-    if (typeof amount !== "number" || amount <= 0) {
+        if (
+            typeof amount !== "number" ||
+            amount <= 0
+        ) {
+
+            payStatus.textContent =
+                "Invalid payment amount.";
+
+            return;
+        }
+
+        // Make sure user is logged in
+        if (!currentPiUsername) {
+
+            payStatus.textContent =
+                "Please sign in with Pi first.";
+
+            return;
+        }
+
+        payBtn.disabled = true;
+
         payStatus.textContent =
-            "Invalid payment amount.";
-        return;
-    }
-
-    payBtn.disabled = true;
-
-    payStatus.textContent =
-        "Processing payment...";
+            "Processing payment...";
 
 
-    Pi.createPayment(
-        {
-            amount: amount,
-            memo: "Test payment for PiConnect",
-            metadata: {
-                test: true
-            }
-        },
+        Pi.createPayment(
 
-        {
+            {
 
-            // ==================================
-            // SERVER APPROVAL
-            // ==================================
+                amount: amount,
 
-            onReadyForServerApproval: function (paymentId) {
+                memo:
+                    "Test payment for PiConnect",
 
-                console.log(
-                    "Ready for approval:",
-                    paymentId
-                );
+                metadata: {
 
-                fetch("/api/approve", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        paymentId: paymentId
-                    })
-                })
-                    .then(res => res.json())
-                    .then(data => {
+                    test: true,
 
-                        console.log(
-                            "Approval response:",
-                            data
-                        );
+                    service:
+                        currentService
 
-                        if (data.error) {
+                }
 
-                            console.error(
-                                "Approve error:",
-                                data.error
-                            );
-
-                            payStatus.textContent =
-                                "Payment could not be approved.";
-
-                            payBtn.disabled = false;
-                        }
-                    })
-                    .catch(err => {
-
-                        console.error(
-                            "Approval network error:",
-                            err
-                        );
-
-                        payStatus.textContent =
-                            "Network error during approval.";
-
-                        payBtn.disabled = false;
-                    });
             },
 
+            {
 
-            // ==================================
-            // SERVER COMPLETION
-            // ==================================
+                // ==================================
+                // SERVER APPROVAL
+                // ==================================
 
-            onReadyForServerCompletion:
-                function (paymentId, txid) {
+                onReadyForServerApproval:
+                    function (paymentId) {
 
-                    console.log(
-                        "Ready for completion:",
-                        paymentId,
-                        txid
-                    );
+                        console.log(
+                            "Ready for approval:",
+                            paymentId
+                        );
 
-                    fetch("/api/complete", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            paymentId: paymentId,
-                            txid: txid
-                        })
-                    })
-                        .then(res => res.json())
-                        .then(data => {
+                        fetch(
+                            "/api/approve",
+                            {
 
-                            console.log(
-                                "Completion response:",
-                                data
-                            );
+                                method: "POST",
 
-                            if (data.error) {
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body: JSON.stringify({
+
+                                    paymentId:
+                                        paymentId
+
+                                })
+
+                            }
+                        )
+
+                            .then(
+                                res =>
+                                    res.json()
+                            )
+
+                            .then(data => {
+
+                                console.log(
+                                    "Approval response:",
+                                    data
+                                );
+
+                                if (data.error) {
+
+                                    console.error(
+                                        "Approve error:",
+                                        data.error
+                                    );
+
+                                    payStatus.textContent =
+                                        "Payment could not be approved.";
+
+                                    payBtn.disabled =
+                                        false;
+
+                                }
+
+                            })
+
+                            .catch(err => {
 
                                 console.error(
-                                    "Complete error:",
-                                    data.error
+                                    "Approval network error:",
+                                    err
                                 );
 
                                 payStatus.textContent =
-                                    "Payment could not be completed.";
+                                    "Network error during approval.";
 
-                                payBtn.disabled = false;
+                                payBtn.disabled =
+                                    false;
 
-                                return;
+                            });
+
+                    },
+
+
+                // ==================================
+                // SERVER COMPLETION
+                // ==================================
+
+                onReadyForServerCompletion:
+                    function (
+                        paymentId,
+                        txid
+                    ) {
+
+                        console.log(
+                            "Ready for completion:",
+                            paymentId,
+                            txid
+                        );
+
+                        fetch(
+                            "/api/complete",
+                            {
+
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body: JSON.stringify({
+
+                                    paymentId:
+                                        paymentId,
+
+                                    txid:
+                                        txid,
+
+                                    pi_username:
+                                        currentPiUsername,
+
+                                    service:
+                                        currentService
+
+                                })
+
                             }
+                        )
 
-                            payStatus.textContent =
-                                "✔️ Payment complete!";
+                            .then(
+                                res =>
+                                    res.json()
+                            )
 
-                            payBtn.disabled = false;
-                        })
-                        .catch(err => {
+                            .then(data => {
 
-                            console.error(
-                                "Completion network error:",
-                                err
-                            );
+                                console.log(
+                                    "Completion response:",
+                                    data
+                                );
 
-                            payStatus.textContent =
-                                "Network error during completion.";
+                                if (data.error) {
 
-                            payBtn.disabled = false;
-                        });
-                },
+                                    console.error(
+                                        "Complete error:",
+                                        data.error
+                                    );
+
+                                    payStatus.textContent =
+                                        "Payment could not be completed.";
+
+                                    payBtn.disabled =
+                                        false;
+
+                                    return;
+
+                                }
+
+                                payStatus.textContent =
+                                    "✔️ Payment complete!";
+
+                                payBtn.disabled =
+                                    false;
+
+                            })
+
+                            .catch(err => {
+
+                                console.error(
+                                    "Completion network error:",
+                                    err
+                                );
+
+                                payStatus.textContent =
+                                    "Network error during completion.";
+
+                                payBtn.disabled =
+                                    false;
+
+                            });
+
+                    },
 
 
-            // ==================================
-            // CANCEL
-            // ==================================
+                // ==================================
+                // CANCEL
+                // ==================================
 
-            onCancel: function (paymentId) {
+                onCancel:
+                    function (paymentId) {
 
-                console.log(
-                    "Payment cancelled:",
-                    paymentId
-                );
+                        console.log(
+                            "Payment cancelled:",
+                            paymentId
+                        );
 
-                payStatus.textContent =
-                    "Payment cancelled.";
+                        payStatus.textContent =
+                            "Payment cancelled.";
 
-                payBtn.disabled = false;
-            },
+                        payBtn.disabled =
+                            false;
+
+                    },
 
 
-            // ==================================
-            // ERROR
-            // ==================================
+                // ==================================
+                // ERROR
+                // ==================================
 
-            onError: function (error, payment) {
+                onError:
+                    function (
+                        error,
+                        payment
+                    ) {
 
-                console.error(
-                    "Payment error:",
-                    error,
-                    payment
-                );
+                        console.error(
+                            "Payment error:",
+                            error,
+                            payment
+                        );
 
-                payStatus.textContent =
-                    "Something went wrong with the payment.";
+                        payStatus.textContent =
+                            "Something went wrong with the payment.";
 
-                payBtn.disabled = false;
+                        payBtn.disabled =
+                            false;
+
+                    }
+
             }
-        }
-    );
-});
+
+        );
+
+    }
+);
