@@ -1,173 +1,319 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <title>Browse Services | PConnect</title>
 
-    <title>PConnect - Browse</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    <link rel="stylesheet" href="style.css">
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f0b1f;
+            color: #ffffff;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            color: #f5b942;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #aaa3ba;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .trust {
+            background: #171025;
+            border: 1px solid #30234d;
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+            color: #c9c2d8;
+            font-size: 13px;
+            margin-bottom: 22px;
+        }
+
+        .service-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .service-icon {
+            font-size: 35px;
+            margin-bottom: 12px;
+        }
+
+        .service-card h2 {
+            color: #ffffff;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .service-card p {
+            color: #aaa3ba;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .service-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .badge {
+            padding: 6px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .available {
+            background: #183b2a;
+            color: #5ee38a;
+        }
+
+        .coming {
+            background: #342b16;
+            color: #f5b942;
+        }
+
+        .view-btn {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            border-radius: 10px;
+            background: #f5b942;
+            color: #171025;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .disabled-btn {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            border-radius: 10px;
+            background: #29233a;
+            color: #777083;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            color: #f5b942;
+            margin: 25px 0 12px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #171025;
+            border-top: 1px solid #30234d;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 5px;
+            z-index: 100;
+        }
+
+        .bottom-nav a {
+            color: #aaa3ba;
+            text-decoration: none;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .bottom-nav a.active {
+            color: #f5b942;
+        }
+    </style>
 </head>
 
 <body>
 
-    <main class="app-shell">
+<div class="container">
 
-        <!-- TOP BAR -->
+    <div class="header">
+        <h1>🔎 Browse Services</h1>
+        <p>
+            Discover services available through
+            the PConnect ecosystem.
+        </p>
+    </div>
 
-        <div class="topbar">
+    <div class="trust">
+        🔐 Trusted services in the Pi ecosystem
+    </div>
 
-            <a href="index.html">
-                ←
-            </a>
 
-            <h1>
-                🔎 Browse Services
-            </h1>
+    <div class="section-title">
+        Available Services
+    </div>
+
+
+    <!-- WEB DEVELOPMENT -->
+
+    <div class="service-card">
+
+        <div class="service-top">
+
+            <div class="service-icon">
+                💻
+            </div>
+
+            <span class="badge available">
+                AVAILABLE
+            </span>
 
         </div>
 
+        <h2>
+            Web Development
+        </h2>
 
-        <!-- INTRO -->
+        <p>
+            Build modern websites and web applications
+            for your business, project, or community.
+        </p>
 
-        <section class="card">
+        <a
+            href="/service.html?service=Web%20Development"
+            class="view-btn"
+        >
+            View Service
+        </a>
 
-            <h2>
-                Find a Service
-            </h2>
-
-            <p>
-                Discover services from the Pi ecosystem.
-            </p>
-
-        </section>
+    </div>
 
 
-        <!-- SERVICE 1 -->
+    <!-- GRAPHIC DESIGN -->
 
-        <section class="item">
+    <div class="service-card">
 
-            <h3>
-                💻 Web Development
-            </h3>
+        <div class="service-top">
 
-            <p>
-                Build websites and simple web applications.
-            </p>
+            <div class="service-icon">
+                🎨
+            </div>
 
-            <span class="badge badge-success">
-                Available
+            <span class="badge available">
+                AVAILABLE
             </span>
 
-            <br><br>
+        </div>
 
-            <button
-                class="btn btn-blue"
-                type="button"
-                onclick="window.location.href='service.html'"
-            >
-                View Service
-            </button>
+        <h2>
+            Graphic Design
+        </h2>
 
-        </section>
+        <p>
+            Create logos, social media graphics,
+            banners, and visual content.
+        </p>
+
+        <a
+            href="/service.html?service=Graphic%20Design"
+            class="view-btn"
+        >
+            View Service
+        </a>
+
+    </div>
 
 
-        <!-- SERVICE 2 -->
+    <!-- APP DEVELOPMENT -->
 
-        <section class="item">
+    <div class="service-card">
 
-            <h3>
-                🎨 Graphic Design
-            </h3>
+        <div class="service-top">
 
-            <p>
-                Logos, banners and creative digital designs.
-            </p>
+            <div class="service-icon">
+                📱
+            </div>
 
-            <span class="badge badge-success">
-                Available
+            <span class="badge coming">
+                COMING SOON
             </span>
 
-            <br><br>
+        </div>
 
-            <button
-                class="btn btn-blue"
-                type="button"
-            >
-                View Service
-            </button>
+        <h2>
+            App Development
+        </h2>
 
-        </section>
+        <p>
+            Mobile application development services
+            will be available soon.
+        </p>
 
+        <div class="disabled-btn">
+            Coming Soon
+        </div>
 
-        <!-- SERVICE 3 -->
-
-        <section class="item">
-
-            <h3>
-                📱 App Development
-            </h3>
-
-            <p>
-                Mobile and web application development services.
-            </p>
-
-            <span class="badge badge-pending">
-                Coming Soon
-            </span>
-
-        </section>
+    </div>
 
 
-        <!-- BOTTOM NAV -->
+</div>
 
-        <nav class="bottom-nav">
 
-            <a
-                href="index.html"
-                aria-label="Home"
-            >
-                🏠
-            </a>
+<!-- BOTTOM NAV -->
 
-            <a
-                href="browse.html"
-                class="active"
-                aria-label="Browse"
-            >
-                🔎
-            </a>
+<div class="bottom-nav">
 
-            <a
-                href="#"
-                aria-label="Requests"
-            >
-                📝
-            </a>
+    <a href="/index.html">
+        🏠<br>Home
+    </a>
 
-            <a
-                href="#"
-                aria-label="Transactions"
-            >
-                💳
-            </a>
+    <a href="/browse.html" class="active">
+        🔎<br>Browse
+    </a>
 
-            <a
-                href="#"
-                aria-label="Profile"
-            >
-                👤
-            </a>
+    <a href="/requests.html">
+        📋<br>Requests
+    </a>
 
-        </nav>
+    <a href="/payments.html">
+        💳<br>Payments
+    </a>
 
-    </main>
+    <a href="/profile.html">
+        👤<br>Profile
+    </a>
+
+</div>
 
 </body>
-
 </html>
