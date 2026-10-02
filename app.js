@@ -23,7 +23,6 @@ let currentPiUsername = null;
 // REQUEST ID
 // ==========================================
 
-// Get request_id from URL first
 const urlParams =
     new URLSearchParams(
         window.location.search
@@ -33,7 +32,7 @@ const urlRequestId =
     urlParams.get("request_id");
 
 
-// If URL has request_id, save it
+// Save request ID from URL
 if (urlRequestId) {
 
     sessionStorage.setItem(
@@ -44,7 +43,7 @@ if (urlRequestId) {
 }
 
 
-// Use URL request_id or previously saved request_id
+// Use URL request ID or saved request ID
 const currentRequestId =
     urlRequestId ||
     sessionStorage.getItem(
@@ -86,7 +85,13 @@ loginBtn.addEventListener(
         status.textContent =
             "Connecting...";
 
+        payStatus.textContent =
+            "Connecting to Pi...";
+
         loginBtn.disabled =
+            true;
+
+        payBtn.disabled =
             true;
 
         let loginTimeout;
@@ -99,6 +104,10 @@ loginBtn.addEventListener(
                 "payments"
             ];
 
+
+            // ==================================
+            // AUTHENTICATION
+            // ==================================
 
             const timeoutPromise =
                 new Promise(
@@ -141,15 +150,40 @@ loginBtn.addEventListener(
             );
 
 
+            // ==================================
+            // CHECK AUTH RESULT
+            // ==================================
+
+            if (
+                !authResult ||
+                !authResult.user ||
+                !authResult.user.username
+            ) {
+
+                throw new Error(
+                    "Pi authentication returned no user"
+                );
+
+            }
+
+
             console.log(
-                "User:",
+                "Pi user:",
                 authResult.user
             );
 
 
+            // ==================================
+            // SAVE USERNAME
+            // ==================================
+
             currentPiUsername =
                 authResult.user.username;
 
+
+            // ==================================
+            // UPDATE UI
+            // ==================================
 
             status.textContent =
                 "Connected ✔️ " +
@@ -158,6 +192,16 @@ loginBtn.addEventListener(
 
             payBtn.disabled =
                 false;
+
+
+            payStatus.textContent =
+                "Pi connected successfully. You can now make the 0.01 π Test-Pi payment.";
+
+
+            console.log(
+                "Pi authentication successful:",
+                currentPiUsername
+            );
 
 
         } catch (error) {
@@ -181,12 +225,22 @@ loginBtn.addEventListener(
                 status.textContent =
                     "⚠️ Timeout - no response from Pi SDK after 15s";
 
+                payStatus.textContent =
+                    "Pi connection timed out. Please try again.";
+
             } else {
 
                 status.textContent =
                     "Connection failed. Please try again.";
 
+                payStatus.textContent =
+                    "Unable to connect to Pi.";
+
             }
+
+
+            payBtn.disabled =
+                true;
 
 
         } finally {
@@ -291,11 +345,11 @@ function onIncompletePaymentFound(
         )
 
         .catch(
-            err => {
+            error => {
 
                 console.error(
                     "Incomplete payment cleanup failed:",
-                    err
+                    error
                 );
 
             }
@@ -366,22 +420,41 @@ payBtn.addEventListener(
 
 
         // ==================================
-        // START PAYMENT
+        // PAYMENT START
         // ==================================
 
         payBtn.disabled =
             true;
 
 
+        loginBtn.disabled =
+            true;
+
+
         payStatus.textContent =
-            "Processing payment...";
+            "Processing 0.01 π Test-Pi payment...";
 
 
         console.log(
-            "Starting payment for Request ID:",
+            "Starting payment..."
+        );
+
+
+        console.log(
+            "Request ID:",
             currentRequestId
         );
 
+
+        console.log(
+            "Pi username:",
+            currentPiUsername
+        );
+
+
+        // ==================================
+        // CREATE PAYMENT
+        // ==================================
 
         Pi.createPayment(
 
@@ -421,7 +494,7 @@ payBtn.addEventListener(
                     ) {
 
                         console.log(
-                            "Ready for approval:",
+                            "Ready for server approval:",
                             paymentId
                         );
 
@@ -450,8 +523,25 @@ payBtn.addEventListener(
                         )
 
                             .then(
-                                res =>
-                                    res.json()
+                                async res => {
+
+                                    const data =
+                                        await res.json();
+
+                                    if (
+                                        !res.ok
+                                    ) {
+
+                                        throw new Error(
+                                            data.error ||
+                                            "Payment approval failed"
+                                        );
+
+                                    }
+
+                                    return data;
+
+                                }
                             )
 
                             .then(
@@ -463,42 +553,30 @@ payBtn.addEventListener(
                                     );
 
 
-                                    if (
-                                        data.error
-                                    ) {
-
-                                        console.error(
-                                            "Approve error:",
-                                            data.error
-                                        );
-
-
-                                        payStatus.textContent =
-                                            "Payment could not be approved.";
-
-
-                                        payBtn.disabled =
-                                            false;
-
-                                    }
+                                    payStatus.textContent =
+                                        "Payment approved. Waiting for Pi transaction...";
 
                                 }
                             )
 
                             .catch(
-                                err => {
+                                error => {
 
                                     console.error(
-                                        "Approval network error:",
-                                        err
+                                        "Approval error:",
+                                        error
                                     );
 
 
                                     payStatus.textContent =
-                                        "Network error during approval.";
+                                        "Payment could not be approved.";
 
 
                                     payBtn.disabled =
+                                        false;
+
+
+                                    loginBtn.disabled =
                                         false;
 
                                 }
@@ -518,10 +596,24 @@ payBtn.addEventListener(
                     ) {
 
                         console.log(
-                            "Ready for completion:",
-                            paymentId,
+                            "Ready for server completion:"
+                        );
+
+
+                        console.log(
+                            "Payment ID:",
+                            paymentId
+                        );
+
+
+                        console.log(
+                            "TXID:",
                             txid
                         );
+
+
+                        payStatus.textContent =
+                            "Completing payment and saving transaction...";
 
 
                         fetch(
@@ -560,8 +652,25 @@ payBtn.addEventListener(
                         )
 
                             .then(
-                                res =>
-                                    res.json()
+                                async res => {
+
+                                    const data =
+                                        await res.json();
+
+                                    if (
+                                        !res.ok
+                                    ) {
+
+                                        throw new Error(
+                                            data.error ||
+                                            "Payment completion failed"
+                                        );
+
+                                    }
+
+                                    return data;
+
+                                }
                             )
 
                             .then(
@@ -573,53 +682,52 @@ payBtn.addEventListener(
                                     );
 
 
-                                    if (
-                                        data.error
-                                    ) {
-
-                                        console.error(
-                                            "Complete error:",
-                                            data.error
-                                        );
-
-
-                                        payStatus.textContent =
-                                            "Payment could not be completed.";
-
-
-                                        payBtn.disabled =
-                                            false;
-
-
-                                        return;
-
-                                    }
-
-
                                     payStatus.textContent =
-                                        "✔️ Payment complete!";
+                                        "✔️ Payment complete! Request #" +
+                                        currentRequestId +
+                                        " has been linked to this transaction.";
 
 
                                     payBtn.disabled =
                                         false;
 
+
+                                    loginBtn.disabled =
+                                        false;
+
+
+                                    // Refresh transaction history
+                                    if (
+                                        typeof loadTransactions ===
+                                        "function"
+                                    ) {
+
+                                        loadTransactions();
+
+                                    }
+
                                 }
                             )
 
                             .catch(
-                                err => {
+                                error => {
 
                                     console.error(
-                                        "Completion network error:",
-                                        err
+                                        "Completion error:",
+                                        error
                                     );
 
 
                                     payStatus.textContent =
-                                        "Network error during completion.";
+                                        "Payment could not be completed: " +
+                                        error.message;
 
 
                                     payBtn.disabled =
+                                        false;
+
+
+                                    loginBtn.disabled =
                                         false;
 
                                 }
@@ -629,7 +737,7 @@ payBtn.addEventListener(
 
 
                 // ==================================
-                // CANCEL
+                // PAYMENT CANCELLED
                 // ==================================
 
                 onCancel:
@@ -650,11 +758,15 @@ payBtn.addEventListener(
                         payBtn.disabled =
                             false;
 
+
+                        loginBtn.disabled =
+                            false;
+
                     },
 
 
                 // ==================================
-                // ERROR
+                // PAYMENT ERROR
                 // ==================================
 
                 onError:
@@ -675,6 +787,10 @@ payBtn.addEventListener(
 
 
                         payBtn.disabled =
+                            false;
+
+
+                        loginBtn.disabled =
                             false;
 
                     }
