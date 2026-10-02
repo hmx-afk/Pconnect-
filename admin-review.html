@@ -1,0 +1,646 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Admin Review | PConnect</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        background: #0f0b1f;
+        color: #ffffff;
+        min-height: 100vh;
+        padding-bottom: 40px;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    .back {
+        display: inline-block;
+        color: #aaa3ba;
+        text-decoration: none;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    .back:hover {
+        color: #f5b942;
+    }
+
+    .header {
+        margin-bottom: 20px;
+    }
+
+    .header h1 {
+        color: #f5b942;
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+
+    .header p {
+        color: #aaa3ba;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .key-box,
+    .request-card {
+        background: #1b1430;
+        border: 1px solid #30234d;
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 18px;
+    }
+
+    .label {
+        display: block;
+        color: #aaa3ba;
+        font-size: 12px;
+        margin-bottom: 7px;
+    }
+
+    input {
+        width: 100%;
+        padding: 13px;
+        border-radius: 10px;
+        border: 1px solid #30234d;
+        background: #171025;
+        color: #ffffff;
+        outline: none;
+        font-size: 14px;
+    }
+
+    input:focus {
+        border-color: #f5b942;
+    }
+
+    .load-btn,
+    .approve-btn,
+    .reject-btn {
+        border: none;
+        cursor: pointer;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .load-btn {
+        width: 100%;
+        margin-top: 12px;
+        background: #f5b942;
+        color: #171025;
+    }
+
+    .approve-btn {
+        background: #5ee38a;
+        color: #102018;
+        flex: 1;
+    }
+
+    .reject-btn {
+        background: #ff7676;
+        color: #2a1111;
+        flex: 1;
+    }
+
+    button:hover {
+        opacity: 0.9;
+    }
+
+    .request-card h2 {
+        color: #f5b942;
+        font-size: 18px;
+        margin-bottom: 14px;
+    }
+
+    .info {
+        border-top: 1px solid #30234d;
+        padding-top: 14px;
+    }
+
+    .row {
+        margin-bottom: 13px;
+    }
+
+    .value {
+        color: #ffffff;
+        font-size: 14px;
+        line-height: 1.5;
+        word-break: break-word;
+    }
+
+    .status {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 6px 10px;
+        border-radius: 20px;
+        background: #30234d;
+        color: #f5b942;
+        font-size: 11px;
+        font-weight: bold;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+    }
+
+    .message {
+        margin-top: 15px;
+        padding: 12px;
+        border-radius: 10px;
+        background: #171025;
+        color: #aaa3ba;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .success {
+        color: #5ee38a;
+    }
+
+    .error {
+        color: #ff7676;
+    }
+
+    .loading,
+    .empty {
+        text-align: center;
+        color: #aaa3ba;
+        padding: 25px;
+    }
+
+    .security-note {
+        margin-top: 8px;
+        color: #777087;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    @media (max-width: 500px) {
+        .container {
+            padding: 16px;
+        }
+
+        .actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+</head><body><div class="container"><a href="/requests.html" class="back">
+    ← Back to My Requests
+</a>
+
+<div class="header">
+    <h1>🔐 Admin Review</h1>
+    <p>
+        Review and approve or reject pending PConnect service requests.
+    </p>
+</div>
+
+<div class="key-box">
+
+    <label class="label" for="adminKey">
+        ADMIN REVIEW KEY
+    </label>
+
+    <input
+        type="password"
+        id="adminKey"
+        placeholder="Enter your admin review key"
+        autocomplete="off"
+    >
+
+    <button
+        class="load-btn"
+        id="loadBtn"
+    >
+        🔄 Load Pending Requests
+    </button>
+
+    <div class="security-note">
+        Your admin key is used only for the current browser request
+        and is not displayed on the page.
+    </div>
+
+</div>
+
+<div id="message"></div>
+
+<div id="requestsContainer">
+    <div class="empty">
+        Enter your admin key and load pending requests.
+    </div>
+</div>
+
+</div><script>
+
+const adminKeyInput =
+    document.getElementById("adminKey");
+
+const loadBtn =
+    document.getElementById("loadBtn");
+
+const message =
+    document.getElementById("message");
+
+const requestsContainer =
+    document.getElementById("requestsContainer");
+
+
+function escapeHtml(value) {
+
+    return String(value)
+
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+function showMessage(text, type = "") {
+
+    message.innerHTML = `
+        <div class="message ${type}">
+            ${escapeHtml(text)}
+        </div>
+    `;
+
+}
+
+
+async function loadRequests() {
+
+    const adminKey =
+        adminKeyInput.value.trim();
+
+    if (!adminKey) {
+
+        showMessage(
+            "Please enter your admin review key.",
+            "error"
+        );
+
+        return;
+    }
+
+    loadBtn.disabled = true;
+    loadBtn.textContent = "Loading...";
+
+    requestsContainer.innerHTML = `
+        <div class="loading">
+            Loading pending requests...
+        </div>
+    `;
+
+    showMessage("");
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/requests",
+                {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: {
+                        "Cache-Control": "no-cache"
+                    }
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok || data.error) {
+
+            throw new Error(
+                data.error ||
+                "Failed to load requests."
+            );
+
+        }
+
+        const requests =
+            Array.isArray(data)
+                ? data
+                : (data.requests || []);
+
+        const pending =
+            requests.filter(function(request) {
+
+                return String(
+                    request.review_status || ""
+                ).toLowerCase() ===
+                "waiting for review";
+
+            });
+
+        if (pending.length === 0) {
+
+            requestsContainer.innerHTML = `
+                <div class="key-box">
+                    <div class="empty">
+                        ✅ No pending requests.
+                    </div>
+                </div>
+            `;
+
+            return;
+        }
+
+        requestsContainer.innerHTML =
+            pending.map(function(request) {
+
+                const id =
+                    request.id;
+
+                const service =
+                    request.service ||
+                    "Service Request";
+
+                const name =
+                    request.name ||
+                    "Not available";
+
+                const contact =
+                    request.contact ||
+                    "Not available";
+
+                const details =
+                    request.details ||
+                    "No project details.";
+
+                const status =
+                    request.status ||
+                    "Submitted";
+
+                const reviewStatus =
+                    request.review_status ||
+                    "Waiting for review";
+
+                let submitted =
+                    "Not available";
+
+                if (request.created_at) {
+
+                    submitted =
+                        new Date(
+                            request.created_at
+                        ).toLocaleString();
+
+                }
+
+                return `
+
+                    <div
+                        class="request-card"
+                        data-request-id="${escapeHtml(id)}"
+                    >
+
+                        <h2>
+                            📋 ${escapeHtml(service)}
+                        </h2>
+
+                        <div class="info">
+
+                            <div class="row">
+                                <span class="label">
+                                    REQUEST ID
+                                </span>
+
+                                <div class="value">
+                                    #${escapeHtml(id)}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <span class="label">
+                                    NAME
+                                </span>
+
+                                <div class="value">
+                                    ${escapeHtml(name)}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <span class="label">
+                                    CONTACT
+                                </span>
+
+                                <div class="value">
+                                    ${escapeHtml(contact)}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <span class="label">
+                                    PROJECT DETAILS
+                                </span>
+
+                                <div class="value">
+                                    ${escapeHtml(details)}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <span class="label">
+                                    SUBMITTED
+                                </span>
+
+                                <div class="value">
+                                    ${escapeHtml(submitted)}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <span class="label">
+                                    STATUS
+                                </span>
+
+                                <div class="value">
+                                    ${escapeHtml(status)}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <span class="label">
+                                    REVIEW
+                                </span>
+
+                                <div>
+                                    <span class="status">
+                                        ${escapeHtml(reviewStatus)}
+                                    </span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="actions">
+
+                            <button
+                                class="approve-btn"
+                                onclick="reviewRequest(${Number(id)}, 'approve')"
+                            >
+                                ✅ Approve
+                            </button>
+
+                            <button
+                                class="reject-btn"
+                                onclick="reviewRequest(${Number(id)}, 'reject')"
+                            >
+                                ❌ Reject
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        console.error(
+            "Admin review load error:",
+            error
+        );
+
+        requestsContainer.innerHTML = "";
+
+        showMessage(
+            error.message,
+            "error"
+        );
+
+    } finally {
+
+        loadBtn.disabled = false;
+        loadBtn.textContent =
+            "🔄 Load Pending Requests";
+
+    }
+
+}
+
+
+async function reviewRequest(
+    requestId,
+    action
+) {
+
+    const adminKey =
+        adminKeyInput.value.trim();
+
+    if (!adminKey) {
+
+        showMessage(
+            "Please enter your admin review key.",
+            "error"
+        );
+
+        return;
+    }
+
+    const actionText =
+        action === "approve"
+            ? "approve"
+            : "reject";
+
+    const confirmed =
+        confirm(
+            `Are you sure you want to ${actionText} Request #${requestId}?`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    showMessage(
+        `${actionText}ing Request #${requestId}...`
+    );
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/admin-review",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+
+                        "x-admin-key":
+                            adminKey
+                    },
+
+                    body: JSON.stringify({
+                        id: requestId,
+                        action: action
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok || !data.success) {
+
+            throw new Error(
+                data.error ||
+                "Review action failed."
+            );
+
+        }
+
+        showMessage(
+            `✅ Request #${requestId} ${actionText}d successfully.`,
+            "success"
+        );
+
+        await loadRequests();
+
+    } catch (error) {
+
+        console.error(
+            "Admin review action error:",
+            error
+        );
+
+        showMessage(
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+loadBtn.addEventListener(
+    "click",
+    loadRequests
+);
+
+</script></body>
+</html>
