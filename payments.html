@@ -12,6 +12,9 @@
 
     <title>Payment | PConnect</title>
 
+    <!-- Pi SDK -->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
     <style>
 
         * {
@@ -72,7 +75,7 @@
 
         .request-info-value {
             color: #f5b942;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
         }
 
@@ -81,6 +84,83 @@
             font-size: 12px;
             line-height: 1.5;
             margin-top: 8px;
+        }
+
+        .payment-box {
+            background: linear-gradient(
+                135deg,
+                #211538,
+                #171025
+            );
+
+            border: 1px solid #3a2856;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .payment-box h2 {
+            color: #f5b942;
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .payment-box p {
+            color: #aaa1b8;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .login-btn,
+        .pay-btn {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .login-btn {
+            background: #f5b942;
+            color: #171025;
+        }
+
+        .pay-btn {
+            background: #f5b942;
+            color: #171025;
+        }
+
+        .login-btn:disabled,
+        .pay-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .status-box {
+            margin-top: 12px;
+            padding: 12px;
+            background: #171025;
+            border: 1px solid #2c2142;
+            border-radius: 10px;
+            color: #aaa1b8;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .pay-status {
+            margin-top: 12px;
+            padding: 12px;
+            background: #171025;
+            border: 1px solid #2c2142;
+            border-radius: 10px;
+            color: #aaa1b8;
+            font-size: 13px;
+            text-align: center;
+            line-height: 1.5;
         }
 
         .summary {
@@ -180,6 +260,22 @@
             word-break: break-all;
         }
 
+        .refresh-btn {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            background: #f5b942;
+            color: #171025;
+            font-weight: bold;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.98);
+        }
+
         .bottom-nav {
             position: fixed;
             left: 0;
@@ -203,27 +299,13 @@
             color: #f5b942;
         }
 
-        .refresh-btn {
-            width: 100%;
-            border: none;
-            border-radius: 10px;
-            padding: 12px;
-            background: #f5b942;
-            color: #171025;
-            font-weight: bold;
-            margin-bottom: 20px;
-            cursor: pointer;
-        }
-
-        .refresh-btn:active {
-            transform: scale(0.98);
-        }
-
     </style>
 
 </head>
 
+
 <body>
+
 
 <header>
 
@@ -241,7 +323,9 @@
 <div class="container">
 
 
-    <!-- APPROVED REQUEST -->
+    <!-- ==========================================
+         APPROVED REQUEST
+    =========================================== -->
 
     <div
         class="request-info"
@@ -267,7 +351,60 @@
     </div>
 
 
-    <!-- TRANSACTION SUMMARY -->
+    <!-- ==========================================
+         PI PAYMENT
+    =========================================== -->
+
+    <div class="payment-box">
+
+        <h2>
+            💳 Test Payment
+        </h2>
+
+        <p>
+            Complete a 0.01 π Test-Pi payment
+            for your approved PConnect service request.
+        </p>
+
+
+        <button
+            id="loginBtn"
+            class="login-btn"
+        >
+            Sign in with Pi
+        </button>
+
+
+        <div
+            id="status"
+            class="status-box"
+        >
+            Not connected
+        </div>
+
+
+        <button
+            id="payBtn"
+            class="pay-btn"
+            disabled
+        >
+            Make Test Payment (0.01 π)
+        </button>
+
+
+        <div
+            id="payStatus"
+            class="pay-status"
+        >
+            Sign in with Pi to continue.
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================
+         TRANSACTION SUMMARY
+    =========================================== -->
 
     <div class="summary">
 
@@ -301,8 +438,13 @@
 
     </div>
 
+
 </div>
 
+
+<!-- ==========================================
+     BOTTOM NAV
+=========================================== -->
 
 <nav class="bottom-nav">
 
@@ -332,8 +474,14 @@
 </nav>
 
 
-<script>
+<!-- ==========================================
+     LOAD PAYMENT APP
+=========================================== -->
 
+<script src="app.js"></script>
+
+
+<script>
 
 // ==========================================
 // GET APPROVED REQUEST ID
@@ -389,7 +537,8 @@ if (storedRequestId) {
         "block";
 
     requestIdDisplay.textContent =
-        "Request #" + storedRequestId;
+        "Request #" +
+        storedRequestId;
 
 }
 
@@ -566,7 +715,6 @@ async function loadTransactions() {
 
                     <div class="details">
 
-
                         <div class="row">
 
                             <span class="label">
@@ -645,7 +793,6 @@ async function loadTransactions() {
                             </span>
 
                         </div>
-
 
                     </div>
 
@@ -728,8 +875,8 @@ function escapeHtml(value) {
 
 loadTransactions();
 
-
 </script>
+
 
 </body>
 
