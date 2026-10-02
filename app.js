@@ -3,15 +3,7 @@
 // ==========================================
 
 Pi.init({
-    version: "2.0",
-    sandbox: true
-});
-
-const loginBtn = document.getElementById("loginBtn");
-const status = document.getElementById("status");
-const payBtn = document.getElementById("payBtn");
-const payStatus = document.getElementById("payStatus");
-
+    version: 
 // ==========================================
 // STORE LOGGED-IN PI USER
 // ==========================================
