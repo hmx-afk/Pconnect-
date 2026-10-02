@@ -139,12 +139,9 @@ export default async function handler(req, res) {
                 `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedRequestId)}&select=id,service,review_status`,
 
                 {
-
                     method: "GET",
-
                     headers:
                         supabaseHeaders
-
                 }
 
             );
@@ -162,10 +159,8 @@ export default async function handler(req, res) {
             );
 
             return res.status(500).json({
-
                 error:
                     "Could not verify service request"
-
             });
 
         }
@@ -177,10 +172,8 @@ export default async function handler(req, res) {
         ) {
 
             return res.status(404).json({
-
                 error:
                     "Service request not found"
-
             });
 
         }
@@ -200,10 +193,8 @@ export default async function handler(req, res) {
         ) {
 
             return res.status(403).json({
-
                 error:
                     "This service request has not been approved"
-
             });
 
         }
@@ -228,12 +219,9 @@ export default async function handler(req, res) {
                 `${supabaseUrl}/rest/v1/transactions?payment_id=eq.${encodeURIComponent(paymentId)}&select=*`,
 
                 {
-
                     method: "GET",
-
                     headers:
                         supabaseHeaders
-
                 }
 
             );
@@ -251,10 +239,8 @@ export default async function handler(req, res) {
             );
 
             return res.status(500).json({
-
                 error:
                     "Could not verify existing transaction"
-
             });
 
         }
@@ -292,19 +278,36 @@ export default async function handler(req, res) {
         // 3. COMPLETE PAYMENT WITH PI
         // ==========================================
 
+        const piApiKey =
+            process.env.PI_API_KEY;
+
+
+        if (!piApiKey) {
+
+            console.error(
+                "Missing PI_API_KEY"
+            );
+
+            return res.status(500).json({
+                error:
+                    "Server configuration error"
+            });
+
+        }
+
+
         const piResponse =
             await fetch(
 
-                `https://api.minepi.com/v2/payments/${paymentId}/complete`,
+                `https://api.minepi.com/v2/payments/${encodeURIComponent(paymentId)}/complete`,
 
                 {
-
                     method: "POST",
 
                     headers: {
 
                         "Authorization":
-                            `Key ${process.env.PI_API_KEY}`,
+                            `Key ${piApiKey}`,
 
                         "Content-Type":
                             "application/json"
@@ -312,10 +315,8 @@ export default async function handler(req, res) {
                     },
 
                     body: JSON.stringify({
-
                         txid:
                             txid
-
                     })
 
                 }
@@ -359,7 +360,6 @@ export default async function handler(req, res) {
                 `${supabaseUrl}/rest/v1/transactions`,
 
                 {
-
                     method: "POST",
 
                     headers: {
@@ -409,7 +409,79 @@ export default async function handler(req, res) {
 
 
         // ==========================================
-        // SUPABASE ERROR
+        // UNIQUE PAYMENT CONFLICT
+        // ==========================================
+
+        if (
+            !supabaseResponse.ok &&
+            supabaseData &&
+            supabaseData.code === "23505"
+        ) {
+
+            console.warn(
+                "Duplicate payment prevented by database:",
+                paymentId
+            );
+
+
+            const existingResponse =
+                await fetch(
+
+                    `${supabaseUrl}/rest/v1/transactions?payment_id=eq.${encodeURIComponent(paymentId)}&select=*`,
+
+                    {
+                        method: "GET",
+                        headers:
+                            supabaseHeaders
+                    }
+
+                );
+
+
+            const existingData =
+                await existingResponse.json();
+
+
+            if (
+                existingResponse.ok &&
+                existingData &&
+                existingData.length > 0
+            ) {
+
+                return res.status(200).json({
+
+                    success:
+                        true,
+
+                    alreadyCompleted:
+                        true,
+
+                    message:
+                        "Payment was already completed",
+
+                    transaction:
+                        existingData[0]
+
+                });
+
+            }
+
+
+            return res.status(409).json({
+
+                success:
+                    false,
+
+                error:
+                    "Duplicate payment detected"
+
+            });
+
+        }
+
+
+        // ==========================================
+        // OTHER SUPABASE ERROR
         // ==========================================
 
         if (!supabaseResponse.ok) {
@@ -433,7 +505,7 @@ export default async function handler(req, res) {
 
 
         // ==========================================
-        // 5. SUCCESS
+        // SUCCESS
         // ==========================================
 
         return res.status(200).json({
