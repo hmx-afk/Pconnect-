@@ -261,17 +261,30 @@
             gap: 10px;
         }
 
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
         .activity-title {
             color: #ffffff;
             font-size: 14px;
             font-weight: bold;
         }
 
+        .activity-description {
+            color: #ffffff;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 5px;
+            word-break: break-word;
+        }
+
         .activity-date {
             color: #aaa3ba;
             font-size: 11px;
-            margin-top: 5px;
             line-height: 1.5;
+            margin-top: 3px;
         }
 
         .activity-status {
@@ -285,13 +298,6 @@
             padding: 22px;
             text-align: center;
             color: #aaa3ba;
-            font-size: 13px;
-        }
-
-        .error-activity {
-            padding: 18px;
-            text-align: center;
-            color: #ff8585;
             font-size: 13px;
         }
 
@@ -327,7 +333,7 @@
 
             .activity-top {
                 flex-direction: column;
-                gap: 5px;
+                gap: 7px;
             }
 
             .activity-status {
@@ -343,6 +349,8 @@
 <body>
 
 <div class="container">
+
+    <!-- HEADER -->
 
     <div class="brand">
         🔗 PConnect
@@ -673,10 +681,56 @@
 
 <script>
 
+const dashboardActivities = [];
+
+
+// ==========================================
+// ESCAPE HTML
+// ==========================================
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+// ==========================================
+// FORMAT DATE
+// ==========================================
+
+function formatActivityDate(value) {
+
+    if (!value) {
+        return "Date unavailable";
+    }
+
+    const date = new Date(value);
+
+    if (isNaN(date.getTime())) {
+        return "Date unavailable";
+    }
+
+    return date.toLocaleString();
+
+}
+
+
+// ==========================================
+// LOAD DASHBOARD
+// ==========================================
+
 async function loadDashboard() {
 
     const recentActivity =
-        document.getElementById("recentActivity");
+        document.getElementById(
+            "recentActivity"
+        );
 
 
     // ==========================================
@@ -698,17 +752,21 @@ async function loadDashboard() {
                 }
             );
 
+
         const requestData =
             await requestResponse.json();
+
 
         if (
             !requestResponse.ok ||
             requestData.error
         ) {
+
             throw new Error(
                 requestData.error ||
                 "Failed to load requests"
             );
+
         }
 
 
@@ -716,11 +774,15 @@ async function loadDashboard() {
             Array.isArray(requestData)
                 ? requestData
                 : (
-                    Array.isArray(requestData.requests)
+                    Array.isArray(
+                        requestData.requests
+                    )
                         ? requestData.requests
                         : []
                 );
 
+
+        // TOTAL
 
         document.getElementById(
             "totalRequests"
@@ -728,33 +790,25 @@ async function loadDashboard() {
             requests.length;
 
 
+        // WAITING
+
         const waiting =
-            requests.filter(function(request) {
+            requests.filter(
+                function(request) {
 
-                const review =
-                    String(
-                        request.review_status || ""
-                    ).toLowerCase();
+                    const review =
+                        String(
+                            request.review_status ||
+                            ""
+                        ).toLowerCase();
 
-                return (
-                    review.includes("waiting") ||
-                    review.includes("review")
-                );
+                    return (
+                        review.includes("waiting") ||
+                        review.includes("review")
+                    );
 
-            }).length;
-
-
-        const approved =
-            requests.filter(function(request) {
-
-                return (
-                    String(
-                        request.review_status || ""
-                    ).toLowerCase() ===
-                    "approved"
-                );
-
-            }).length;
+                }
+            ).length;
 
 
         document.getElementById(
@@ -763,80 +817,81 @@ async function loadDashboard() {
             waiting;
 
 
+        // APPROVED
+
+        const approved =
+            requests.filter(
+                function(request) {
+
+                    return (
+                        String(
+                            request.review_status ||
+                            ""
+                        ).toLowerCase() ===
+                        "approved"
+                    );
+
+                }
+            ).length;
+
+
         document.getElementById(
             "approvedRequests"
         ).textContent =
             approved;
 
 
-        // Add request activities
+        // REQUEST ACTIVITY
 
-        requests.forEach(function(request) {
+        requests.forEach(
+            function(request) {
 
-            let dateText =
-                "Date unavailable";
+                const requestId =
+                    (
+                        request.id !==
+                        undefined &&
+                        request.id !== null &&
+                        request.id !== ""
+                    )
+                        ? request.id
+                        : "Not linked";
 
-            if (request.created_at) {
 
-                const parsedDate =
-                    new Date(
+                dashboardActivities.push({
+
+                    type: "request",
+
+                    title:
+                        "📋 Service Request",
+
+                    description:
+                        (
+                            request.service ||
+                            "Service Request"
+                        ) +
+                        " • Request #" +
+                        requestId,
+
+                    date:
+                        formatActivityDate(
+                            request.created_at
+                        ),
+
+                    status:
+                        request.review_status ||
+                        "Waiting for review",
+
+                    timestamp:
                         request.created_at
-                    );
+                            ? new Date(
+                                request.created_at
+                            ).getTime()
+                            : 0
 
-                if (!isNaN(parsedDate.getTime())) {
-
-                    dateText =
-                        parsedDate.toLocaleString();
-
-                }
+                });
 
             }
-
-
-            const reviewStatus =
-                request.review_status ||
-                "Waiting for review";
-
-
-            const requestItem = {
-
-                type: "request",
-
-                title:
-                    "📋 Service Request",
-
-                description:
-                    (
-                        request.service ||
-                        "Service Request"
-                    ) +
-                    " • Request #" +
-                    (
-                        request.id ??
-                        "Not linked"
-                    ),
-
-                date:
-                    dateText,
-
-                status:
-                    reviewStatus,
-
-                timestamp:
-                    request.created_at
-                        ? new Date(
-                            request.created_at
-                        ).getTime()
-                        : 0
-
-            };
-
-
-            dashboardActivities.push(
-                requestItem
-            );
-
-        });
+        );
 
     } catch (error) {
 
@@ -867,6 +922,7 @@ async function loadDashboard() {
                 }
             );
 
+
         const transactionData =
             await transactionResponse.json();
 
@@ -875,10 +931,12 @@ async function loadDashboard() {
             !transactionResponse.ok ||
             transactionData.error
         ) {
+
             throw new Error(
                 transactionData.error ||
                 "Failed to load transactions"
             );
+
         }
 
 
@@ -894,15 +952,22 @@ async function loadDashboard() {
                 );
 
 
+        // COMPLETED PAYMENTS
+
         const completed =
-            transactions.filter(function(transaction) {
+            transactions.filter(
+                function(transaction) {
 
-                return String(
-                    transaction.status || ""
-                ).toLowerCase() ===
-                "completed";
+                    return (
+                        String(
+                            transaction.status ||
+                            ""
+                        ).toLowerCase() ===
+                        "completed"
+                    );
 
-            }).length;
+                }
+            ).length;
 
 
         document.getElementById(
@@ -911,78 +976,58 @@ async function loadDashboard() {
             completed;
 
 
-        transactions.forEach(function(transaction) {
+        // PAYMENT ACTIVITY
 
-            let dateText =
-                "Date unavailable";
+        transactions.forEach(
+            function(transaction) {
+
+                const requestId =
+                    (
+                        transaction.request_id !==
+                        undefined &&
+                        transaction.request_id !==
+                        null &&
+                        transaction.request_id !== ""
+                    )
+                        ? transaction.request_id
+                        : "Not linked";
 
 
-            if (transaction.created_at) {
+                dashboardActivities.push({
 
-                const parsedDate =
-                    new Date(
+                    type: "payment",
+
+                    title:
+                        "💳 Pi Payment",
+
+                    description:
+                        (
+                            transaction.amount ??
+                            "0.01"
+                        ) +
+                        " Pi • Request #" +
+                        requestId,
+
+                    date:
+                        formatActivityDate(
+                            transaction.created_at
+                        ),
+
+                    status:
+                        transaction.status ||
+                        "Completed",
+
+                    timestamp:
                         transaction.created_at
-                    );
+                            ? new Date(
+                                transaction.created_at
+                            ).getTime()
+                            : 0
 
-                if (!isNaN(parsedDate.getTime())) {
-
-                    dateText =
-                        parsedDate.toLocaleString();
-
-                }
+                });
 
             }
-
-
-            const requestId =
-                (
-                    transaction.request_id !==
-                    undefined &&
-                    transaction.request_id !==
-                    null &&
-                    transaction.request_id !== ""
-                )
-                    ? transaction.request_id
-                    : "Not linked";
-
-
-            const transactionItem = {
-
-                type: "payment",
-
-                title:
-                    "💳 Pi Payment",
-
-                description:
-                    (
-                        transaction.amount ??
-                        "0.01"
-                    ) +
-                    " Pi • Request #" +
-                    requestId,
-
-                date:
-                    dateText,
-
-                status:
-                    transaction.status ||
-                    "Completed",
-
-                timestamp:
-                    transaction.created_at
-                        ? new Date(
-                            transaction.created_at
-                        ).getTime()
-                        : 0
-
-            };
-
-
-            dashboardActivities.push(
-                transactionItem
-            );
-
-        });
+        );
 
     } catch (error) {
 
@@ -995,15 +1040,24 @@ async function loadDashboard() {
 
 
     // ==========================================
-    // RENDER RECENT ACTIVITY
+    // SORT ACTIVITY
     // ==========================================
 
     dashboardActivities.sort(
         function(a, b) {
-            return b.timestamp - a.timestamp;
+
+            return (
+                b.timestamp -
+                a.timestamp
+            );
+
         }
     );
 
+
+    // ==========================================
+    // SHOW LAST 5
+    // ==========================================
 
     const recent =
         dashboardActivities.slice(
@@ -1026,95 +1080,56 @@ async function loadDashboard() {
     }
 
 
+    // ==========================================
+    // RENDER ACTIVITY
+    // ==========================================
+
     recentActivity.innerHTML =
-        recent.map(function(item) {
+        recent.map(
+            function(item) {
 
-            return `
+                return `
 
-                <div class="activity-item">
+                    <div class="activity-item">
 
-                    <div class="activity-top">
+                        <div class="activity-top">
 
-                        <div>
+                            <div class="activity-content">
 
-                            <div class="activity-title">
+                                <div class="activity-title">
+                                    ${escapeHtml(
+                                        item.title
+                                    )}
+                                </div>
+
+                                <div class="activity-description">
+                                    ${escapeHtml(
+                                        item.description
+                                    )}
+                                </div>
+
+                                <div class="activity-date">
+                                    ${escapeHtml(
+                                        item.date
+                                    )}
+                                </div>
+
+                            </div>
+
+                            <div class="activity-status">
                                 ${escapeHtml(
-                                    item.title
+                                    item.status
                                 )}
                             </div>
 
-                            <div
-                                class="activity-date"
-                            >
-                                ${escapeHtml(
-                                    item.description
-                                )}
-                                <br>
-                                ${escapeHtml(
-                                    item.date
-                                )}
-                            </div>
-
-                        </div>
-
-                        <div
-                            class="activity-status"
-                        >
-                            ${escapeHtml(
-                                item.status
-                            )}
                         </div>
 
                     </div>
 
-                </div>
+                `;
 
-            `;
-
-        }).join("");
-
-}
-
-
-// ==========================================
-// GLOBAL ACTIVITY ARRAY
-// ==========================================
-
-const dashboardActivities = [];
-
-
-// ==========================================
-// HTML ESCAPE
-// ==========================================
-
-function escapeHtml(value) {
-
-    return String(value)
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+            }
+        ).join("");
 
 }
 
