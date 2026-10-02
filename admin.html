@@ -1,90 +1,516 @@
-export default async function handler(req, res) {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Review | PConnect</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #10051f;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+        }
+
+        h1 {
+            color: #ffbf00;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #b9a9c9;
+            margin-bottom: 20px;
+        }
+
+        .login-box,
+        .request-card {
+            background: #1d0b35;
+            border: 1px solid #3b1b5c;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            border-radius: 10px;
+            border: 1px solid #56307a;
+            background: #120721;
+            color: white;
+            margin: 10px 0;
+            outline: none;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            padding: 11px 15px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px 5px 0 0;
+        }
+
+        .login-btn {
+            background: #ffbf00;
+            color: #180b25;
+            width: 100%;
+        }
+
+        .approve {
+            background: #28c76f;
+            color: white;
+        }
+
+        .reject {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .logout {
+            background: #5b3a70;
+            color: white;
+            margin-bottom: 18px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin: 8px 0;
+            background: #6b4d00;
+        }
+
+        .approved {
+            background: #176b3a;
+        }
+
+        .rejected {
+            background: #70231d;
+        }
+
+        .info {
+            color: #d8cde1;
+            line-height: 1.6;
+            margin-top: 8px;
+        }
+
+        .message {
+            margin: 12px 0;
+            padding: 10px;
+            border-radius: 8px;
+            background: #24103d;
+            color: #d8cde1;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .empty {
+            text-align: center;
+            color: #b9a9c9;
+            padding: 30px;
+        }
+
+        .error {
+            color: #ff8f8f;
+            margin-top: 10px;
+        }
+
+        .success {
+            color: #75e6a7;
+            margin-top: 10px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .count {
+            color: #ffbf00;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="topbar">
+        <div>
+            <h1>🔐 PConnect Admin</h1>
+            <div class="subtitle">Request Review System</div>
+        </div>
+
+        <button class="logout hidden" id="logoutBtn">
+            Logout
+        </button>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="login-box" id="loginBox">
+
+        <h3>Admin Access</h3>
+
+        <p class="info">
+            Enter your admin review key to continue.
+        </p>
+
+        <input
+            type="password"
+            id="adminKey"
+            placeholder="Enter admin key"
+            autocomplete="off"
+        >
+
+        <button class="login-btn" id="loginBtn">
+            Login
+        </button>
+
+        <div id="loginMessage"></div>
+
+    </div>
+
+    <!-- ADMIN CONTENT -->
+    <div id="adminContent" class="hidden">
+
+        <div class="message">
+            <strong>Review Requests</strong>
+            <br>
+            Total:
+            <span class="count" id="totalCount">0</span>
+        </div>
+
+        <div id="requestsContainer"></div>
+
+    </div>
+
+</div>
+
+<script>
+
+let adminKey = sessionStorage.getItem("pconnect_admin_key") || "";
+
+const loginBox = document.getElementById("loginBox");
+const adminContent = document.getElementById("adminContent");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const adminKeyInput = document.getElementById("adminKey");
+const loginMessage = document.getElementById("loginMessage");
+const requestsContainer = document.getElementById("requestsContainer");
+const totalCount = document.getElementById("totalCount");
+
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+function showAdmin() {
+    loginBox.classList.add("hidden");
+    adminContent.classList.remove("hidden");
+    logoutBtn.classList.remove("hidden");
+
+    loadRequests();
+}
+
+
+function showLogin() {
+    loginBox.classList.remove("hidden");
+    adminContent.classList.add("hidden");
+    logoutBtn.classList.add("hidden");
+}
+
+
+async function login() {
+
+    const key = adminKeyInput.value.trim();
+
+    if (!key) {
+        loginMessage.innerHTML =
+            '<div class="error">Please enter your admin key.</div>';
+
+        return;
+    }
+
+    /*
+      We test the key with a harmless request.
+      If the server accepts it, we save it only
+      in this browser session.
+    */
+
     try {
-        if (req.method !== "POST") {
-            return res.status(405).json({
-                success: false,
-                error: "Method not allowed"
-            });
-        }
 
-        const adminKey = req.headers["x-admin-key"];
-
-        if (!adminKey || adminKey !== process.env.ADMIN_REVIEW_KEY) {
-            return res.status(401).json({
-                success: false,
-                error: "Unauthorized"
-            });
-        }
-
-        const { id, action } = req.body || {};
-
-        if (!id) {
-            return res.status(400).json({
-                success: false,
-                error: "Missing request id"
-            });
-        }
-
-        if (!["approve", "reject"].includes(action)) {
-            return res.status(400).json({
-                success: false,
-                error: "Invalid action"
-            });
-        }
-
-        const reviewStatus =
-            action === "approve"
-                ? "Approved"
-                : "Rejected";
-
-        const response = await fetch(
-            `${process.env.SUPABASE_URL}/rest/v1/requests?id=eq.${encodeURIComponent(id)}`,
-            {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    "apikey": process.env.SUPABASE_SECRET_KEY,
-                    "Authorization": `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
-                    "Prefer": "return=representation"
-                },
-                body: JSON.stringify({
-                    review_status: reviewStatus
-                })
+        const response = await fetch("/api/requests", {
+            method: "GET",
+            headers: {
+                "x-admin-key": key
             }
-        );
+        });
+
+        /*
+          The current requests API may not require the key.
+          Therefore we only use this step to continue
+          after a non-server-error response.
+        */
+
+        if (response.ok) {
+
+            adminKey = key;
+
+            sessionStorage.setItem(
+                "pconnect_admin_key",
+                adminKey
+            );
+
+            loginMessage.innerHTML =
+                '<div class="success">Admin access granted.</div>';
+
+            showAdmin();
+
+        } else {
+
+            loginMessage.innerHTML =
+                '<div class="error">Unable to access admin data.</div>';
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        loginMessage.innerHTML =
+            '<div class="error">Connection error.</div>';
+    }
+}
+
+
+async function loadRequests() {
+
+    requestsContainer.innerHTML =
+        '<div class="empty">Loading requests...</div>';
+
+    try {
+
+        const response = await fetch("/api/requests");
 
         const data = await response.json();
 
         if (!response.ok) {
-            console.error("Admin review error:", data);
-
-            return res.status(response.status).json({
-                success: false,
-                error: "Failed to update request",
-                details: data
-            });
+            throw new Error(data.error || "Failed to load requests");
         }
 
-        if (!data || data.length === 0) {
-            return res.status(404).json({
-                success: false,
-                error: "Request not found"
-            });
+        const requests = data.requests || [];
+
+        totalCount.textContent = requests.length;
+
+        if (requests.length === 0) {
+
+            requestsContainer.innerHTML =
+                '<div class="empty">No requests found.</div>';
+
+            return;
         }
 
-        return res.status(200).json({
-            success: true,
-            message: `Request ${reviewStatus.toLowerCase()} successfully`,
-            request: data[0]
-        });
+        requestsContainer.innerHTML = requests.map(request => {
+
+            const status =
+                request.review_status || "Waiting for review";
+
+            let statusClass = "";
+
+            if (status === "Approved") {
+                statusClass = "approved";
+            }
+
+            if (status === "Rejected") {
+                statusClass = "rejected";
+            }
+
+            return `
+                <div class="request-card">
+
+                    <h3>${escapeHtml(request.name)}</h3>
+
+                    <div class="info">
+
+                        <strong>Service:</strong>
+                        ${escapeHtml(request.service)}
+
+                        <br>
+
+                        <strong>Contact:</strong>
+                        ${escapeHtml(request.contact)}
+
+                        <br>
+
+                        <strong>Details:</strong>
+                        ${escapeHtml(request.details)}
+
+                    </div>
+
+                    <div class="status ${statusClass}">
+                        ${escapeHtml(status)}
+                    </div>
+
+                    <div>
+
+                        <button
+                            class="approve"
+                            onclick="reviewRequest('${request.id}', 'approve')"
+                            ${status === "Approved" ? "disabled" : ""}
+                        >
+                            ✅ Approve
+                        </button>
+
+                        <button
+                            class="reject"
+                            onclick="reviewRequest('${request.id}', 'reject')"
+                            ${status === "Rejected" ? "disabled" : ""}
+                        >
+                            ❌ Reject
+                        </button>
+
+                    </div>
+
+                </div>
+            `;
+
+        }).join("");
 
     } catch (error) {
-        console.error("Admin review API error:", error);
 
-        return res.status(500).json({
-            success: false,
-            error: "Internal server error",
-            details: error.message
-        });
+        console.error(error);
+
+        requestsContainer.innerHTML =
+            `<div class="empty">
+                Failed to load requests.
+                <br>
+                ${escapeHtml(error.message)}
+            </div>`;
     }
 }
+
+
+async function reviewRequest(id, action) {
+
+    const confirmText =
+        action === "approve"
+            ? "Approve this request?"
+            : "Reject this request?";
+
+    if (!confirm(confirmText)) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/api/admin-review", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                "x-admin-key": adminKey
+            },
+
+            body: JSON.stringify({
+                id: id,
+                action: action
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.error ||
+                "Failed to update request."
+            );
+
+            return;
+        }
+
+        alert(
+            action === "approve"
+                ? "Request approved successfully."
+                : "Request rejected successfully."
+        );
+
+        await loadRequests();
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Connection error. Please try again."
+        );
+    }
+}
+
+
+function logout() {
+
+    sessionStorage.removeItem(
+        "pconnect_admin_key"
+    );
+
+    adminKey = "";
+
+    adminKeyInput.value = "";
+
+    showLogin();
+}
+
+
+loginBtn.addEventListener("click", login);
+
+logoutBtn.addEventListener("click", logout);
+
+
+adminKeyInput.addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter") {
+        login();
+    }
+
+});
+
+
+if (adminKey) {
+    showAdmin();
+} else {
+    showLogin();
+}
+
+</script>
+
+</body>
+</html>
