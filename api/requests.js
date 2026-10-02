@@ -1,44 +1,854 @@
-export default async function handler(req, res) {
-    try {
-        if (req.method !== "GET") {
-            return res.status(405).json({
-                error: "Method not allowed"
-            });
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>My Requests | PConnect</title>
+
+<style>
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        background: #0f0b1f;
+        color: #ffffff;
+        min-height: 100vh;
+        padding-bottom: 85px;
+    }
+
+    .container {
+        max-width: 700px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    .back {
+        display: inline-block;
+        color: #aaa3ba;
+        text-decoration: none;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    .back:hover {
+        color: #f5b942;
+    }
+
+    .header {
+        margin-bottom: 22px;
+    }
+
+    .header h1 {
+        color: #f5b942;
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+
+    .header p {
+        color: #aaa3ba;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .summary-card {
+        background: #1b1430;
+        border: 1px solid #30234d;
+        border-radius: 15px;
+        padding: 16px;
+    }
+
+    .summary-label {
+        color: #aaa3ba;
+        font-size: 11px;
+        margin-bottom: 7px;
+    }
+
+    .summary-value {
+        color: #f5b942;
+        font-size: 23px;
+        font-weight: bold;
+    }
+
+    .request-card {
+        background: #1b1430;
+        border: 1px solid #30234d;
+        border-radius: 18px;
+        padding: 18px;
+        margin-bottom: 16px;
+    }
+
+    .request-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .service-name {
+        color: #f5b942;
+        font-size: 19px;
+        font-weight: bold;
+    }
+
+    .request-id {
+        color: #777087;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .submitted {
+        color: #aaa3ba;
+        font-size: 12px;
+        margin-top: 6px;
+    }
+
+    .status {
+        padding: 6px 10px;
+        border-radius: 20px;
+        background: #30234d;
+        color: #f5b942;
+        font-size: 11px;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .info {
+        border-top: 1px solid #30234d;
+        padding-top: 14px;
+    }
+
+    .info-row {
+        margin-bottom: 12px;
+    }
+
+    .info-label {
+        color: #aaa3ba;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        color: #ffffff;
+        font-size: 14px;
+        line-height: 1.5;
+        word-break: break-word;
+    }
+
+    .review-box {
+        margin-top: 14px;
+        padding: 14px;
+        border-radius: 12px;
+        background: #171025;
+        border: 1px solid #30234d;
+    }
+
+    .review-label {
+        color: #aaa3ba;
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .review-status {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+
+    .review-message {
+        color: #aaa3ba;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .waiting {
+        color: #f5b942;
+    }
+
+    .approved {
+        color: #5ee38a;
+    }
+
+    .rejected {
+        color: #ff7676;
+    }
+
+    .payment-btn {
+        display: block;
+        width: 100%;
+        text-align: center;
+        text-decoration: none;
+        margin-top: 13px;
+        padding: 13px;
+        border-radius: 10px;
+        background: #f5b942;
+        color: #171025;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .payment-btn:hover {
+        opacity: 0.9;
+    }
+
+    .empty {
+        background: #1b1430;
+        border: 1px solid #30234d;
+        border-radius: 18px;
+        padding: 30px 20px;
+        text-align: center;
+    }
+
+    .empty-icon {
+        font-size: 38px;
+        margin-bottom: 10px;
+    }
+
+    .empty h2 {
+        font-size: 19px;
+        margin-bottom: 8px;
+    }
+
+    .empty p {
+        color: #aaa3ba;
+        font-size: 13px;
+        line-height: 1.5;
+        margin-bottom: 18px;
+    }
+
+    .browse-btn {
+        display: inline-block;
+        text-decoration: none;
+        background: #f5b942;
+        color: #171025;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .loading {
+        text-align: center;
+        color: #aaa3ba;
+        padding: 30px;
+        font-size: 14px;
+    }
+
+    .error {
+        background: #29151a;
+        border: 1px solid #5a2730;
+        border-radius: 14px;
+        padding: 18px;
+        text-align: center;
+        color: #ff8585;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #171025;
+        border-top: 1px solid #30234d;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 5px;
+        z-index: 100;
+    }
+
+    .bottom-nav a {
+        color: #aaa3ba;
+        text-decoration: none;
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .bottom-nav a.active {
+        color: #f5b942;
+    }
+
+    @media (max-width: 600px) {
+
+        .summary {
+            grid-template-columns: 1fr;
         }
 
-        const response = await fetch(
-            `${process.env.SUPABASE_URL}/rest/v1/requests?select=*&order=created_at.desc`,
-            {
-                method: "GET",
-                headers: {
-                    "apikey": process.env.SUPABASE_SECRET_KEY,
-                    "Authorization": `Bearer ${process.env.SUPABASE_SECRET_KEY}`
-                }
-            }
+    }
+
+    @media (max-width: 480px) {
+
+        .container {
+            padding: 16px;
+        }
+
+        .request-top {
+            flex-direction: column;
+        }
+
+        .status {
+            align-self: flex-start;
+        }
+
+    }
+
+</style>
+
+</head><body><div class="container"><a href="/browse.html" class="back">
+    ← Back to Browse
+</a>
+
+<div class="header">
+
+    <h1>📋 My Requests</h1>
+
+    <p>
+        Track your service requests, review status,
+        and payment progress.
+    </p>
+
+</div>
+
+<div class="summary">
+
+    <div class="summary-card">
+
+        <div class="summary-label">
+            TOTAL REQUESTS
+        </div>
+
+        <div
+            class="summary-value"
+            id="totalRequests"
+        >
+            0
+        </div>
+
+    </div>
+
+    <div class="summary-card">
+
+        <div class="summary-label">
+            WAITING REVIEW
+        </div>
+
+        <div
+            class="summary-value"
+            id="waitingRequests"
+        >
+            0
+        </div>
+
+    </div>
+
+    <div class="summary-card">
+
+        <div class="summary-label">
+            APPROVED
+        </div>
+
+        <div
+            class="summary-value"
+            id="approvedRequests"
+        >
+            0
+        </div>
+
+    </div>
+
+</div>
+
+<div id="requestsContainer">
+
+    <div class="loading">
+        Loading your requests...
+    </div>
+
+</div>
+
+</div><div class="bottom-nav"><a href="/index.html">
+    🏠<br>Home
+</a>
+
+<a href="/browse.html">
+    🔎<br>Browse
+</a>
+
+<a
+    href="/requests.html"
+    class="active"
+>
+    📋<br>Requests
+</a>
+
+<a href="/payments.html">
+    💳<br>Payments
+</a>
+
+<a href="/profile.html">
+    👤<br>Profile
+</a>
+
+</div><script>
+
+async function loadRequests() {
+
+    const container =
+        document.getElementById(
+            "requestsContainer"
         );
 
-        const data = await response.json();
+    try {
 
-        if (!response.ok) {
-            console.error("Supabase error:", data);
+        const response =
+            await fetch(
+                "/api/requests?refresh=" +
+                Date.now(),
+                {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: {
+                        "Cache-Control":
+                            "no-cache"
+                    }
+                }
+            );
 
-            return res.status(response.status).json({
-                error: "Failed to load requests",
-                details: data
-            });
+        const data =
+            await response.json();
+
+        if (!response.ok || data.error) {
+
+            throw new Error(
+                data.error ||
+                "Failed to load requests."
+            );
+
         }
 
-        return res.status(200).json({
-            success: true,
-            requests: data
-        });
+        const requests =
+            Array.isArray(data)
+                ? data
+                : (data.requests || []);
+
+        document.getElementById(
+            "totalRequests"
+        ).textContent =
+            requests.length;
+
+        const waitingCount =
+            requests.filter(
+                function(request) {
+
+                    return String(
+                        request.review_status ||
+                        ""
+                    ).toLowerCase()
+                    ===
+                    "waiting for review";
+
+                }
+            ).length;
+
+        const approvedCount =
+            requests.filter(
+                function(request) {
+
+                    return String(
+                        request.review_status ||
+                        ""
+                    ).toLowerCase()
+                    ===
+                    "approved";
+
+                }
+            ).length;
+
+        document.getElementById(
+            "waitingRequests"
+        ).textContent =
+            waitingCount;
+
+        document.getElementById(
+            "approvedRequests"
+        ).textContent =
+            approvedCount;
+
+        if (requests.length === 0) {
+
+            container.innerHTML = `
+
+                <div class="empty">
+
+                    <div class="empty-icon">
+                        📋
+                    </div>
+
+                    <h2>
+                        No Requests Yet
+                    </h2>
+
+                    <p>
+                        You have not submitted
+                        any service requests yet.
+                    </p>
+
+                    <a
+                        href="/browse.html"
+                        class="browse-btn"
+                    >
+                        Browse Services
+                    </a>
+
+                </div>
+
+            `;
+
+            return;
+        }
+
+        container.innerHTML =
+            requests.map(
+                function(request) {
+
+                    const service =
+                        request.service ||
+                        "Service Request";
+
+                    const status =
+                        request.status ||
+                        "Submitted";
+
+                    const reviewStatus =
+                        request.review_status ||
+                        "Waiting for review";
+
+                    const name =
+                        request.name ||
+                        "Not available";
+
+                    const contact =
+                        request.contact ||
+                        "Not available";
+
+                    const details =
+                        request.details ||
+                        "No project details provided.";
+
+                    const payment =
+                        request.payment ||
+                        "Pi Network";
+
+                    let submitted =
+                        "Not available";
+
+                    if (request.created_at) {
+
+                        submitted =
+                            new Date(
+                                request.created_at
+                            ).toLocaleString();
+
+                    }
+
+                    const review =
+                        String(
+                            reviewStatus
+                        ).toLowerCase();
+
+                    let reviewClass =
+                        "waiting";
+
+                    let reviewMessage =
+                        "Your request is currently being reviewed.";
+
+                    let paymentButton = "";
+
+                    if (
+                        review === "approved"
+                    ) {
+
+                        reviewClass =
+                            "approved";
+
+                        reviewMessage =
+                            "Your request has been approved. Payment can proceed.";
+
+                        if (
+                            request.id !==
+                            undefined &&
+                            request.id !== null
+                        ) {
+
+                            paymentButton = `
+
+                                <a
+                                    href="/payments.html?request_id=${encodeURIComponent(
+                                        request.id
+                                    )}"
+                                    class="payment-btn"
+                                >
+                                    💳 Proceed to Pi Payment
+                                </a>
+
+                            `;
+
+                        }
+
+                    } else if (
+                        review === "rejected"
+                    ) {
+
+                        reviewClass =
+                            "rejected";
+
+                        reviewMessage =
+                            "Your request was not approved. Please review the request details.";
+
+                    }
+
+                    return `
+
+                        <div
+                            class="request-card"
+                        >
+
+                            <div
+                                class="request-top"
+                            >
+
+                                <div>
+
+                                    <div
+                                        class="service-name"
+                                    >
+                                        ${escapeHtml(
+                                            service
+                                        )}
+                                    </div>
+
+                                    <div
+                                        class="request-id"
+                                    >
+                                        Request #${escapeHtml(
+                                            request.id ??
+                                            "N/A"
+                                        )}
+                                    </div>
+
+                                    <div
+                                        class="submitted"
+                                    >
+                                        Submitted:
+                                        ${escapeHtml(
+                                            submitted
+                                        )}
+                                    </div>
+
+                                </div>
+
+                                <div
+                                    class="status"
+                                >
+                                    ${escapeHtml(
+                                        status
+                                    )}
+                                </div>
+
+                            </div>
+
+                            <div class="info">
+
+                                <div
+                                    class="info-row"
+                                >
+
+                                    <div
+                                        class="info-label"
+                                    >
+                                        👤 NAME
+                                    </div>
+
+                                    <div
+                                        class="info-value"
+                                    >
+                                        ${escapeHtml(
+                                            name
+                                        )}
+                                    </div>
+
+                                </div>
+
+                                <div
+                                    class="info-row"
+                                >
+
+                                    <div
+                                        class="info-label"
+                                    >
+                                        📞 CONTACT
+                                    </div>
+
+                                    <div
+                                        class="info-value"
+                                    >
+                                        ${escapeHtml(
+                                            contact
+                                        )}
+                                    </div>
+
+                                </div>
+
+                                <div
+                                    class="info-row"
+                                >
+
+                                    <div
+                                        class="info-label"
+                                    >
+                                        📝 PROJECT DETAILS
+                                    </div>
+
+                                    <div
+                                        class="info-value"
+                                    >
+                                        ${escapeHtml(
+                                            details
+                                        )}
+                                    </div>
+
+                                </div>
+
+                                <div
+                                    class="info-row"
+                                >
+
+                                    <div
+                                        class="info-label"
+                                    >
+                                        💳 PAYMENT
+                                    </div>
+
+                                    <div
+                                        class="info-value"
+                                    >
+                                        ${escapeHtml(
+                                            payment
+                                        )}
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                class="review-box"
+                            >
+
+                                <div
+                                    class="review-label"
+                                >
+                                    REVIEW STATUS
+                                </div>
+
+                                <div
+                                    class="review-status ${reviewClass}"
+                                >
+                                    ${escapeHtml(
+                                        reviewStatus
+                                    )}
+                                </div>
+
+                                <div
+                                    class="review-message"
+                                >
+                                    ${reviewMessage}
+                                </div>
+
+                                ${paymentButton}
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                }
+            ).join("");
 
     } catch (error) {
-        console.error("Requests API error:", error);
 
-        return res.status(500).json({
-            error: "Internal server error",
-            details: error.message
-        });
+        console.error(
+            "Requests error:",
+            error
+        );
+
+        container.innerHTML = `
+
+            <div class="error">
+
+                ⚠️
+                ${escapeHtml(
+                    error.message
+                )}
+
+            </div>
+
+        `;
+
     }
+
 }
+
+
+function escapeHtml(value) {
+
+    return String(value)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+loadRequests();
+
+</script></body>
+</html>
