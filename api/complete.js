@@ -30,7 +30,8 @@ export default async function handler(req, res) {
             txid,
             amount = 0.01,
             pi_username = null,
-            service = "Web Development"
+            service = "Web Development",
+            request_id = null
         } = req.body || {};
 
 
@@ -48,6 +49,7 @@ export default async function handler(req, res) {
 
         }
 
+
         if (!txid) {
 
             return res.status(400).json({
@@ -55,6 +57,41 @@ export default async function handler(req, res) {
                 error: "Missing txid"
 
             });
+
+        }
+
+
+        // ==========================================
+        // VALIDATE REQUEST ID
+        // ==========================================
+
+        let requestIdValue = null;
+
+        if (
+            request_id !== null &&
+            request_id !== undefined &&
+            request_id !== ""
+        ) {
+
+            const parsedRequestId =
+                Number(request_id);
+
+            if (
+                !Number.isInteger(parsedRequestId) ||
+                parsedRequestId <= 0
+            ) {
+
+                return res.status(400).json({
+
+                    error:
+                        "Invalid request_id"
+
+                });
+
+            }
+
+            requestIdValue =
+                parsedRequestId;
 
         }
 
@@ -168,7 +205,10 @@ export default async function handler(req, res) {
                             service,
 
                         status:
-                            "Completed"
+                            "Completed",
+
+                        request_id:
+                            requestIdValue
 
                     })
 
