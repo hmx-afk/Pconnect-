@@ -1,1 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Dashboard | PConnect</title>
+
+    <!-- Pi SDK -->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f0b1f;
+            color: #ffffff;
+            min-height: 100vh;
+            padding-bottom: 90px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            padding: 18px;
+        }
+
+        /* ==========================================
+           HEADER
+        ========================================== */
+
+        .dashboard-header {
+            background: linear-gradient(
+                135deg,
+                #1b1430,
+                #24183d
+            );
+
+            border: 1px solid #30234d;
+            border-radius: 20px;
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+
+        .brand {
+            color: #f5b942;
+            font-size: 27px;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        .welcome {
+            color: #ffffff;
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: #aaa3ba;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* ==========================================
+           PI ACCOUNT
+        ========================================== */
+
+        .login-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .login-title {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .login-status {
+            color: #aaa3ba;
+            font-size: 12px;
+            margin-top: 7px;
+        }
+
+        .connected {
+            color: #5ee38a;
+        }
+
+        .login-btn {
+            width: 100%;
+            margin-top: 15px;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            background: #f5b942;
+            color: #171025;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .login-btn:disabled {
+            background: #665d76;
+            color: #aaa3ba;
+            cursor: not-allowed;
+        }
+
+        /* ==========================================
+           SECTION TITLE
+        ========================================== */
+
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        /* ==========================================
+           STATS
+        ========================================== */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 16px;
+            padding: 17px;
+        }
+
+        .stat-icon {
+            font-size: 22px;
+            margin-bottom: 9px;
+        }
+
+        .stat-label {
+            color: #aaa3ba;
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            color: #f5b942;
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        /* ==========================================
+           CARD
+        ========================================== */
+
+        .card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+
+        /* ==========================================
+           QUICK ACTIONS
+        ========================================== */
+
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .action {
+            display: block;
+            text-decoration: none;
+            text-align: center;
+            padding: 14px 8px;
+            border-radius: 11px;
+            background: #241b3d;
+            border: 1px solid #30234d;
+            color: #ffffff;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .action:hover {
+            border-color: #f5b942;
+            color: #f5b942;
+        }
+
+        /* ==========================================
+           PAYMENT
+        ========================================== */
+
+        .payment-card {
+            border: 1px solid #5a4920;
+        }
+
+        .payment-card p {
+            color: #aaa3ba;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .pay-btn {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            background: #f5b942;
+            color: #171025;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .pay-btn:disabled {
+            background: #665d76;
+            color: #aaa3ba;
+            cursor: not-allowed;
+        }
+
+        .payment-status {
+            margin-top: 10px;
+            color: #aaa3ba;
+            font-size: 12px;
+        }
+
+        .payment-note {
+            margin-top: 10px;
+            color: #777083 !important;
+            font-size: 11px !important;
+        }
+
+        /* ==========================================
+           RECENT ACTIVITY
+        ========================================== */
+
+        .activity {
+            margin-top: 5px;
+        }
+
+        .activity-item {
+            border-top: 1px solid #30234d;
+            padding: 13px 0;
+        }
+
+        .activity-item:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .activity-title {
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .activity-info {
+            color: #aaa3ba;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .activity-status {
+            color: #5ee38a;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .empty-activity {
+            color: #aaa3ba;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .loading {
+            color: #aaa3ba;
+            font-size: 13px;
+            text-align: center;
+            padding: 15px;
+        }
+
+        .error {
+            color: #ff7676;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* ==========================================
+           BOTTOM NAVIGATION
+        ========================================== */
+
+        nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+
+            background: #171025;
+
+            border-top: 1px solid #30234d;
+
+            display: flex;
+            justify-content: space-around;
+
+            padding: 10px 5px;
+
+            z-index: 1000;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #aaa3ba;
+            font-size: 11px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        nav a.active {
+            color: #f5b942;
+            font-weight: bold;
+        }
+
+        /* ==========================================
+           MOBILE
+        ========================================== */
+
+        @media (max-width: 480px) {
+
+            .container {
+                padding: 15px;
+            }
+
+            .dashboard-header {
+                padding: 19px;
+            }
+
+            .brand {
+                font-size: 24px;
+            }
+
+            .stats {
+                gap: 9px;
+            }
+
+            .stat-card {
+                padding: 14px;
+            }
+
+            .actions {
+                gap: 8px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+    <!-- ==========================================
+         DASHBOARD HEADER
+    ========================================== -->
+
+    <div class="dashboard-header">
+
+        <div class="brand">
+            🔗 PConnect
+        </div>
+
+        <div class="welcome">
+            Welcome to your Dashboard
+        </div>
+
+        <div class="subtitle">
+            Manage your service requests,
+            payments and Pi ecosystem activity.
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================
+         PI ACCOUNT
+    ========================================== -->
+
+    <div class="login-card">
+
+        <div class="login-title">
+            👤 Pi Account
+        </div>
+
+        <div
+            id="status"
+            class="login-status"
+        >
+            Not connected
+        </div>
+
+        <button
+            id="loginBtn"
+            class="login-btn"
+        >
+            Sign in with Pi
+        </button>
+
+    </div>
+
+
+    <!-- ==========================================
+         OVERVIEW
+    ========================================== -->
+
+    <div class="section-title">
+        📊 Overview
+    </div>
+
+
+    <div class="stats">
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                📋
+            </div>
+
+            <div class="stat-label">
+                TOTAL REQUESTS
+            </div>
+
+            <div
+                id="totalRequests"
+                class="stat-value"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                ⏳
+            </div>
+
+            <div class="stat-label">
+                WAITING REVIEW
+            </div>
+
+            <div
+                id="waitingRequests"
+                class="stat-value"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                ✅
+            </div>
+
+            <div class="stat-label">
+                APPROVED
+            </div>
+
+            <div
+                id="approvedRequests"
+                class="stat-value"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                💳
+            </div>
+
+            <div class="stat-label">
+                COMPLETED PAYMENTS
+            </div>
+
+            <div
+                id="completedPayments"
+                class="stat-value"
+            >
+                0
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- ==========================================
+         QUICK ACTIONS
+    ========================================== -->
+
+    <div class="card">
+
+        <div class="section-title">
+            ⚡ Quick Actions
+        </div>
+
+        <div class="actions">
+
+            <a
+                href="browse.html"
+                class="action"
+            >
+                🔎<br>
+                Browse Services
+            </a>
+
+            <a
+                href="requests.html"
+                class="action"
+            >
+                📋<br>
+                My Requests
+            </a>
+
+            <a
+                href="payments.html"
+                class="action"
+            >
+                💳<br>
+                Payments
+            </a>
+
+            <a
+                href="profile.html"
+                class="action"
+            >
+                👤<br>
+                Profile
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================
+         TEST PAYMENT
+    ========================================== -->
+
+    <div class="card payment-card">
+
+        <div class="section-title">
+            💳 Test Payment
+        </div>
+
+        <p>
+            Test a 0.01 π payment on
+            PConnect Testnet.
+        </p>
+
+        <button
+            id="payBtn"
+            class="pay-btn"
+            disabled
+        >
+            Make Test Payment (0.01 π)
+        </button>
+
+        <div
+            id="payStatus"
+            class="payment-status"
+        >
+            Sign in with Pi first.
+        </div>
+
+        <p class="payment-note">
+            Testnet payment only.
+            No Mainnet Pi is used.
+        </p>
+
+    </div>
+
+
+    <!-- ==========================================
+         RECENT ACTIVITY
+    ========================================== -->
+
+    <div class="card">
+
+        <div class="section-title">
+            🕒 Recent Activity
+        </div>
+
+        <div
+            id="recentActivity"
+            class="activity"
+        >
+
+            <div class="loading">
+                Loading activity...
+            </div>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<!-- ==========================================
+     BOTTOM NAVIGATION
+========================================== -->
+
+<nav>
+
+    <a
+        href="index.html"
+        class="active"
+    >
+        🏠<br>
+        Home
+    </a>
+
+    <a href="browse.html">
+        🔎<br>
+        Browse
+    </a>
+
+    <a href="requests.html">
+        📋<br>
+        Requests
+    </a>
+
+    <a href="payments.html">
+        💳<br>
+        Payments
+    </a>
+
+    <a href="profile.html">
+        👤<br>
+        Profile
+    </a>
+
+</nav>
+
+
+<!-- ==========================================
+     DASHBOARD DATA
+========================================== -->
+
+<script>
+
+async function loadDashboardData() {
+
+    const recentActivity =
+        document.getElementById(
+            "recentActivity"
+        );
+
+
+    try {
+
+        /* ======================================
+           REQUESTS
+        ====================================== */
+
+        const requestsResponse =
+            await fetch(
+                "/api/requests?refresh=" +
+                Date.now(),
+                {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: {
+                        "Cache-Control":
+                            "no-cache"
+                    }
+                }
+            );
+
+
+        const requestsData =
+            await requestsResponse.json();
+
+
+        if (!requestsResponse.ok) {
+
+            throw new Error(
+                requestsData.error ||
+                "Failed to load requests."
+            );
+
+        }
+
+
+        const requests =
+            Array.isArray(requestsData)
+                ? requestsData
+                : (
+                    Array.isArray(
+                        requestsData.requests
+                    )
+                        ? requestsData.requests
+                        : []
+                );
+
+
+        /* ======================================
+           REQUEST COUNTS
+        ====================================== */
+
+        const waiting =
+            requests.filter(function(request) {
+
+                const review =
+                    String(
+                        request.review_status ||
+                        ""
+                    ).toLowerCase();
+
+                return (
+                    review.includes("waiting") ||
+                    review.includes("review")
+                );
+
+            });
+
+
+        const approved =
+            requests.filter(function(request) {
+
+                return String(
+                    request.review_status ||
+                    ""
+                ).toLowerCase() === "approved";
+
+            });
+
+
+        document.getElementById(
+            "totalRequests"
+        ).textContent =
+            requests.length;
+
+
+        document.getElementById(
+            "waitingRequests"
+        ).textContent =
+            waiting.length;
+
+
+        document.getElementById(
+            "approvedRequests"
+        ).textContent =
+            approved.length;
+
+
+        /* ======================================
+           TRANSACTIONS
+        ====================================== */
+
+        let transactions = [];
+
+
+        try {
+
+            const transactionsResponse =
+                await fetch(
+                    "/api/transactions?refresh=" +
+                    Date.now(),
+                    {
+                        method: "GET",
+                        cache: "no-store",
+                        headers: {
+                            "Cache-Control":
+                                "no-cache"
+                        }
+                    }
+                );
+
+
+            const transactionsData =
+                await transactionsResponse.json();
+
+
+            if (!transactionsResponse.ok) {
+
+                throw new Error(
+                    transactionsData.error ||
+                    "Failed to load transactions."
+                );
+
+            }
+
+
+            transactions =
+                Array.isArray(
+                    transactionsData
+                )
+                    ? transactionsData
+                    : (
+                        Array.isArray(
+                            transactionsData.transactions
+                        )
+                            ? transactionsData.transactions
+                            : []
+                    );
+
+
+        } catch (transactionError) {
+
+            console.error(
+                "Transaction loading error:",
+                transactionError
+            );
+
+            transactions = [];
+
+        }
+
+
+        /* ======================================
+           COMPLETED PAYMENTS
+        ====================================== */
+
+        const completed =
+            transactions.filter(function(transaction) {
+
+                return String(
+                    transaction.status ||
+                    ""
+                ).toLowerCase() === "completed";
+
+            });
+
+
+        document.getElementById(
+            "completedPayments"
+        ).textContent =
+            completed.length;
+
+
+        /* ======================================
+           RECENT ACTIVITY
+        ====================================== */
+
+        const activity = [];
+
+
+        /* REQUESTS */
+
+        requests.forEach(function(request) {
+
+            activity.push({
+
+                type: "request",
+
+                date:
+                    request.created_at
+                        ? new Date(
+                            request.created_at
+                        )
+                        : new Date(0),
+
+                title:
+                    "Service Request",
+
+                info:
+                    (
+                        request.service ||
+                        "Web Development"
+                    ) +
+                    " • Request #" +
+                    (
+                        request.id ||
+                        "N/A"
+                    ),
+
+                status:
+                    request.review_status ||
+                    "Waiting for review"
+
+            });
+
+        });
+
+
+        /* TRANSACTIONS */
+
+        transactions.forEach(function(transaction) {
+
+            activity.push({
+
+                type: "payment",
+
+                date:
+                    transaction.created_at
+                        ? new Date(
+                            transaction.created_at
+                        )
+                        : new Date(0),
+
+                title:
+                    "Pi Payment",
+
+                info:
+                    (
+                        transaction.amount ||
+                        "0"
+                    ) +
+                    " " +
+                    (
+                        transaction.currency ||
+                        "Pi"
+                    ) +
+                    " • Request #" +
+                    (
+                        transaction.request_id ||
+                        "Not linked"
+                    ),
+
+                status:
+                    transaction.status ||
+                    "Unknown"
+
+            });
+
+        });
+
+
+        /* ======================================
+           SORT
+        ====================================== */
+
+        activity.sort(function(a, b) {
+
+            return b.date - a.date;
+
+        });
+
+
+        const recent =
+            activity.slice(0, 5);
+
+
+        if (recent.length === 0) {
+
+            recentActivity.innerHTML = `
+
+                <div class="empty-activity">
+
+                    No recent activity yet.
+
+                    <br><br>
+
+                    Start by browsing available
+                    services.
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        /* ======================================
+           DISPLAY
+        ====================================== */
+
+        recentActivity.innerHTML =
+            recent.map(function(item) {
+
+                const date =
+                    item.date.getTime() > 0
+                        ? item.date.toLocaleString()
+                        : "Date unavailable";
+
+
+                const icon =
+                    item.type === "payment"
+                        ? "💳"
+                        : "📋";
+
+
+                return `
+
+                    <div class="activity-item">
+
+                        <div class="activity-title">
+
+                            ${icon}
+                            ${escapeHtml(
+                                item.title
+                            )}
+
+                        </div>
+
+                        <div class="activity-info">
+
+                            ${escapeHtml(
+                                item.info
+                            )}
+
+                            <br>
+
+                            ${escapeHtml(
+                                date
+                            )}
+
+                        </div>
+
+                        <div class="activity-status">
+
+                            ${escapeHtml(
+                                item.status
+                            )}
+
+                        </div>
+
+                    </div>
+
+                `;
+
+            }).join("");
+
+
+    } catch (error) {
+
+        console.error(
+            "Dashboard error:",
+            error
+        );
+
+
+        recentActivity.innerHTML = `
+
+            <div class="error">
+
+                ⚠️
+                ${escapeHtml(
+                    error.message
+                )}
+
+            </div>
+
+        `;
+
+    }
+
+}
+
+
+/* ==========================================
+   ESCAPE HTML
+========================================== */
+
+function escapeHtml(value) {
+
+    return String(value)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* ==========================================
+   LOAD DASHBOARD
+========================================== */
+
+loadDashboardData();
+
+</script>
+
+
+<!-- Existing Pi Login + Payment System -->
+<script src="app.js"></script>
+
+
+</body>
+
+</html>
