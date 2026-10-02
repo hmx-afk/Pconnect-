@@ -424,7 +424,7 @@
 
     <button
         class="refresh-btn"
-        onclick="loadTransactions()"
+        id="refreshTransactionsBtn"
     >
         🔄 Refresh Transactions
     </button>
@@ -484,63 +484,87 @@
 <script>
 
 // ==========================================
-// GET APPROVED REQUEST ID
+// PAYMENT PAGE REQUEST ID
 // ==========================================
 
-const urlParams =
+const paymentPageParams =
     new URLSearchParams(
         window.location.search
     );
 
-const requestId =
-    urlParams.get("request_id");
+
+const paymentPageRequestId =
+    paymentPageParams.get(
+        "request_id"
+    );
 
 
 // ==========================================
 // STORE REQUEST ID
 // ==========================================
 
-if (requestId) {
+if (paymentPageRequestId) {
 
     sessionStorage.setItem(
         "pconnect_request_id",
-        requestId
+        paymentPageRequestId
     );
 
 }
 
 
 // ==========================================
-// SHOW REQUEST ID
+// GET STORED REQUEST ID
 // ==========================================
 
-const storedRequestId =
-    requestId ||
+const storedPaymentRequestId =
+    paymentPageRequestId ||
     sessionStorage.getItem(
         "pconnect_request_id"
     );
 
 
-if (storedRequestId) {
+// ==========================================
+// SHOW APPROVED REQUEST
+// ==========================================
+
+if (storedPaymentRequestId) {
 
     const requestInfo =
         document.getElementById(
             "requestInfo"
         );
 
+
     const requestIdDisplay =
         document.getElementById(
             "requestIdDisplay"
         );
 
+
     requestInfo.style.display =
         "block";
 
+
     requestIdDisplay.textContent =
         "Request #" +
-        storedRequestId;
+        storedPaymentRequestId;
 
 }
+
+
+// ==========================================
+// REFRESH BUTTON
+// ==========================================
+
+document
+    .getElementById(
+        "refreshTransactionsBtn"
+    )
+    .addEventListener(
+        "click",
+        loadTransactions
+    );
 
 
 // ==========================================
@@ -553,6 +577,7 @@ async function loadTransactions() {
         document.getElementById(
             "transactions"
         );
+
 
     const total =
         document.getElementById(
@@ -571,14 +596,34 @@ async function loadTransactions() {
 
     try {
 
+        console.log(
+            "Loading PConnect transactions..."
+        );
+
+
         const response =
             await fetch(
-                "/api/transactions"
+                "/api/transactions?refresh=" +
+                Date.now(),
+                {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: {
+                        "Cache-Control":
+                            "no-cache"
+                    }
+                }
             );
 
 
         const data =
             await response.json();
+
+
+        console.log(
+            "Transaction API response:",
+            data
+        );
 
 
         if (
@@ -595,7 +640,11 @@ async function loadTransactions() {
 
 
         const transactions =
-            data.transactions || [];
+            Array.isArray(
+                data.transactions
+            )
+                ? data.transactions
+                : [];
 
 
         total.textContent =
@@ -679,8 +728,12 @@ async function loadTransactions() {
 
 
                 const transactionRequestId =
-                    transaction.request_id ??
-                    "Not linked";
+                    transaction.request_id !==
+                    null &&
+                    transaction.request_id !==
+                    undefined
+                        ? transaction.request_id
+                        : "Not linked";
 
 
                 const card =
@@ -810,8 +863,13 @@ async function loadTransactions() {
     } catch (error) {
 
         console.error(
+            "Transaction history error:",
             error
         );
+
+
+        total.textContent =
+            "0";
 
 
         container.innerHTML = `
@@ -822,7 +880,10 @@ async function loadTransactions() {
 
                 <br><br>
 
-                Please try again.
+                ${escapeHtml(
+                    error.message ||
+                    "Please try again."
+                )}
 
             </div>
 
@@ -870,7 +931,7 @@ function escapeHtml(value) {
 
 
 // ==========================================
-// START
+// START TRANSACTION HISTORY
 // ==========================================
 
 loadTransactions();
