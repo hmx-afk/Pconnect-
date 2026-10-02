@@ -1,14 +1,9 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
-
-<title>My Requests | PConnect</title>
+<!DOCTYPE html><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>My Requests | PConnect</title>
 
 <style>
-
     * {
         box-sizing: border-box;
         margin: 0;
@@ -42,221 +37,153 @@
     }
 
     .header {
-        margin-bottom: 22px;
+        margin-bottom: 20px;
     }
 
     .header h1 {
         color: #f5b942;
-        font-size: 28px;
+        font-size: 27px;
         margin-bottom: 8px;
     }
 
     .header p {
         color: #aaa3ba;
-        font-size: 14px;
         line-height: 1.5;
+        font-size: 14px;
     }
 
-    .summary {
+    .stats {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
+        gap: 10px;
         margin-bottom: 20px;
     }
 
-    .summary-card {
+    .stat-card {
         background: #1b1430;
         border: 1px solid #30234d;
-        border-radius: 15px;
-        padding: 16px;
+        border-radius: 14px;
+        padding: 15px 10px;
+        text-align: center;
     }
 
-    .summary-label {
-        color: #aaa3ba;
-        font-size: 11px;
-        margin-bottom: 7px;
-    }
-
-    .summary-value {
+    .stat-number {
         color: #f5b942;
         font-size: 23px;
         font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        color: #aaa3ba;
+        font-size: 11px;
+        line-height: 1.3;
+    }
+
+    .section-title {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+
+    .loading,
+    .empty,
+    .error-box {
+        background: #1b1430;
+        border: 1px solid #30234d;
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        color: #aaa3ba;
+        line-height: 1.5;
+    }
+
+    .error-box {
+        color: #ff7676;
     }
 
     .request-card {
         background: #1b1430;
         border: 1px solid #30234d;
-        border-radius: 18px;
+        border-radius: 16px;
         padding: 18px;
-        margin-bottom: 16px;
+        margin-bottom: 14px;
     }
 
     .request-top {
         display: flex;
         justify-content: space-between;
+        gap: 10px;
         align-items: flex-start;
-        gap: 12px;
-        margin-bottom: 15px;
-    }
-
-    .service-name {
-        color: #f5b942;
-        font-size: 19px;
-        font-weight: bold;
+        margin-bottom: 14px;
     }
 
     .request-id {
-        color: #777087;
-        font-size: 12px;
+        color: #f5b942;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .service {
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: bold;
         margin-top: 5px;
     }
 
-    .submitted {
-        color: #aaa3ba;
-        font-size: 12px;
-        margin-top: 6px;
-    }
-
-    .status {
-        padding: 6px 10px;
+    .status-badge {
+        padding: 6px 9px;
         border-radius: 20px;
-        background: #30234d;
-        color: #f5b942;
         font-size: 11px;
         font-weight: bold;
         white-space: nowrap;
+        background: #30234d;
+        color: #f5b942;
     }
 
     .info {
-        border-top: 1px solid #30234d;
-        padding-top: 14px;
+        margin-bottom: 10px;
     }
 
-    .info-row {
-        margin-bottom: 12px;
-    }
-
-    .info-label {
+    .label {
         color: #aaa3ba;
-        font-size: 12px;
+        font-size: 11px;
         margin-bottom: 4px;
     }
 
-    .info-value {
+    .value {
         color: #ffffff;
         font-size: 14px;
         line-height: 1.5;
         word-break: break-word;
     }
 
-    .review-box {
-        margin-top: 14px;
-        padding: 14px;
-        border-radius: 12px;
+    .details {
         background: #171025;
-        border: 1px solid #30234d;
-    }
-
-    .review-label {
-        color: #aaa3ba;
-        font-size: 11px;
-        margin-bottom: 6px;
-    }
-
-    .review-status {
-        font-size: 14px;
-        font-weight: bold;
-        margin-bottom: 8px;
-    }
-
-    .review-message {
-        color: #aaa3ba;
-        font-size: 12px;
-        line-height: 1.5;
-    }
-
-    .waiting {
-        color: #f5b942;
-    }
-
-    .approved {
-        color: #5ee38a;
-    }
-
-    .rejected {
-        color: #ff7676;
-    }
-
-    .payment-btn {
-        display: block;
-        width: 100%;
-        text-align: center;
-        text-decoration: none;
-        margin-top: 13px;
-        padding: 13px;
         border-radius: 10px;
-        background: #f5b942;
-        color: #171025;
-        font-size: 14px;
+        padding: 12px;
+        margin-top: 12px;
+    }
+
+    .date {
+        color: #77718a;
+        font-size: 11px;
+        margin-top: 13px;
+    }
+
+    .refresh-btn {
+        width: 100%;
+        border: 1px solid #3a2d59;
+        border-radius: 10px;
+        padding: 12px;
+        background: #171025;
+        color: #f5b942;
         font-weight: bold;
-    }
-
-    .payment-btn:hover {
-        opacity: 0.9;
-    }
-
-    .empty {
-        background: #1b1430;
-        border: 1px solid #30234d;
-        border-radius: 18px;
-        padding: 30px 20px;
-        text-align: center;
-    }
-
-    .empty-icon {
-        font-size: 38px;
-        margin-bottom: 10px;
-    }
-
-    .empty h2 {
-        font-size: 19px;
-        margin-bottom: 8px;
-    }
-
-    .empty p {
-        color: #aaa3ba;
-        font-size: 13px;
-        line-height: 1.5;
+        cursor: pointer;
         margin-bottom: 18px;
     }
 
-    .browse-btn {
-        display: inline-block;
-        text-decoration: none;
-        background: #f5b942;
-        color: #171025;
-        padding: 12px 18px;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: bold;
-    }
-
-    .loading {
-        text-align: center;
-        color: #aaa3ba;
-        padding: 30px;
-        font-size: 14px;
-    }
-
-    .error {
-        background: #29151a;
-        border: 1px solid #5a2730;
-        border-radius: 14px;
-        padding: 18px;
-        text-align: center;
-        color: #ff8585;
-        font-size: 14px;
-        line-height: 1.5;
+    .refresh-btn:hover {
+        background: #241b3c;
     }
 
     .bottom-nav {
@@ -283,30 +210,31 @@
         color: #f5b942;
     }
 
-    @media (max-width: 600px) {
-
-        .summary {
-            grid-template-columns: 1fr;
+    @media (max-width: 480px) {
+        .stats {
+            gap: 7px;
         }
 
-    }
+        .stat-card {
+            padding: 13px 6px;
+        }
 
-    @media (max-width: 480px) {
+        .stat-number {
+            font-size: 20px;
+        }
 
-        .container {
-            padding: 16px;
+        .stat-label {
+            font-size: 10px;
         }
 
         .request-top {
             flex-direction: column;
         }
 
-        .status {
+        .status-badge {
             align-self: flex-start;
         }
-
     }
-
 </style>
 
 </head><body><div class="container"><a href="/browse.html" class="back">
@@ -314,66 +242,68 @@
 </a>
 
 <div class="header">
-
     <h1>📋 My Requests</h1>
 
     <p>
-        Track your service requests, review status,
-        and payment progress.
+        Track your service requests and review their current status.
     </p>
-
 </div>
 
-<div class="summary">
 
-    <div class="summary-card">
+<!-- STATS -->
 
-        <div class="summary-label">
+<div class="stats">
+
+    <div class="stat-card">
+        <div class="stat-number" id="totalRequests">
+            0
+        </div>
+
+        <div class="stat-label">
             TOTAL REQUESTS
         </div>
+    </div>
 
-        <div
-            class="summary-value"
-            id="totalRequests"
-        >
+
+    <div class="stat-card">
+        <div class="stat-number" id="waitingRequests">
             0
         </div>
 
-    </div>
-
-    <div class="summary-card">
-
-        <div class="summary-label">
+        <div class="stat-label">
             WAITING REVIEW
         </div>
-
-        <div
-            class="summary-value"
-            id="waitingRequests"
-        >
-            0
-        </div>
-
     </div>
 
-    <div class="summary-card">
 
-        <div class="summary-label">
-            APPROVED
-        </div>
-
-        <div
-            class="summary-value"
-            id="approvedRequests"
-        >
+    <div class="stat-card">
+        <div class="stat-number" id="approvedRequests">
             0
         </div>
 
+        <div class="stat-label">
+            APPROVED
+        </div>
     </div>
 
 </div>
 
-<div id="requestsContainer">
+
+<button
+    class="refresh-btn"
+    id="refreshBtn"
+    onclick="loadRequests()"
+>
+    🔄 Refresh Requests
+</button>
+
+
+<h2 class="section-title">
+    Recent Requests
+</h2>
+
+
+<div id="requestList">
 
     <div class="loading">
         Loading your requests...
@@ -381,7 +311,7 @@
 
 </div>
 
-</div><div class="bottom-nav"><a href="/index.html">
+</div><!-- BOTTOM NAV --><div class="bottom-nav"><a href="/index.html">
     🏠<br>Home
 </a>
 
@@ -389,10 +319,7 @@
     🔎<br>Browse
 </a>
 
-<a
-    href="/requests.html"
-    class="active"
->
+<a href="/requests.html" class="active">
     📋<br>Requests
 </a>
 
@@ -406,449 +333,332 @@
 
 </div><script>
 
-async function loadRequests() {
+    // ==========================================
+    // PConnect - My Requests
+    // ==========================================
 
-    const container =
-        document.getElementById(
-            "requestsContainer"
-        );
+    const totalRequests =
+        document.getElementById("totalRequests");
 
-    try {
+    const waitingRequests =
+        document.getElementById("waitingRequests");
 
-        const response =
-            await fetch(
-                "/api/requests?refresh=" +
-                Date.now(),
-                {
+    const approvedRequests =
+        document.getElementById("approvedRequests");
+
+    const requestList =
+        document.getElementById("requestList");
+
+    const refreshBtn =
+        document.getElementById("refreshBtn");
+
+
+    // ==========================================
+    // LOAD REQUESTS
+    // ==========================================
+
+    async function loadRequests() {
+
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = "⏳ Loading...";
+
+        requestList.innerHTML = `
+            <div class="loading">
+                Loading your requests...
+            </div>
+        `;
+
+        try {
+
+            const response =
+                await fetch("/api/requests", {
                     method: "GET",
-                    cache: "no-store",
-                    headers: {
-                        "Cache-Control":
-                            "no-cache"
-                    }
-                }
-            );
+                    cache: "no-store"
+                });
 
-        const data =
-            await response.json();
 
-        if (!response.ok || data.error) {
+            const data =
+                await response.json();
 
-            throw new Error(
-                data.error ||
-                "Failed to load requests."
-            );
 
-        }
+            if (!response.ok || !data.success) {
 
-        const requests =
-            Array.isArray(data)
-                ? data
-                : (data.requests || []);
+                throw new Error(
+                    data.error ||
+                    "Failed to load requests."
+                );
 
-        document.getElementById(
-            "totalRequests"
-        ).textContent =
-            requests.length;
+            }
 
-        const waitingCount =
-            requests.filter(
-                function(request) {
 
-                    return String(
-                        request.review_status ||
-                        ""
-                    ).toLowerCase()
-                    ===
-                    "waiting for review";
+            const requests =
+                Array.isArray(data.requests)
+                    ? data.requests
+                    : [];
 
-                }
-            ).length;
 
-        const approvedCount =
-            requests.filter(
-                function(request) {
+            // ==================================
+            // STATISTICS
+            // ==================================
 
-                    return String(
-                        request.review_status ||
-                        ""
-                    ).toLowerCase()
-                    ===
-                    "approved";
+            totalRequests.textContent =
+                requests.length;
 
-                }
-            ).length;
 
-        document.getElementById(
-            "waitingRequests"
-        ).textContent =
-            waitingCount;
-
-        document.getElementById(
-            "approvedRequests"
-        ).textContent =
-            approvedCount;
-
-        if (requests.length === 0) {
-
-            container.innerHTML = `
-
-                <div class="empty">
-
-                    <div class="empty-icon">
-                        📋
-                    </div>
-
-                    <h2>
-                        No Requests Yet
-                    </h2>
-
-                    <p>
-                        You have not submitted
-                        any service requests yet.
-                    </p>
-
-                    <a
-                        href="/browse.html"
-                        class="browse-btn"
-                    >
-                        Browse Services
-                    </a>
-
-                </div>
-
-            `;
-
-            return;
-        }
-
-        container.innerHTML =
-            requests.map(
-                function(request) {
-
-                    const service =
-                        request.service ||
-                        "Service Request";
+            const waiting =
+                requests.filter(function(request) {
 
                     const status =
+                        String(
+                            request.review_status ||
+                            request.status ||
+                            ""
+                        ).toLowerCase();
+
+                    return (
+                        status.includes("waiting") ||
+                        status.includes("review") ||
+                        status === "submitted"
+                    );
+
+                });
+
+
+            const approved =
+                requests.filter(function(request) {
+
+                    const status =
+                        String(
+                            request.review_status ||
+                            request.status ||
+                            ""
+                        ).toLowerCase();
+
+                    return status.includes("approved");
+
+                });
+
+
+            waitingRequests.textContent =
+                waiting.length;
+
+
+            approvedRequests.textContent =
+                approved.length;
+
+
+            // ==================================
+            // EMPTY STATE
+            // ==================================
+
+            if (requests.length === 0) {
+
+                requestList.innerHTML = `
+                    <div class="empty">
+                        📭<br><br>
+                        No service requests yet.
+                        <br><br>
+                        Go to Browse Services to submit
+                        your first request.
+                    </div>
+                `;
+
+                return;
+            }
+
+
+            // ==================================
+            // DISPLAY REQUESTS
+            // ==================================
+
+            requestList.innerHTML =
+                requests.map(function(request) {
+
+                    const id =
+                        request.id ??
+                        "N/A";
+
+                    const service =
+                        request.service ??
+                        "Service Request";
+
+                    const name =
+                        request.name ??
+                        "N/A";
+
+                    const contact =
+                        request.contact ??
+                        "N/A";
+
+                    const details =
+                        request.details ??
+                        "No details provided.";
+
+                    const status =
+                        request.review_status ||
                         request.status ||
                         "Submitted";
 
-                    const reviewStatus =
-                        request.review_status ||
-                        "Waiting for review";
 
-                    const name =
-                        request.name ||
-                        "Not available";
-
-                    const contact =
-                        request.contact ||
-                        "Not available";
-
-                    const details =
-                        request.details ||
-                        "No project details provided.";
-
-                    const payment =
-                        request.payment ||
-                        "Pi Network";
-
-                    let submitted =
-                        "Not available";
+                    let createdAt = "";
 
                     if (request.created_at) {
 
-                        submitted =
+                        const date =
                             new Date(
                                 request.created_at
-                            ).toLocaleString();
+                            );
 
-                    }
+                        if (!isNaN(date.getTime())) {
 
-                    const review =
-                        String(
-                            reviewStatus
-                        ).toLowerCase();
-
-                    let reviewClass =
-                        "waiting";
-
-                    let reviewMessage =
-                        "Your request is currently being reviewed.";
-
-                    let paymentButton = "";
-
-                    if (
-                        review === "approved"
-                    ) {
-
-                        reviewClass =
-                            "approved";
-
-                        reviewMessage =
-                            "Your request has been approved. Payment can proceed.";
-
-                        if (
-                            request.id !==
-                            undefined &&
-                            request.id !== null
-                        ) {
-
-                            paymentButton = `
-
-                                <a
-                                    href="/payments.html?request_id=${encodeURIComponent(
-                                        request.id
-                                    )}"
-                                    class="payment-btn"
-                                >
-                                    💳 Proceed to Pi Payment
-                                </a>
-
-                            `;
+                            createdAt =
+                                date.toLocaleString();
 
                         }
 
-                    } else if (
-                        review === "rejected"
-                    ) {
-
-                        reviewClass =
-                            "rejected";
-
-                        reviewMessage =
-                            "Your request was not approved. Please review the request details.";
-
                     }
+
 
                     return `
 
-                        <div
-                            class="request-card"
-                        >
+                        <div class="request-card">
 
-                            <div
-                                class="request-top"
-                            >
+                            <div class="request-top">
 
                                 <div>
 
-                                    <div
-                                        class="service-name"
-                                    >
-                                        ${escapeHtml(
-                                            service
-                                        )}
+                                    <div class="request-id">
+                                        📋 Request #${escapeHtml(id)}
                                     </div>
 
-                                    <div
-                                        class="request-id"
-                                    >
-                                        Request #${escapeHtml(
-                                            request.id ??
-                                            "N/A"
-                                        )}
-                                    </div>
-
-                                    <div
-                                        class="submitted"
-                                    >
-                                        Submitted:
-                                        ${escapeHtml(
-                                            submitted
-                                        )}
+                                    <div class="service">
+                                        ${escapeHtml(service)}
                                     </div>
 
                                 </div>
 
-                                <div
-                                    class="status"
-                                >
-                                    ${escapeHtml(
-                                        status
-                                    )}
+
+                                <div class="status-badge">
+                                    ${escapeHtml(status)}
                                 </div>
 
                             </div>
+
 
                             <div class="info">
 
-                                <div
-                                    class="info-row"
-                                >
-
-                                    <div
-                                        class="info-label"
-                                    >
-                                        👤 NAME
-                                    </div>
-
-                                    <div
-                                        class="info-value"
-                                    >
-                                        ${escapeHtml(
-                                            name
-                                        )}
-                                    </div>
-
+                                <div class="label">
+                                    NAME
                                 </div>
 
-                                <div
-                                    class="info-row"
-                                >
-
-                                    <div
-                                        class="info-label"
-                                    >
-                                        📞 CONTACT
-                                    </div>
-
-                                    <div
-                                        class="info-value"
-                                    >
-                                        ${escapeHtml(
-                                            contact
-                                        )}
-                                    </div>
-
-                                </div>
-
-                                <div
-                                    class="info-row"
-                                >
-
-                                    <div
-                                        class="info-label"
-                                    >
-                                        📝 PROJECT DETAILS
-                                    </div>
-
-                                    <div
-                                        class="info-value"
-                                    >
-                                        ${escapeHtml(
-                                            details
-                                        )}
-                                    </div>
-
-                                </div>
-
-                                <div
-                                    class="info-row"
-                                >
-
-                                    <div
-                                        class="info-label"
-                                    >
-                                        💳 PAYMENT
-                                    </div>
-
-                                    <div
-                                        class="info-value"
-                                    >
-                                        ${escapeHtml(
-                                            payment
-                                        )}
-                                    </div>
-
+                                <div class="value">
+                                    ${escapeHtml(name)}
                                 </div>
 
                             </div>
 
-                            <div
-                                class="review-box"
-                            >
 
-                                <div
-                                    class="review-label"
-                                >
-                                    REVIEW STATUS
+                            <div class="info">
+
+                                <div class="label">
+                                    CONTACT
                                 </div>
 
-                                <div
-                                    class="review-status ${reviewClass}"
-                                >
-                                    ${escapeHtml(
-                                        reviewStatus
-                                    )}
+                                <div class="value">
+                                    ${escapeHtml(contact)}
                                 </div>
-
-                                <div
-                                    class="review-message"
-                                >
-                                    ${reviewMessage}
-                                </div>
-
-                                ${paymentButton}
 
                             </div>
+
+
+                            <div class="details">
+
+                                <div class="label">
+                                    PROJECT DETAILS
+                                </div>
+
+                                <div class="value">
+                                    ${escapeHtml(details)}
+                                </div>
+
+                            </div>
+
+
+                            ${
+                                createdAt
+                                    ? `
+                                        <div class="date">
+                                            🕒 Submitted:
+                                            ${escapeHtml(createdAt)}
+                                        </div>
+                                      `
+                                    : ""
+                            }
 
                         </div>
 
                     `;
 
-                }
-            ).join("");
+                }).join("");
 
-    } catch (error) {
 
-        console.error(
-            "Requests error:",
-            error
-        );
+        } catch (error) {
 
-        container.innerHTML = `
+            console.error(
+                "Load requests error:",
+                error
+            );
 
-            <div class="error">
 
-                ⚠️
-                ${escapeHtml(
-                    error.message
-                )}
+            requestList.innerHTML = `
 
-            </div>
+                <div class="error-box">
 
-        `;
+                    ⚠️ ${escapeHtml(
+                        error.message ||
+                        "Failed to load requests."
+                    )}
+
+                    <br><br>
+
+                    Please try again.
+
+                </div>
+
+            `;
+
+        } finally {
+
+            refreshBtn.disabled = false;
+            refreshBtn.textContent =
+                "🔄 Refresh Requests";
+
+        }
 
     }
 
-}
+
+    // ==========================================
+    // HTML ESCAPE
+    // ==========================================
+
+    function escapeHtml(value) {
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+    }
 
 
-function escapeHtml(value) {
+    // ==========================================
+    // START
+    // ==========================================
 
-    return String(value)
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-}
-
-
-loadRequests();
+    loadRequests();
 
 </script></body>
 </html>
