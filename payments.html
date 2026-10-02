@@ -1,1 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Payment | PConnect</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f0b1a;
+            color: #ffffff;
+            min-height: 100vh;
+            padding-bottom: 90px;
+        }
+
+        header {
+            background: #171025;
+            padding: 22px 18px;
+            border-bottom: 1px solid #2c2142;
+        }
+
+        header h1 {
+            color: #f5b942;
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: #aaa1b8;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            padding: 20px 15px;
+        }
+
+        .request-info {
+            background: linear-gradient(
+                135deg,
+                #211538,
+                #171025
+            );
+
+            border: 1px solid #3a2856;
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .request-info-title {
+            color: #aaa1b8;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .request-info-value {
+            color: #f5b942;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .request-info-note {
+            color: #aaa1b8;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 8px;
+        }
+
+        .summary {
+            background: linear-gradient(
+                135deg,
+                #211538,
+                #171025
+            );
+
+            border: 1px solid #3a2856;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .summary-title {
+            color: #aaa1b8;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            color: #f5b942;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .loading,
+        .empty,
+        .error {
+            text-align: center;
+            padding: 35px 15px;
+            color: #aaa1b8;
+        }
+
+        .error {
+            color: #ff7777;
+        }
+
+        .transaction {
+            background: #171025;
+            border: 1px solid #2c2142;
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 15px;
+        }
+
+        .transaction-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .amount {
+            color: #f5b942;
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        .status {
+            background: #183b2b;
+            color: #65e6a0;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .details {
+            display: grid;
+            gap: 10px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            border-bottom: 1px solid #251b36;
+            padding-bottom: 8px;
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            color: #8f879c;
+            font-size: 13px;
+        }
+
+        .value {
+            color: #e9e3ef;
+            font-size: 13px;
+            text-align: right;
+            word-break: break-all;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #171025;
+            border-top: 1px solid #2c2142;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 5px;
+        }
+
+        .bottom-nav a {
+            color: #aaa1b8;
+            text-decoration: none;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .bottom-nav a.active {
+            color: #f5b942;
+        }
+
+        .refresh-btn {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            background: #f5b942;
+            color: #171025;
+            font-weight: bold;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.98);
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+
+    <h1>
+        💳 PConnect Payment
+    </h1>
+
+    <p>
+        Complete your Pi payment securely.
+    </p>
+
+</header>
+
+
+<div class="container">
+
+
+    <!-- APPROVED REQUEST -->
+
+    <div
+        class="request-info"
+        id="requestInfo"
+        style="display:none;"
+    >
+
+        <div class="request-info-title">
+            APPROVED REQUEST
+        </div>
+
+        <div
+            class="request-info-value"
+            id="requestIdDisplay"
+        >
+            Request
+        </div>
+
+        <div class="request-info-note">
+            This payment will be linked to the approved service request.
+        </div>
+
+    </div>
+
+
+    <!-- TRANSACTION SUMMARY -->
+
+    <div class="summary">
+
+        <div class="summary-title">
+            Total Transactions
+        </div>
+
+        <div
+            class="summary-value"
+            id="totalTransactions"
+        >
+            0
+        </div>
+
+    </div>
+
+
+    <button
+        class="refresh-btn"
+        onclick="loadTransactions()"
+    >
+        🔄 Refresh Transactions
+    </button>
+
+
+    <div id="transactions">
+
+        <div class="loading">
+            Loading transactions...
+        </div>
+
+    </div>
+
+</div>
+
+
+<nav class="bottom-nav">
+
+    <a href="index.html">
+        🏠<br>Home
+    </a>
+
+    <a href="browse.html">
+        🔎<br>Browse
+    </a>
+
+    <a href="requests.html">
+        📋<br>Requests
+    </a>
+
+    <a
+        href="payments.html"
+        class="active"
+    >
+        💳<br>Payments
+    </a>
+
+    <a href="profile.html">
+        👤<br>Profile
+    </a>
+
+</nav>
+
+
+<script>
+
+
+// ==========================================
+// GET APPROVED REQUEST ID
+// ==========================================
+
+const urlParams =
+    new URLSearchParams(
+        window.location.search
+    );
+
+const requestId =
+    urlParams.get("request_id");
+
+
+// ==========================================
+// STORE REQUEST ID
+// ==========================================
+
+if (requestId) {
+
+    sessionStorage.setItem(
+        "pconnect_request_id",
+        requestId
+    );
+
+}
+
+
+// ==========================================
+// SHOW REQUEST ID
+// ==========================================
+
+const storedRequestId =
+    requestId ||
+    sessionStorage.getItem(
+        "pconnect_request_id"
+    );
+
+
+if (storedRequestId) {
+
+    const requestInfo =
+        document.getElementById(
+            "requestInfo"
+        );
+
+    const requestIdDisplay =
+        document.getElementById(
+            "requestIdDisplay"
+        );
+
+    requestInfo.style.display =
+        "block";
+
+    requestIdDisplay.textContent =
+        "Request #" + storedRequestId;
+
+}
+
+
+// ==========================================
+// LOAD TRANSACTIONS
+// ==========================================
+
+async function loadTransactions() {
+
+    const container =
+        document.getElementById(
+            "transactions"
+        );
+
+    const total =
+        document.getElementById(
+            "totalTransactions"
+        );
+
+
+    container.innerHTML = `
+
+        <div class="loading">
+            Loading transactions...
+        </div>
+
+    `;
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/transactions"
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.error ||
+                "Failed to load transactions"
+            );
+
+        }
+
+
+        const transactions =
+            data.transactions || [];
+
+
+        total.textContent =
+            transactions.length;
+
+
+        if (
+            transactions.length === 0
+        ) {
+
+            container.innerHTML = `
+
+                <div class="empty">
+
+                    <div
+                        style="font-size:40px;"
+                    >
+                        💸
+                    </div>
+
+                    <br>
+
+                    No transactions yet.
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        container.innerHTML = "";
+
+
+        transactions.forEach(
+            transaction => {
+
+                const date =
+                    transaction.created_at
+                        ? new Date(
+                            transaction.created_at
+                        ).toLocaleString()
+                        : "Unknown";
+
+
+                const amount =
+                    transaction.amount ??
+                    "0";
+
+
+                const currency =
+                    transaction.currency ||
+                    "Pi";
+
+
+                const status =
+                    transaction.status ||
+                    "Unknown";
+
+
+                const service =
+                    transaction.service ||
+                    "PConnect Payment";
+
+
+                const username =
+                    transaction.pi_username ||
+                    "Not available";
+
+
+                const txid =
+                    transaction.txid ||
+                    "Not available";
+
+
+                const paymentId =
+                    transaction.payment_id ||
+                    "Not available";
+
+
+                const transactionRequestId =
+                    transaction.request_id ??
+                    "Not linked";
+
+
+                const card =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                card.className =
+                    "transaction";
+
+
+                card.innerHTML = `
+
+                    <div class="transaction-top">
+
+                        <div class="amount">
+
+                            ${escapeHtml(amount)}
+                            ${escapeHtml(currency)}
+
+                        </div>
+
+                        <div class="status">
+
+                            ${escapeHtml(status)}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="details">
+
+
+                        <div class="row">
+
+                            <span class="label">
+                                Service
+                            </span>
+
+                            <span class="value">
+                                ${escapeHtml(service)}
+                            </span>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <span class="label">
+                                Request ID
+                            </span>
+
+                            <span class="value">
+                                ${escapeHtml(
+                                    transactionRequestId
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <span class="label">
+                                Pi Username
+                            </span>
+
+                            <span class="value">
+                                ${escapeHtml(username)}
+                            </span>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <span class="label">
+                                Payment ID
+                            </span>
+
+                            <span class="value">
+                                ${escapeHtml(paymentId)}
+                            </span>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <span class="label">
+                                TXID
+                            </span>
+
+                            <span class="value">
+                                ${escapeHtml(txid)}
+                            </span>
+
+                        </div>
+
+
+                        <div class="row">
+
+                            <span class="label">
+                                Date
+                            </span>
+
+                            <span class="value">
+                                ${escapeHtml(date)}
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+                `;
+
+
+                container.appendChild(
+                    card
+                );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        container.innerHTML = `
+
+            <div class="error">
+
+                ❌ Failed to load transactions.
+
+                <br><br>
+
+                Please try again.
+
+            </div>
+
+        `;
+
+    }
+
+}
+
+
+// ==========================================
+// HTML ESCAPE
+// ==========================================
+
+function escapeHtml(value) {
+
+    return String(value)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+// ==========================================
+// START
+// ==========================================
+
+loadTransactions();
+
+
+</script>
+
+</body>
+
+</html>
