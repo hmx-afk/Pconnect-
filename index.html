@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -10,7 +9,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Dashboard | PConnect</title>
+    <title>PConnect Dashboard</title>
 
     <!-- Pi SDK -->
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
@@ -34,121 +33,107 @@
         .container {
             max-width: 700px;
             margin: auto;
-            padding: 18px;
-        }
-
-        /* ==========================================
-           HEADER
-        ========================================== */
-
-        .dashboard-header {
-            background: linear-gradient(
-                135deg,
-                #1b1430,
-                #24183d
-            );
-
-            border: 1px solid #30234d;
-            border-radius: 20px;
-            padding: 22px;
-            margin-bottom: 18px;
+            padding: 20px;
         }
 
         .brand {
             color: #f5b942;
-            font-size: 27px;
+            font-size: 25px;
             font-weight: bold;
-            margin-bottom: 7px;
-        }
-
-        .welcome {
-            color: #ffffff;
-            font-size: 18px;
             margin-bottom: 6px;
         }
 
         .subtitle {
             color: #aaa3ba;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        /* ==========================================
-           PI ACCOUNT
-        ========================================== */
-
-        .login-card {
-            background: #1b1430;
-            border: 1px solid #30234d;
-            border-radius: 18px;
-            padding: 18px;
-            margin-bottom: 20px;
-        }
-
-        .login-title {
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .login-status {
-            color: #aaa3ba;
-            font-size: 12px;
-            margin-top: 7px;
-        }
-
-        .connected {
-            color: #5ee38a;
-        }
-
-        .login-btn {
-            width: 100%;
-            margin-top: 15px;
-            border: none;
-            border-radius: 10px;
-            padding: 13px;
-            background: #f5b942;
-            color: #171025;
             font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
+            line-height: 1.5;
+            margin-bottom: 22px;
         }
-
-        .login-btn:disabled {
-            background: #665d76;
-            color: #aaa3ba;
-            cursor: not-allowed;
-        }
-
-        /* ==========================================
-           SECTION TITLE
-        ========================================== */
 
         .section-title {
+            color: #ffffff;
             font-size: 18px;
             margin-bottom: 12px;
         }
 
-        /* ==========================================
-           STATS
-        ========================================== */
+        .card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+
+        .account-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .account-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #30234d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 23px;
+        }
+
+        .account-info {
+            flex: 1;
+        }
+
+        .account-title {
+            color: #aaa3ba;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .account-status {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .pi-login-btn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 13px;
+            border-radius: 10px;
+            background: #f5b942;
+            color: #171025;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .pi-login-btn:hover {
+            opacity: 0.9;
+        }
 
         .stats {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .stat-card {
             background: #1b1430;
             border: 1px solid #30234d;
-            border-radius: 16px;
-            padding: 17px;
+            border-radius: 15px;
+            padding: 16px;
         }
 
         .stat-icon {
-            font-size: 22px;
+            font-size: 20px;
             margin-bottom: 9px;
         }
 
@@ -160,15 +145,50 @@
 
         .stat-value {
             color: #f5b942;
-            font-size: 25px;
+            font-size: 24px;
             font-weight: bold;
         }
 
-        /* ==========================================
-           CARD
-        ========================================== */
+        .quick-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
 
-        .card {
+        .quick-action {
+            display: block;
+            text-decoration: none;
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 15px;
+            padding: 17px;
+            color: #ffffff;
+            transition: 0.2s;
+        }
+
+        .quick-action:hover {
+            border-color: #f5b942;
+            transform: translateY(-1px);
+        }
+
+        .quick-icon {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .quick-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .quick-text {
+            color: #aaa3ba;
+            font-size: 11px;
+        }
+
+        .payment-card {
             background: #1b1430;
             border: 1px solid #30234d;
             border-radius: 18px;
@@ -176,199 +196,142 @@
             margin-bottom: 18px;
         }
 
-        /* ==========================================
-           QUICK ACTIONS
-        ========================================== */
-
-        .actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .action {
-            display: block;
-            text-decoration: none;
-            text-align: center;
-            padding: 14px 8px;
-            border-radius: 11px;
-            background: #241b3d;
-            border: 1px solid #30234d;
-            color: #ffffff;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .action:hover {
-            border-color: #f5b942;
+        .payment-title {
             color: #f5b942;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 7px;
         }
 
-        /* ==========================================
-           PAYMENT
-        ========================================== */
-
-        .payment-card {
-            border: 1px solid #5a4920;
-        }
-
-        .payment-card p {
+        .payment-description {
             color: #aaa3ba;
             font-size: 13px;
             line-height: 1.5;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
 
-        .pay-btn {
+        .payment-btn {
             width: 100%;
-            border: none;
-            border-radius: 10px;
             padding: 13px;
+            border-radius: 10px;
             background: #f5b942;
             color: #171025;
             font-size: 14px;
             font-weight: bold;
-            cursor: pointer;
         }
 
-        .pay-btn:disabled {
-            background: #665d76;
-            color: #aaa3ba;
+        .payment-btn:hover {
+            opacity: 0.9;
+        }
+
+        .payment-btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
         .payment-status {
-            margin-top: 10px;
             color: #aaa3ba;
             font-size: 12px;
-        }
-
-        .payment-note {
+            line-height: 1.5;
             margin-top: 10px;
-            color: #777083 !important;
-            font-size: 11px !important;
+            text-align: center;
         }
-
-        /* ==========================================
-           RECENT ACTIVITY
-        ========================================== */
 
         .activity {
-            margin-top: 5px;
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 18px;
+            overflow: hidden;
+            margin-bottom: 18px;
         }
 
         .activity-item {
-            border-top: 1px solid #30234d;
-            padding: 13px 0;
+            padding: 15px 17px;
+            border-bottom: 1px solid #30234d;
         }
 
-        .activity-item:first-child {
-            border-top: none;
-            padding-top: 0;
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
         }
 
         .activity-title {
             color: #ffffff;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 5px;
         }
 
-        .activity-info {
+        .activity-date {
             color: #aaa3ba;
             font-size: 11px;
+            margin-top: 5px;
             line-height: 1.5;
         }
 
         .activity-status {
-            color: #5ee38a;
+            color: #f5b942;
             font-size: 11px;
             font-weight: bold;
-            margin-top: 4px;
+            white-space: nowrap;
         }
 
         .empty-activity {
-            color: #aaa3ba;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .loading {
-            color: #aaa3ba;
-            font-size: 13px;
+            padding: 22px;
             text-align: center;
-            padding: 15px;
+            color: #aaa3ba;
+            font-size: 13px;
         }
 
-        .error {
-            color: #ff7676;
-            font-size: 12px;
-            line-height: 1.5;
+        .error-activity {
+            padding: 18px;
+            text-align: center;
+            color: #ff8585;
+            font-size: 13px;
         }
 
-        /* ==========================================
-           BOTTOM NAVIGATION
-        ========================================== */
-
-        nav {
+        .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-
             background: #171025;
-
             border-top: 1px solid #30234d;
-
             display: flex;
             justify-content: space-around;
-
             padding: 10px 5px;
-
-            z-index: 1000;
+            z-index: 100;
         }
 
-        nav a {
-            text-decoration: none;
+        .bottom-nav a {
             color: #aaa3ba;
+            text-decoration: none;
             font-size: 11px;
             text-align: center;
-            line-height: 1.5;
         }
 
-        nav a.active {
+        .bottom-nav a.active {
             color: #f5b942;
-            font-weight: bold;
         }
-
-        /* ==========================================
-           MOBILE
-        ========================================== */
 
         @media (max-width: 480px) {
 
             .container {
-                padding: 15px;
+                padding: 16px;
             }
 
-            .dashboard-header {
-                padding: 19px;
+            .activity-top {
+                flex-direction: column;
+                gap: 5px;
             }
 
-            .brand {
-                font-size: 24px;
-            }
-
-            .stats {
-                gap: 9px;
-            }
-
-            .stat-card {
-                padding: 14px;
-            }
-
-            .actions {
-                gap: 8px;
+            .activity-status {
+                white-space: normal;
             }
 
         }
@@ -377,55 +340,54 @@
 
 </head>
 
-
 <body>
-
 
 <div class="container">
 
+    <div class="brand">
+        🔗 PConnect
+    </div>
 
-    <!-- ==========================================
-         DASHBOARD HEADER
-    ========================================== -->
-
-    <div class="dashboard-header">
-
-        <div class="brand">
-            🔗 PConnect
-        </div>
-
-        <div class="welcome">
-            Welcome to your Dashboard
-        </div>
-
-        <div class="subtitle">
-            Manage your service requests,
-            payments and Pi ecosystem activity.
-        </div>
-
+    <div class="subtitle">
+        Welcome to your Dashboard<br>
+        Manage your service requests, payments and Pi ecosystem activity.
     </div>
 
 
-    <!-- ==========================================
-         PI ACCOUNT
-    ========================================== -->
+    <!-- PI ACCOUNT -->
 
-    <div class="login-card">
+    <div class="section-title">
+        👤 Pi Account
+    </div>
 
-        <div class="login-title">
-            👤 Pi Account
-        </div>
+    <div class="card">
 
-        <div
-            id="status"
-            class="login-status"
-        >
-            Not connected
+        <div class="account-row">
+
+            <div class="account-icon">
+                👤
+            </div>
+
+            <div class="account-info">
+
+                <div class="account-title">
+                    PI ACCOUNT
+                </div>
+
+                <div
+                    class="account-status"
+                    id="piStatus"
+                >
+                    Not connected
+                </div>
+
+            </div>
+
         </div>
 
         <button
             id="loginBtn"
-            class="login-btn"
+            class="pi-login-btn"
         >
             Sign in with Pi
         </button>
@@ -433,17 +395,13 @@
     </div>
 
 
-    <!-- ==========================================
-         OVERVIEW
-    ========================================== -->
+    <!-- OVERVIEW -->
 
     <div class="section-title">
         📊 Overview
     </div>
 
-
     <div class="stats">
-
 
         <div class="stat-card">
 
@@ -456,8 +414,8 @@
             </div>
 
             <div
-                id="totalRequests"
                 class="stat-value"
+                id="totalRequests"
             >
                 0
             </div>
@@ -476,8 +434,8 @@
             </div>
 
             <div
-                id="waitingRequests"
                 class="stat-value"
+                id="waitingRequests"
             >
                 0
             </div>
@@ -496,8 +454,8 @@
             </div>
 
             <div
-                id="approvedRequests"
                 class="stat-value"
+                id="approvedRequests"
             >
                 0
             </div>
@@ -516,85 +474,122 @@
             </div>
 
             <div
-                id="completedPayments"
                 class="stat-value"
+                id="completedPayments"
             >
                 0
             </div>
 
         </div>
 
-
     </div>
 
 
-    <!-- ==========================================
-         QUICK ACTIONS
-    ========================================== -->
+    <!-- QUICK ACTIONS -->
 
-    <div class="card">
+    <div class="section-title">
+        ⚡ Quick Actions
+    </div>
 
-        <div class="section-title">
-            ⚡ Quick Actions
-        </div>
+    <div class="quick-grid">
 
-        <div class="actions">
+        <a
+            href="/browse.html"
+            class="quick-action"
+        >
 
-            <a
-                href="browse.html"
-                class="action"
-            >
-                🔎<br>
+            <div class="quick-icon">
+                🔎
+            </div>
+
+            <div class="quick-title">
                 Browse Services
-            </a>
+            </div>
 
-            <a
-                href="requests.html"
-                class="action"
-            >
-                📋<br>
+            <div class="quick-text">
+                Find available services
+            </div>
+
+        </a>
+
+
+        <a
+            href="/requests.html"
+            class="quick-action"
+        >
+
+            <div class="quick-icon">
+                📋
+            </div>
+
+            <div class="quick-title">
                 My Requests
-            </a>
+            </div>
 
-            <a
-                href="payments.html"
-                class="action"
-            >
-                💳<br>
+            <div class="quick-text">
+                Track your requests
+            </div>
+
+        </a>
+
+
+        <a
+            href="/payments.html"
+            class="quick-action"
+        >
+
+            <div class="quick-icon">
+                💳
+            </div>
+
+            <div class="quick-title">
                 Payments
-            </a>
+            </div>
 
-            <a
-                href="profile.html"
-                class="action"
-            >
-                👤<br>
+            <div class="quick-text">
+                View payment history
+            </div>
+
+        </a>
+
+
+        <a
+            href="/profile.html"
+            class="quick-action"
+        >
+
+            <div class="quick-icon">
+                👤
+            </div>
+
+            <div class="quick-title">
                 Profile
-            </a>
+            </div>
 
-        </div>
+            <div class="quick-text">
+                Manage your profile
+            </div>
+
+        </a>
 
     </div>
 
 
-    <!-- ==========================================
-         TEST PAYMENT
-    ========================================== -->
+    <!-- TEST PAYMENT -->
 
-    <div class="card payment-card">
+    <div class="payment-card">
 
-        <div class="section-title">
+        <div class="payment-title">
             💳 Test Payment
         </div>
 
-        <p>
-            Test a 0.01 π payment on
-            PConnect Testnet.
-        </p>
+        <div class="payment-description">
+            Test a 0.01 π payment on PConnect Testnet.
+        </div>
 
         <button
             id="payBtn"
-            class="pay-btn"
+            class="payment-btn"
             disabled
         >
             Make Test Payment (0.01 π)
@@ -607,99 +602,90 @@
             Sign in with Pi first.
         </div>
 
-        <p class="payment-note">
-            Testnet payment only.
-            No Mainnet Pi is used.
-        </p>
-
-    </div>
-
-
-    <!-- ==========================================
-         RECENT ACTIVITY
-    ========================================== -->
-
-    <div class="card">
-
-        <div class="section-title">
-            🕒 Recent Activity
-        </div>
-
         <div
-            id="recentActivity"
-            class="activity"
+            style="
+                color:#77718a;
+                font-size:11px;
+                text-align:center;
+                margin-top:8px;
+            "
         >
-
-            <div class="loading">
-                Loading activity...
-            </div>
-
+            Testnet payment only. No Mainnet Pi is used.
         </div>
 
     </div>
 
+
+    <!-- RECENT ACTIVITY -->
+
+    <div class="section-title">
+        🕒 Recent Activity
+    </div>
+
+    <div
+        class="activity"
+        id="recentActivity"
+    >
+
+        <div class="empty-activity">
+            Loading recent activity...
+        </div>
+
+    </div>
 
 </div>
 
 
-<!-- ==========================================
-     BOTTOM NAVIGATION
-========================================== -->
+<!-- BOTTOM NAV -->
 
-<nav>
+<div class="bottom-nav">
 
     <a
-        href="index.html"
+        href="/index.html"
         class="active"
     >
         🏠<br>
         Home
     </a>
 
-    <a href="browse.html">
+    <a href="/browse.html">
         🔎<br>
         Browse
     </a>
 
-    <a href="requests.html">
+    <a href="/requests.html">
         📋<br>
         Requests
     </a>
 
-    <a href="payments.html">
+    <a href="/payments.html">
         💳<br>
         Payments
     </a>
 
-    <a href="profile.html">
+    <a href="/profile.html">
         👤<br>
         Profile
     </a>
 
-</nav>
+</div>
 
-
-<!-- ==========================================
-     DASHBOARD DATA
-========================================== -->
 
 <script>
 
-async function loadDashboardData() {
+async function loadDashboard() {
 
     const recentActivity =
-        document.getElementById(
-            "recentActivity"
-        );
+        document.getElementById("recentActivity");
 
+
+    // ==========================================
+    // LOAD REQUESTS
+    // ==========================================
 
     try {
 
-        /* ======================================
-           REQUESTS
-        ====================================== */
-
-        const requestsResponse =
+        const requestResponse =
             await fetch(
                 "/api/requests?refresh=" +
                 Date.now(),
@@ -707,69 +693,33 @@ async function loadDashboardData() {
                     method: "GET",
                     cache: "no-store",
                     headers: {
-                        "Cache-Control":
-                            "no-cache"
+                        "Cache-Control": "no-cache"
                     }
                 }
             );
 
+        const requestData =
+            await requestResponse.json();
 
-        const requestsData =
-            await requestsResponse.json();
-
-
-        if (!requestsResponse.ok) {
-
+        if (
+            !requestResponse.ok ||
+            requestData.error
+        ) {
             throw new Error(
-                requestsData.error ||
-                "Failed to load requests."
+                requestData.error ||
+                "Failed to load requests"
             );
-
         }
 
 
         const requests =
-            Array.isArray(requestsData)
-                ? requestsData
+            Array.isArray(requestData)
+                ? requestData
                 : (
-                    Array.isArray(
-                        requestsData.requests
-                    )
-                        ? requestsData.requests
+                    Array.isArray(requestData.requests)
+                        ? requestData.requests
                         : []
                 );
-
-
-        /* ======================================
-           REQUEST COUNTS
-        ====================================== */
-
-        const waiting =
-            requests.filter(function(request) {
-
-                const review =
-                    String(
-                        request.review_status ||
-                        ""
-                    ).toLowerCase();
-
-                return (
-                    review.includes("waiting") ||
-                    review.includes("review")
-                );
-
-            });
-
-
-        const approved =
-            requests.filter(function(request) {
-
-                return String(
-                    request.review_status ||
-                    ""
-                ).toLowerCase() === "approved";
-
-            });
 
 
         document.getElementById(
@@ -778,318 +728,364 @@ async function loadDashboardData() {
             requests.length;
 
 
+        const waiting =
+            requests.filter(function(request) {
+
+                const review =
+                    String(
+                        request.review_status || ""
+                    ).toLowerCase();
+
+                return (
+                    review.includes("waiting") ||
+                    review.includes("review")
+                );
+
+            }).length;
+
+
+        const approved =
+            requests.filter(function(request) {
+
+                return (
+                    String(
+                        request.review_status || ""
+                    ).toLowerCase() ===
+                    "approved"
+                );
+
+            }).length;
+
+
         document.getElementById(
             "waitingRequests"
         ).textContent =
-            waiting.length;
+            waiting;
 
 
         document.getElementById(
             "approvedRequests"
         ).textContent =
-            approved.length;
+            approved;
 
 
-        /* ======================================
-           TRANSACTIONS
-        ====================================== */
+        // Add request activities
 
-        let transactions = [];
+        requests.forEach(function(request) {
 
+            let dateText =
+                "Date unavailable";
 
-        try {
+            if (request.created_at) {
 
-            const transactionsResponse =
-                await fetch(
-                    "/api/transactions?refresh=" +
-                    Date.now(),
-                    {
-                        method: "GET",
-                        cache: "no-store",
-                        headers: {
-                            "Cache-Control":
-                                "no-cache"
-                        }
-                    }
-                );
+                const parsedDate =
+                    new Date(
+                        request.created_at
+                    );
 
+                if (!isNaN(parsedDate.getTime())) {
 
-            const transactionsData =
-                await transactionsResponse.json();
+                    dateText =
+                        parsedDate.toLocaleString();
 
-
-            if (!transactionsResponse.ok) {
-
-                throw new Error(
-                    transactionsData.error ||
-                    "Failed to load transactions."
-                );
+                }
 
             }
 
 
-            transactions =
-                Array.isArray(
-                    transactionsData
-                )
-                    ? transactionsData
-                    : (
-                        Array.isArray(
-                            transactionsData.transactions
-                        )
-                            ? transactionsData.transactions
-                            : []
-                    );
+            const reviewStatus =
+                request.review_status ||
+                "Waiting for review";
 
 
-        } catch (transactionError) {
+            const requestItem = {
 
-            console.error(
-                "Transaction loading error:",
-                transactionError
+                type: "request",
+
+                title:
+                    "📋 Service Request",
+
+                description:
+                    (
+                        request.service ||
+                        "Service Request"
+                    ) +
+                    " • Request #" +
+                    (
+                        request.id ??
+                        "Not linked"
+                    ),
+
+                date:
+                    dateText,
+
+                status:
+                    reviewStatus,
+
+                timestamp:
+                    request.created_at
+                        ? new Date(
+                            request.created_at
+                        ).getTime()
+                        : 0
+
+            };
+
+
+            dashboardActivities.push(
+                requestItem
             );
 
-            transactions = [];
+        });
 
+    } catch (error) {
+
+        console.error(
+            "Requests dashboard error:",
+            error
+        );
+
+    }
+
+
+    // ==========================================
+    // LOAD TRANSACTIONS
+    // ==========================================
+
+    try {
+
+        const transactionResponse =
+            await fetch(
+                "/api/transactions?refresh=" +
+                Date.now(),
+                {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: {
+                        "Cache-Control": "no-cache"
+                    }
+                }
+            );
+
+        const transactionData =
+            await transactionResponse.json();
+
+
+        if (
+            !transactionResponse.ok ||
+            transactionData.error
+        ) {
+            throw new Error(
+                transactionData.error ||
+                "Failed to load transactions"
+            );
         }
 
 
-        /* ======================================
-           COMPLETED PAYMENTS
-        ====================================== */
+        const transactions =
+            Array.isArray(transactionData)
+                ? transactionData
+                : (
+                    Array.isArray(
+                        transactionData.transactions
+                    )
+                        ? transactionData.transactions
+                        : []
+                );
+
 
         const completed =
             transactions.filter(function(transaction) {
 
                 return String(
-                    transaction.status ||
-                    ""
-                ).toLowerCase() === "completed";
+                    transaction.status || ""
+                ).toLowerCase() ===
+                "completed";
 
-            });
+            }).length;
 
 
         document.getElementById(
             "completedPayments"
         ).textContent =
-            completed.length;
+            completed;
 
-
-        /* ======================================
-           RECENT ACTIVITY
-        ====================================== */
-
-        const activity = [];
-
-
-        /* REQUESTS */
-
-        requests.forEach(function(request) {
-
-            activity.push({
-
-                type: "request",
-
-                date:
-                    request.created_at
-                        ? new Date(
-                            request.created_at
-                        )
-                        : new Date(0),
-
-                title:
-                    "Service Request",
-
-                info:
-                    (
-                        request.service ||
-                        "Web Development"
-                    ) +
-                    " • Request #" +
-                    (
-                        request.id ||
-                        "N/A"
-                    ),
-
-                status:
-                    request.review_status ||
-                    "Waiting for review"
-
-            });
-
-        });
-
-
-        /* TRANSACTIONS */
 
         transactions.forEach(function(transaction) {
 
-            activity.push({
+            let dateText =
+                "Date unavailable";
+
+
+            if (transaction.created_at) {
+
+                const parsedDate =
+                    new Date(
+                        transaction.created_at
+                    );
+
+                if (!isNaN(parsedDate.getTime())) {
+
+                    dateText =
+                        parsedDate.toLocaleString();
+
+                }
+
+            }
+
+
+            const requestId =
+                (
+                    transaction.request_id !==
+                    undefined &&
+                    transaction.request_id !==
+                    null &&
+                    transaction.request_id !== ""
+                )
+                    ? transaction.request_id
+                    : "Not linked";
+
+
+            const transactionItem = {
 
                 type: "payment",
 
-                date:
-                    transaction.created_at
-                        ? new Date(
-                            transaction.created_at
-                        )
-                        : new Date(0),
-
                 title:
-                    "Pi Payment",
+                    "💳 Pi Payment",
 
-                info:
+                description:
                     (
-                        transaction.amount ||
-                        "0"
+                        transaction.amount ??
+                        "0.01"
                     ) +
-                    " " +
-                    (
-                        transaction.currency ||
-                        "Pi"
-                    ) +
-                    " • Request #" +
-                    (
-                        transaction.request_id ||
-                        "Not linked"
-                    ),
+                    " Pi • Request #" +
+                    requestId,
+
+                date:
+                    dateText,
 
                 status:
                     transaction.status ||
-                    "Unknown"
+                    "Completed",
 
-            });
+                timestamp:
+                    transaction.created_at
+                        ? new Date(
+                            transaction.created_at
+                        ).getTime()
+                        : 0
+
+            };
+
+
+            dashboardActivities.push(
+                transactionItem
+            );
 
         });
 
+    } catch (error) {
 
-        /* ======================================
-           SORT
-        ====================================== */
+        console.error(
+            "Transactions dashboard error:",
+            error
+        );
 
-        activity.sort(function(a, b) {
-
-            return b.date - a.date;
-
-        });
+    }
 
 
-        const recent =
-            activity.slice(0, 5);
+    // ==========================================
+    // RENDER RECENT ACTIVITY
+    // ==========================================
+
+    dashboardActivities.sort(
+        function(a, b) {
+            return b.timestamp - a.timestamp;
+        }
+    );
 
 
-        if (recent.length === 0) {
+    const recent =
+        dashboardActivities.slice(
+            0,
+            5
+        );
 
-            recentActivity.innerHTML = `
 
-                <div class="empty-activity">
+    if (recent.length === 0) {
 
-                    No recent activity yet.
+        recentActivity.innerHTML = `
 
-                    <br><br>
+            <div class="empty-activity">
+                No recent activity yet.
+            </div>
 
-                    Start by browsing available
-                    services.
+        `;
+
+        return;
+    }
+
+
+    recentActivity.innerHTML =
+        recent.map(function(item) {
+
+            return `
+
+                <div class="activity-item">
+
+                    <div class="activity-top">
+
+                        <div>
+
+                            <div class="activity-title">
+                                ${escapeHtml(
+                                    item.title
+                                )}
+                            </div>
+
+                            <div
+                                class="activity-date"
+                            >
+                                ${escapeHtml(
+                                    item.description
+                                )}
+                                <br>
+                                ${escapeHtml(
+                                    item.date
+                                )}
+                            </div>
+
+                        </div>
+
+                        <div
+                            class="activity-status"
+                        >
+                            ${escapeHtml(
+                                item.status
+                            )}
+                        </div>
+
+                    </div>
 
                 </div>
 
             `;
 
-            return;
-
-        }
-
-
-        /* ======================================
-           DISPLAY
-        ====================================== */
-
-        recentActivity.innerHTML =
-            recent.map(function(item) {
-
-                const date =
-                    item.date.getTime() > 0
-                        ? item.date.toLocaleString()
-                        : "Date unavailable";
-
-
-                const icon =
-                    item.type === "payment"
-                        ? "💳"
-                        : "📋";
-
-
-                return `
-
-                    <div class="activity-item">
-
-                        <div class="activity-title">
-
-                            ${icon}
-                            ${escapeHtml(
-                                item.title
-                            )}
-
-                        </div>
-
-                        <div class="activity-info">
-
-                            ${escapeHtml(
-                                item.info
-                            )}
-
-                            <br>
-
-                            ${escapeHtml(
-                                date
-                            )}
-
-                        </div>
-
-                        <div class="activity-status">
-
-                            ${escapeHtml(
-                                item.status
-                            )}
-
-                        </div>
-
-                    </div>
-
-                `;
-
-            }).join("");
-
-
-    } catch (error) {
-
-        console.error(
-            "Dashboard error:",
-            error
-        );
-
-
-        recentActivity.innerHTML = `
-
-            <div class="error">
-
-                ⚠️
-                ${escapeHtml(
-                    error.message
-                )}
-
-            </div>
-
-        `;
-
-    }
+        }).join("");
 
 }
 
 
-/* ==========================================
-   ESCAPE HTML
-========================================== */
+// ==========================================
+// GLOBAL ACTIVITY ARRAY
+// ==========================================
+
+const dashboardActivities = [];
+
+
+// ==========================================
+// HTML ESCAPE
+// ==========================================
 
 function escapeHtml(value) {
 
@@ -1123,18 +1119,17 @@ function escapeHtml(value) {
 }
 
 
-/* ==========================================
-   LOAD DASHBOARD
-========================================== */
+// ==========================================
+// START DASHBOARD
+// ==========================================
 
-loadDashboardData();
+loadDashboard();
 
 </script>
 
 
-<!-- Existing Pi Login + Payment System -->
+<!-- PConnect Pi SDK / Payment Logic -->
 <script src="app.js"></script>
-
 
 </body>
 
