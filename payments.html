@@ -1,487 +1,468 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
 
-<head>
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <meta charset="UTF-8">
+<title>Payment | PConnect</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<!-- Pi SDK -->
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
-    <title>Payment | PConnect</title>
+<style>
 
-    <!-- Pi SDK -->
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
 
-    <style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #0f0b1a;
+        color: #ffffff;
+        min-height: 100vh;
+        padding-bottom: 90px;
+    }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    header {
+        background: #171025;
+        padding: 22px 18px;
+        border-bottom: 1px solid #2c2142;
+    }
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #0f0b1a;
-            color: #ffffff;
-            min-height: 100vh;
-            padding-bottom: 90px;
-        }
+    header h1 {
+        color: #f5b942;
+        font-size: 24px;
+        margin-bottom: 6px;
+    }
 
-        header {
-            background: #171025;
-            padding: 22px 18px;
-            border-bottom: 1px solid #2c2142;
-        }
+    header p {
+        color: #aaa1b8;
+        font-size: 14px;
+    }
 
-        header h1 {
-            color: #f5b942;
-            font-size: 24px;
-            margin-bottom: 6px;
-        }
+    .container {
+        max-width: 700px;
+        margin: auto;
+        padding: 20px 15px;
+    }
 
-        header p {
-            color: #aaa1b8;
-            font-size: 14px;
-        }
+    .request-info {
+        background: linear-gradient(
+            135deg,
+            #211538,
+            #171025
+        );
 
-        .container {
-            max-width: 700px;
-            margin: auto;
-            padding: 20px 15px;
-        }
+        border: 1px solid #3a2856;
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 20px;
+    }
 
-        .request-info {
-            background: linear-gradient(
-                135deg,
-                #211538,
-                #171025
-            );
+    .request-info-title {
+        color: #aaa1b8;
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
 
-            border: 1px solid #3a2856;
-            border-radius: 16px;
-            padding: 18px;
-            margin-bottom: 20px;
-        }
+    .request-info-value {
+        color: #f5b942;
+        font-size: 20px;
+        font-weight: bold;
+    }
 
-        .request-info-title {
-            color: #aaa1b8;
-            font-size: 13px;
-            margin-bottom: 8px;
-        }
+    .request-info-note {
+        color: #aaa1b8;
+        font-size: 12px;
+        line-height: 1.5;
+        margin-top: 8px;
+    }
 
-        .request-info-value {
-            color: #f5b942;
-            font-size: 20px;
-            font-weight: bold;
-        }
+    .payment-box {
+        background: linear-gradient(
+            135deg,
+            #211538,
+            #171025
+        );
 
-        .request-info-note {
-            color: #aaa1b8;
-            font-size: 12px;
-            line-height: 1.5;
-            margin-top: 8px;
-        }
+        border: 1px solid #3a2856;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
 
-        .payment-box {
-            background: linear-gradient(
-                135deg,
-                #211538,
-                #171025
-            );
+    .payment-box h2 {
+        color: #f5b942;
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
 
-            border: 1px solid #3a2856;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+    .payment-box p {
+        color: #aaa1b8;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 15px;
+    }
 
-        .payment-box h2 {
-            color: #f5b942;
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
+    .login-btn,
+    .pay-btn {
+        width: 100%;
+        border: none;
+        border-radius: 10px;
+        padding: 14px;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 10px;
+    }
 
-        .payment-box p {
-            color: #aaa1b8;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 15px;
-        }
+    .login-btn {
+        background: #f5b942;
+        color: #171025;
+    }
 
-        .login-btn,
-        .pay-btn {
-            width: 100%;
-            border: none;
-            border-radius: 10px;
-            padding: 14px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
+    .pay-btn {
+        background: #f5b942;
+        color: #171025;
+    }
 
-        .login-btn {
-            background: #f5b942;
-            color: #171025;
-        }
+    .login-btn:disabled,
+    .pay-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
 
-        .pay-btn {
-            background: #f5b942;
-            color: #171025;
-        }
+    .status-box {
+        margin-top: 12px;
+        padding: 12px;
+        background: #171025;
+        border: 1px solid #2c2142;
+        border-radius: 10px;
+        color: #aaa1b8;
+        font-size: 13px;
+        text-align: center;
+    }
 
-        .login-btn:disabled,
-        .pay-btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-        }
+    .pay-status {
+        margin-top: 12px;
+        padding: 12px;
+        background: #171025;
+        border: 1px solid #2c2142;
+        border-radius: 10px;
+        color: #aaa1b8;
+        font-size: 13px;
+        text-align: center;
+        line-height: 1.5;
+    }
 
-        .status-box {
-            margin-top: 12px;
-            padding: 12px;
-            background: #171025;
-            border: 1px solid #2c2142;
-            border-radius: 10px;
-            color: #aaa1b8;
-            font-size: 13px;
-            text-align: center;
-        }
+    .summary {
+        background: linear-gradient(
+            135deg,
+            #211538,
+            #171025
+        );
 
-        .pay-status {
-            margin-top: 12px;
-            padding: 12px;
-            background: #171025;
-            border: 1px solid #2c2142;
-            border-radius: 10px;
-            color: #aaa1b8;
-            font-size: 13px;
-            text-align: center;
-            line-height: 1.5;
-        }
+        border: 1px solid #3a2856;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
 
-        .summary {
-            background: linear-gradient(
-                135deg,
-                #211538,
-                #171025
-            );
+    .summary-title {
+        color: #aaa1b8;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
 
-            border: 1px solid #3a2856;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
+    .summary-value {
+        color: #f5b942;
+        font-size: 30px;
+        font-weight: bold;
+    }
 
-        .summary-title {
-            color: #aaa1b8;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
+    .loading,
+    .empty,
+    .error {
+        text-align: center;
+        padding: 35px 15px;
+        color: #aaa1b8;
+    }
 
-        .summary-value {
-            color: #f5b942;
-            font-size: 30px;
-            font-weight: bold;
-        }
+    .error {
+        color: #ff7777;
+    }
 
-        .loading,
-        .empty,
-        .error {
-            text-align: center;
-            padding: 35px 15px;
-            color: #aaa1b8;
-        }
+    .transaction {
+        background: #171025;
+        border: 1px solid #2c2142;
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 15px;
+    }
 
-        .error {
-            color: #ff7777;
-        }
+    .transaction-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
 
-        .transaction {
-            background: #171025;
-            border: 1px solid #2c2142;
-            border-radius: 16px;
-            padding: 18px;
-            margin-bottom: 15px;
-        }
+    .amount {
+        color: #f5b942;
+        font-size: 21px;
+        font-weight: bold;
+    }
 
-        .transaction-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
+    .status {
+        background: #183b2b;
+        color: #65e6a0;
+        padding: 6px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+    }
 
-        .amount {
-            color: #f5b942;
-            font-size: 21px;
-            font-weight: bold;
-        }
+    .details {
+        display: grid;
+        gap: 10px;
+    }
 
-        .status {
-            background: #183b2b;
-            color: #65e6a0;
-            padding: 6px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
+    .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        border-bottom: 1px solid #251b36;
+        padding-bottom: 8px;
+    }
 
-        .details {
-            display: grid;
-            gap: 10px;
-        }
+    .row:last-child {
+        border-bottom: none;
+    }
 
-        .row {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            border-bottom: 1px solid #251b36;
-            padding-bottom: 8px;
-        }
+    .label {
+        color: #8f879c;
+        font-size: 13px;
+    }
 
-        .row:last-child {
-            border-bottom: none;
-        }
+    .value {
+        color: #e9e3ef;
+        font-size: 13px;
+        text-align: right;
+        word-break: break-all;
+    }
 
-        .label {
-            color: #8f879c;
-            font-size: 13px;
-        }
+    .refresh-btn {
+        width: 100%;
+        border: none;
+        border-radius: 10px;
+        padding: 12px;
+        background: #f5b942;
+        color: #171025;
+        font-weight: bold;
+        margin-bottom: 20px;
+        cursor: pointer;
+    }
 
-        .value {
-            color: #e9e3ef;
-            font-size: 13px;
-            text-align: right;
-            word-break: break-all;
-        }
+    .refresh-btn:active {
+        transform: scale(0.98);
+    }
 
-        .refresh-btn {
-            width: 100%;
-            border: none;
-            border-radius: 10px;
-            padding: 12px;
-            background: #f5b942;
-            color: #171025;
-            font-weight: bold;
-            margin-bottom: 20px;
-            cursor: pointer;
-        }
+    .bottom-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #171025;
+        border-top: 1px solid #2c2142;
+        display: flex;
+        justify-content: space-around;
+        padding: 12px 5px;
+        z-index: 1000;
+    }
 
-        .refresh-btn:active {
-            transform: scale(0.98);
-        }
+    .bottom-nav a {
+        color: #aaa1b8;
+        text-decoration: none;
+        font-size: 12px;
+        text-align: center;
+    }
 
-        .bottom-nav {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #171025;
-            border-top: 1px solid #2c2142;
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 5px;
-        }
+    .bottom-nav a.active {
+        color: #f5b942;
+    }
 
-        .bottom-nav a {
-            color: #aaa1b8;
-            text-decoration: none;
-            font-size: 12px;
-            text-align: center;
-        }
+</style>
 
-        .bottom-nav a.active {
-            color: #f5b942;
-        }
+</head><body><header><h1>
+    💳 PConnect Payment
+</h1>
 
-    </style>
+<p>
+    Complete your Pi payment securely.
+</p>
 
-</head>
+</header><div class="container"><!-- ==========================================
+     APPROVED REQUEST
+=========================================== -->
 
+<div
+    class="request-info"
+    id="requestInfo"
+    style="display:none;"
+>
 
-<body>
-
-
-<header>
-
-    <h1>
-        💳 PConnect Payment
-    </h1>
-
-    <p>
-        Complete your Pi payment securely.
-    </p>
-
-</header>
-
-
-<div class="container">
-
-
-    <!-- ==========================================
-         APPROVED REQUEST
-    =========================================== -->
+    <div class="request-info-title">
+        APPROVED REQUEST
+    </div>
 
     <div
-        class="request-info"
-        id="requestInfo"
-        style="display:none;"
+        class="request-info-value"
+        id="requestIdDisplay"
     >
-
-        <div class="request-info-title">
-            APPROVED REQUEST
-        </div>
-
-        <div
-            class="request-info-value"
-            id="requestIdDisplay"
-        >
-            Request
-        </div>
-
-        <div class="request-info-note">
-            This payment will be linked to the approved service request.
-        </div>
-
+        Request
     </div>
 
-
-    <!-- ==========================================
-         PI PAYMENT
-    =========================================== -->
-
-    <div class="payment-box">
-
-        <h2>
-            💳 Test Payment
-        </h2>
-
-        <p>
-            Complete a 0.01 π Test-Pi payment
-            for your approved PConnect service request.
-        </p>
-
-
-        <button
-            id="loginBtn"
-            class="login-btn"
-        >
-            Sign in with Pi
-        </button>
-
-
-        <div
-            id="status"
-            class="status-box"
-        >
-            Not connected
-        </div>
-
-
-        <button
-            id="payBtn"
-            class="pay-btn"
-            disabled
-        >
-            Make Test Payment (0.01 π)
-        </button>
-
-
-        <div
-            id="payStatus"
-            class="pay-status"
-        >
-            Sign in with Pi to continue.
-        </div>
-
+    <div class="request-info-note">
+        This payment will be linked to the approved service request.
     </div>
-
-
-    <!-- ==========================================
-         TRANSACTION SUMMARY
-    =========================================== -->
-
-    <div class="summary">
-
-        <div class="summary-title">
-            Total Transactions
-        </div>
-
-        <div
-            class="summary-value"
-            id="totalTransactions"
-        >
-            0
-        </div>
-
-    </div>
-
-
-    <button
-        class="refresh-btn"
-        id="refreshTransactionsBtn"
-    >
-        🔄 Refresh Transactions
-    </button>
-
-
-    <div id="transactions">
-
-        <div class="loading">
-            Loading transactions...
-        </div>
-
-    </div>
-
 
 </div>
 
 
 <!-- ==========================================
-     BOTTOM NAV
+     PI PAYMENT
 =========================================== -->
 
-<nav class="bottom-nav">
+<div class="payment-box">
 
-    <a href="index.html">
-        🏠<br>Home
-    </a>
+    <h2>
+        💳 Test Payment
+    </h2>
 
-    <a href="browse.html">
-        🔎<br>Browse
-    </a>
+    <p>
+        Complete a 0.01 π Test-Pi payment
+        for your approved PConnect service request.
+    </p>
 
-    <a href="requests.html">
-        📋<br>Requests
-    </a>
 
-    <a
-        href="payments.html"
-        class="active"
+    <button
+        id="loginBtn"
+        class="login-btn"
+        type="button"
     >
-        💳<br>Payments
-    </a>
+        Sign in with Pi
+    </button>
 
-    <a href="profile.html">
-        👤<br>Profile
-    </a>
 
-</nav>
+    <!-- IMPORTANT:
+         app.js expects piStatus
+    -->
+
+    <div
+        id="piStatus"
+        class="status-box"
+    >
+        Not connected
+    </div>
+
+
+    <button
+        id="payBtn"
+        class="pay-btn"
+        type="button"
+        disabled
+    >
+        Make Test Payment (0.01 π)
+    </button>
+
+
+    <div
+        id="payStatus"
+        class="pay-status"
+    >
+        Sign in with Pi to continue.
+    </div>
+
+</div>
 
 
 <!-- ==========================================
-     LOAD PAYMENT APP
+     TRANSACTION SUMMARY
 =========================================== -->
 
-<script src="app.js"></script>
+<div class="summary">
+
+    <div class="summary-title">
+        Total Transactions
+    </div>
+
+    <div
+        class="summary-value"
+        id="totalTransactions"
+    >
+        0
+    </div>
+
+</div>
 
 
-<script>
+<!-- ==========================================
+     REFRESH
+=========================================== -->
+
+<button
+    class="refresh-btn"
+    id="refreshTransactionsBtn"
+    type="button"
+>
+    🔄 Refresh Transactions
+</button>
+
+
+<!-- ==========================================
+     TRANSACTIONS
+=========================================== -->
+
+<div id="transactions">
+
+    <div class="loading">
+        Loading transactions...
+    </div>
+
+</div>
+
+</div><!-- ==========================================
+     BOTTOM NAV
+=========================================== --><nav class="bottom-nav"><a href="index.html">
+    🏠<br>Home
+</a>
+
+<a href="browse.html">
+    🔎<br>Browse
+</a>
+
+<a href="requests.html">
+    📋<br>Requests
+</a>
+
+<a
+    href="payments.html"
+    class="active"
+>
+    💳<br>Payments
+</a>
+
+<a href="profile.html">
+    👤<br>Profile
+</a>
+
+</nav><!-- ==========================================
+     PConnect PAYMENT APP
+=========================================== --><script src="app.js"></script><script>
 
 // ==========================================
 // PAYMENT PAGE REQUEST ID
@@ -491,7 +472,6 @@ const paymentPageParams =
     new URLSearchParams(
         window.location.search
     );
-
 
 const paymentPageRequestId =
     paymentPageParams.get(
@@ -535,20 +515,25 @@ if (storedPaymentRequestId) {
             "requestInfo"
         );
 
-
     const requestIdDisplay =
         document.getElementById(
             "requestIdDisplay"
         );
 
+    if (requestInfo) {
 
-    requestInfo.style.display =
-        "block";
+        requestInfo.style.display =
+            "block";
 
+    }
 
-    requestIdDisplay.textContent =
-        "Request #" +
-        storedPaymentRequestId;
+    if (requestIdDisplay) {
+
+        requestIdDisplay.textContent =
+            "Request #" +
+            storedPaymentRequestId;
+
+    }
 
 }
 
@@ -557,14 +542,19 @@ if (storedPaymentRequestId) {
 // REFRESH BUTTON
 // ==========================================
 
-document
-    .getElementById(
+const refreshTransactionsBtn =
+    document.getElementById(
         "refreshTransactionsBtn"
-    )
-    .addEventListener(
+    );
+
+if (refreshTransactionsBtn) {
+
+    refreshTransactionsBtn.addEventListener(
         "click",
         loadTransactions
     );
+
+}
 
 
 // ==========================================
@@ -578,11 +568,17 @@ async function loadTransactions() {
             "transactions"
         );
 
-
     const total =
         document.getElementById(
             "totalTransactions"
         );
+
+
+    if (!container || !total) {
+
+        return;
+
+    }
 
 
     container.innerHTML = `
@@ -728,10 +724,8 @@ async function loadTransactions() {
 
 
                 const transactionRequestId =
-                    transaction.request_id !==
-                    null &&
-                    transaction.request_id !==
-                    undefined
+                    transaction.request_id !== null &&
+                    transaction.request_id !== undefined
                         ? transaction.request_id
                         : "Not linked";
 
@@ -751,16 +745,12 @@ async function loadTransactions() {
                     <div class="transaction-top">
 
                         <div class="amount">
-
                             ${escapeHtml(amount)}
                             ${escapeHtml(currency)}
-
                         </div>
 
                         <div class="status">
-
                             ${escapeHtml(status)}
-
                         </div>
 
                     </div>
@@ -936,9 +926,4 @@ function escapeHtml(value) {
 
 loadTransactions();
 
-</script>
-
-
-</body>
-
-</html>
+</script></body></html>
