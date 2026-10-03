@@ -1,664 +1,543 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>My Requests | PConnect</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
+    <title>My Requests - PConnect</title>
 
-    body {
-        font-family: Arial, sans-serif;
-        background: #0f0b1f;
-        color: #ffffff;
-        min-height: 100vh;
-        padding-bottom: 85px;
-    }
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    .container {
-        max-width: 700px;
-        margin: auto;
-        padding: 20px;
-    }
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f0b1a;
+            color: #ffffff;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
 
-    .back {
-        display: inline-block;
-        color: #aaa3ba;
-        text-decoration: none;
-        font-size: 14px;
-        margin-bottom: 20px;
-    }
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
 
-    .back:hover {
-        color: #f5b942;
-    }
+        .container {
+            width: 92%;
+            max-width: 900px;
+            margin: auto;
+        }
 
-    .header {
-        margin-bottom: 20px;
-    }
+        header {
+            padding: 20px 0;
+        }
 
-    .header h1 {
-        color: #f5b942;
-        font-size: 27px;
-        margin-bottom: 8px;
-    }
+        .back-link {
+            color: #c7a7ff;
+            font-size: 14px;
+        }
 
-    .header p {
-        color: #aaa3ba;
-        line-height: 1.5;
-        font-size: 14px;
-    }
+        h1 {
+            margin-top: 18px;
+            font-size: 28px;
+        }
 
-    .stats {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        margin-bottom: 20px;
-    }
+        .subtitle {
+            color: #aaa;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
 
-    .stat-card {
-        background: #1b1430;
-        border: 1px solid #30234d;
-        border-radius: 14px;
-        padding: 15px 10px;
-        text-align: center;
-    }
-
-    .stat-number {
-        color: #f5b942;
-        font-size: 23px;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-
-    .stat-label {
-        color: #aaa3ba;
-        font-size: 11px;
-        line-height: 1.3;
-    }
-
-    .section-title {
-        font-size: 18px;
-        margin-bottom: 12px;
-    }
-
-    .loading,
-    .empty,
-    .error-box {
-        background: #1b1430;
-        border: 1px solid #30234d;
-        border-radius: 16px;
-        padding: 20px;
-        text-align: center;
-        color: #aaa3ba;
-        line-height: 1.5;
-    }
-
-    .error-box {
-        color: #ff7676;
-    }
-
-    .request-card {
-        background: #1b1430;
-        border: 1px solid #30234d;
-        border-radius: 16px;
-        padding: 18px;
-        margin-bottom: 14px;
-    }
-
-    .request-top {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        align-items: flex-start;
-        margin-bottom: 14px;
-    }
-
-    .request-id {
-        color: #f5b942;
-        font-size: 16px;
-        font-weight: bold;
-    }
-
-    .service {
-        color: #ffffff;
-        font-size: 15px;
-        font-weight: bold;
-        margin-top: 5px;
-    }
-
-    .status-badge {
-        padding: 6px 9px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: bold;
-        white-space: nowrap;
-        background: #30234d;
-        color: #f5b942;
-    }
-
-    .info {
-        margin-bottom: 10px;
-    }
-
-    .label {
-        color: #aaa3ba;
-        font-size: 11px;
-        margin-bottom: 4px;
-    }
-
-    .value {
-        color: #ffffff;
-        font-size: 14px;
-        line-height: 1.5;
-        word-break: break-word;
-    }
-
-    .details {
-        background: #171025;
-        border-radius: 10px;
-        padding: 12px;
-        margin-top: 12px;
-    }
-
-    .date {
-        color: #77718a;
-        font-size: 11px;
-        margin-top: 13px;
-    }
-
-    .refresh-btn {
-        width: 100%;
-        border: 1px solid #3a2d59;
-        border-radius: 10px;
-        padding: 12px;
-        background: #171025;
-        color: #f5b942;
-        font-weight: bold;
-        cursor: pointer;
-        margin-bottom: 18px;
-    }
-
-    .refresh-btn:hover {
-        background: #241b3c;
-    }
-
-    .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: #171025;
-        border-top: 1px solid #30234d;
-        display: flex;
-        justify-content: space-around;
-        padding: 10px 5px;
-        z-index: 100;
-    }
-
-    .bottom-nav a {
-        color: #aaa3ba;
-        text-decoration: none;
-        font-size: 11px;
-        text-align: center;
-    }
-
-    .bottom-nav a.active {
-        color: #f5b942;
-    }
-
-    @media (max-width: 480px) {
         .stats {
-            gap: 7px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 25px 0;
         }
 
         .stat-card {
-            padding: 13px 6px;
+            background: #1a1427;
+            border: 1px solid #302447;
+            border-radius: 14px;
+            padding: 18px 10px;
+            text-align: center;
         }
 
         .stat-number {
-            font-size: 20px;
+            font-size: 28px;
+            font-weight: bold;
         }
 
         .stat-label {
-            font-size: 10px;
+            color: #aaa;
+            font-size: 12px;
+            margin-top: 6px;
         }
 
-        .request-top {
-            flex-direction: column;
+        .refresh-btn {
+            width: 100%;
+            border: 1px solid #49346d;
+            background: #191224;
+            color: #ffffff;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-bottom: 25px;
         }
 
-        .status-badge {
-            align-self: flex-start;
+        .refresh-btn:hover {
+            background: #241936;
         }
-    }
-</style>
 
-</head><body><div class="container"><a href="/browse.html" class="back">
-    ← Back to Browse
-</a>
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
 
-<div class="header">
-    <h1>📋 My Requests</h1>
+        .request-card {
+            background: #181222;
+            border: 1px solid #302447;
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 15px;
+        }
 
-    <p>
-        Track your service requests and review their current status.
-    </p>
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .request-title {
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .service {
+            color: #c7a7ff;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .status {
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .approved {
+            background: #173d29;
+            color: #6ff0a4;
+        }
+
+        .waiting {
+            background: #3d3217;
+            color: #ffd76a;
+        }
+
+        .info {
+            border-top: 1px solid #2b2239;
+            padding-top: 13px;
+        }
+
+        .info-row {
+            margin-bottom: 12px;
+        }
+
+        .label {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .value {
+            color: #eee;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .submitted {
+            color: #888;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+
+        .pay-btn {
+            display: block;
+            width: 100%;
+            margin-top: 16px;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            background: #f5b642;
+            color: #17110a;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .pay-btn:hover {
+            background: #ffc95f;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px 15px;
+            color: #999;
+            background: #181222;
+            border: 1px solid #302447;
+            border-radius: 16px;
+        }
+
+        .error {
+            text-align: center;
+            padding: 25px;
+            color: #ff8c8c;
+            background: #29171c;
+            border: 1px solid #55252d;
+            border-radius: 14px;
+        }
+
+        nav {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #120d1d;
+            border-top: 1px solid #302447;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 5px;
+            z-index: 1000;
+        }
+
+        nav a {
+            color: #aaa;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        nav a.active {
+            color: #ffffff;
+        }
+
+        @media (max-width: 600px) {
+            .stats {
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 15px 5px;
+            }
+
+            .stat-number {
+                font-size: 23px;
+            }
+
+            .request-header {
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <a href="/browse.html" class="back-link">← Back to Browse</a>
+
+        <h1>📋 My Requests</h1>
+
+        <p class="subtitle">
+            Track your service requests and review their current status.
+        </p>
+    </header>
+
+    <section class="stats">
+
+        <div class="stat-card">
+            <div class="stat-number" id="totalRequests">0</div>
+            <div class="stat-label">TOTAL REQUESTS</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-number" id="waitingRequests">0</div>
+            <div class="stat-label">WAITING REVIEW</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-number" id="approvedRequests">0</div>
+            <div class="stat-label">APPROVED</div>
+        </div>
+
+    </section>
+
+    <button id="refreshBtn" class="refresh-btn">
+        🔄 Refresh Requests
+    </button>
+
+    <h2 class="section-title">Recent Requests</h2>
+
+    <div id="requestsList">
+        <div class="empty">
+            Loading requests...
+        </div>
+    </div>
+
 </div>
 
+<nav>
+    <a href="/index.html">
+        🏠<br>Home
+    </a>
 
-<!-- STATS -->
+    <a href="/browse.html">
+        🔎<br>Browse
+    </a>
 
-<div class="stats">
+    <a href="/requests.html" class="active">
+        📋<br>Requests
+    </a>
 
-    <div class="stat-card">
-        <div class="stat-number" id="totalRequests">
-            0
-        </div>
+    <a href="/payments.html">
+        💳<br>Payments
+    </a>
 
-        <div class="stat-label">
-            TOTAL REQUESTS
-        </div>
-    </div>
+    <a href="/profile.html">
+        👤<br>Profile
+    </a>
+</nav>
 
-
-    <div class="stat-card">
-        <div class="stat-number" id="waitingRequests">
-            0
-        </div>
-
-        <div class="stat-label">
-            WAITING REVIEW
-        </div>
-    </div>
-
-
-    <div class="stat-card">
-        <div class="stat-number" id="approvedRequests">
-            0
-        </div>
-
-        <div class="stat-label">
-            APPROVED
-        </div>
-    </div>
-
-</div>
-
-
-<button
-    class="refresh-btn"
-    id="refreshBtn"
-    onclick="loadRequests()"
->
-    🔄 Refresh Requests
-</button>
-
-
-<h2 class="section-title">
-    Recent Requests
-</h2>
-
-
-<div id="requestList">
-
-    <div class="loading">
-        Loading your requests...
-    </div>
-
-</div>
-
-</div><!-- BOTTOM NAV --><div class="bottom-nav"><a href="/index.html">
-    🏠<br>Home
-</a>
-
-<a href="/browse.html">
-    🔎<br>Browse
-</a>
-
-<a href="/requests.html" class="active">
-    📋<br>Requests
-</a>
-
-<a href="/payments.html">
-    💳<br>Payments
-</a>
-
-<a href="/profile.html">
-    👤<br>Profile
-</a>
-
-</div><script>
-
-    // ==========================================
-    // PConnect - My Requests
-    // ==========================================
-
-    const totalRequests =
-        document.getElementById("totalRequests");
-
-    const waitingRequests =
-        document.getElementById("waitingRequests");
-
-    const approvedRequests =
-        document.getElementById("approvedRequests");
-
-    const requestList =
-        document.getElementById("requestList");
-
-    const refreshBtn =
-        document.getElementById("refreshBtn");
-
+<script>
+    const requestsList = document.getElementById("requestsList");
+    const totalRequests = document.getElementById("totalRequests");
+    const waitingRequests = document.getElementById("waitingRequests");
+    const approvedRequests = document.getElementById("approvedRequests");
+    const refreshBtn = document.getElementById("refreshBtn");
 
     // ==========================================
     // LOAD REQUESTS
     // ==========================================
 
     async function loadRequests() {
-
-        refreshBtn.disabled = true;
-        refreshBtn.textContent = "⏳ Loading...";
-
-        requestList.innerHTML = `
-            <div class="loading">
-                Loading your requests...
+        requestsList.innerHTML = `
+            <div class="empty">
+                Loading requests...
             </div>
         `;
 
         try {
+            const response = await fetch("/api/requests", {
+                method: "GET",
+                cache: "no-store"
+            });
 
-            const response =
-                await fetch("/api/requests", {
-                    method: "GET",
-                    cache: "no-store"
-                });
+            const result = await response.json();
 
-
-            const data =
-                await response.json();
-
-
-            if (!response.ok || !data.success) {
-
+            if (!response.ok || !result.success) {
                 throw new Error(
-                    data.error ||
-                    "Failed to load requests."
+                    result.error || "Failed to load requests"
                 );
-
             }
 
-
-            const requests =
-                Array.isArray(data.requests)
-                    ? data.requests
-                    : [];
-
-
-            // ==================================
-            // STATISTICS
-            // ==================================
-
-            totalRequests.textContent =
-                requests.length;
-
-
-            const waiting =
-                requests.filter(function(request) {
-
-                    const status =
-                        String(
-                            request.review_status ||
-                            request.status ||
-                            ""
-                        ).toLowerCase();
-
-                    return (
-                        status.includes("waiting") ||
-                        status.includes("review") ||
-                        status === "submitted"
-                    );
-
-                });
-
-
-            const approved =
-                requests.filter(function(request) {
-
-                    const status =
-                        String(
-                            request.review_status ||
-                            request.status ||
-                            ""
-                        ).toLowerCase();
-
-                    return status.includes("approved");
-
-                });
-
-
-            waitingRequests.textContent =
-                waiting.length;
-
-
-            approvedRequests.textContent =
-                approved.length;
-
-
-            // ==================================
-            // EMPTY STATE
-            // ==================================
-
-            if (requests.length === 0) {
-
-                requestList.innerHTML = `
-                    <div class="empty">
-                        📭<br><br>
-                        No service requests yet.
-                        <br><br>
-                        Go to Browse Services to submit
-                        your first request.
-                    </div>
-                `;
-
-                return;
-            }
-
-
-            // ==================================
-            // DISPLAY REQUESTS
-            // ==================================
-
-            requestList.innerHTML =
-                requests.map(function(request) {
-
-                    const id =
-                        request.id ??
-                        "N/A";
-
-                    const service =
-                        request.service ??
-                        "Service Request";
-
-                    const name =
-                        request.name ??
-                        "N/A";
-
-                    const contact =
-                        request.contact ??
-                        "N/A";
-
-                    const details =
-                        request.details ??
-                        "No details provided.";
-
-                    const status =
-                        request.review_status ||
-                        request.status ||
-                        "Submitted";
-
-
-                    let createdAt = "";
-
-                    if (request.created_at) {
-
-                        const date =
-                            new Date(
-                                request.created_at
-                            );
-
-                        if (!isNaN(date.getTime())) {
-
-                            createdAt =
-                                date.toLocaleString();
-
-                        }
-
-                    }
-
-
-                    return `
-
-                        <div class="request-card">
-
-                            <div class="request-top">
-
-                                <div>
-
-                                    <div class="request-id">
-                                        📋 Request #${escapeHtml(id)}
-                                    </div>
-
-                                    <div class="service">
-                                        ${escapeHtml(service)}
-                                    </div>
-
-                                </div>
-
-
-                                <div class="status-badge">
-                                    ${escapeHtml(status)}
-                                </div>
-
-                            </div>
-
-
-                            <div class="info">
-
-                                <div class="label">
-                                    NAME
-                                </div>
-
-                                <div class="value">
-                                    ${escapeHtml(name)}
-                                </div>
-
-                            </div>
-
-
-                            <div class="info">
-
-                                <div class="label">
-                                    CONTACT
-                                </div>
-
-                                <div class="value">
-                                    ${escapeHtml(contact)}
-                                </div>
-
-                            </div>
-
-
-                            <div class="details">
-
-                                <div class="label">
-                                    PROJECT DETAILS
-                                </div>
-
-                                <div class="value">
-                                    ${escapeHtml(details)}
-                                </div>
-
-                            </div>
-
-
-                            ${
-                                createdAt
-                                    ? `
-                                        <div class="date">
-                                            🕒 Submitted:
-                                            ${escapeHtml(createdAt)}
-                                        </div>
-                                      `
-                                    : ""
-                            }
-
-                        </div>
-
-                    `;
-
-                }).join("");
-
+            const requests = Array.isArray(result.requests)
+                ? result.requests
+                : [];
+
+            updateStats(requests);
+            renderRequests(requests);
 
         } catch (error) {
+            console.error("Requests loading error:", error);
 
-            console.error(
-                "Load requests error:",
-                error
-            );
-
-
-            requestList.innerHTML = `
-
-                <div class="error-box">
-
-                    ⚠️ ${escapeHtml(
-                        error.message ||
-                        "Failed to load requests."
-                    )}
-
-                    <br><br>
-
-                    Please try again.
-
+            requestsList.innerHTML = `
+                <div class="error">
+                    ❌ Failed to load requests.<br><br>
+                    ${escapeHtml(error.message)}
                 </div>
-
             `;
-
-        } finally {
-
-            refreshBtn.disabled = false;
-            refreshBtn.textContent =
-                "🔄 Refresh Requests";
-
         }
-
     }
 
+    // ==========================================
+    // UPDATE STATS
+    // ==========================================
+
+    function updateStats(requests) {
+
+        const waiting = requests.filter(request =>
+            String(request.review_status || "").toLowerCase() ===
+            "waiting for review"
+        );
+
+        const approved = requests.filter(request =>
+            String(request.review_status || "").toLowerCase() ===
+            "approved"
+        );
+
+        totalRequests.textContent = requests.length;
+        waitingRequests.textContent = waiting.length;
+        approvedRequests.textContent = approved.length;
+    }
+
+    // ==========================================
+    // RENDER REQUESTS
+    // ==========================================
+
+    function renderRequests(requests) {
+
+        if (!requests.length) {
+            requestsList.innerHTML = `
+                <div class="empty">
+                    No service requests found.
+                </div>
+            `;
+            return;
+        }
+
+        requestsList.innerHTML = requests.map(request => {
+
+            const id = Number(request.id);
+            const service = request.service || "Web Development";
+            const name = request.name || "N/A";
+            const contact = request.contact || "N/A";
+            const details = request.details || "No project details";
+            const reviewStatus = request.review_status || "Waiting for review";
+            const createdAt = request.created_at
+                ? new Date(request.created_at).toLocaleString()
+                : "Unknown";
+
+            const isApproved =
+                String(reviewStatus).toLowerCase() === "approved";
+
+            const statusClass = isApproved
+                ? "approved"
+                : "waiting";
+
+            const payButton = isApproved && Number.isInteger(id) && id > 0
+                ? `
+                    <a
+                        href="/payments.html?request_id=${encodeURIComponent(id)}"
+                        class="pay-btn"
+                    >
+                        💳 Pay for Request #${id}
+                    </a>
+                  `
+                : "";
+
+            return `
+                <article class="request-card">
+
+                    <div class="request-header">
+
+                        <div>
+                            <div class="request-title">
+                                📋 Request #${escapeHtml(String(id))}
+                            </div>
+
+                            <div class="service">
+                                ${escapeHtml(service)}
+                            </div>
+                        </div>
+
+                        <div class="status ${statusClass}">
+                            ${escapeHtml(reviewStatus)}
+                        </div>
+
+                    </div>
+
+                    <div class="info">
+
+                        <div class="info-row">
+                            <div class="label">Name</div>
+                            <div class="value">
+                                ${escapeHtml(name)}
+                            </div>
+                        </div>
+
+                        <div class="info-row">
+                            <div class="label">Contact</div>
+                            <div class="value">
+                                ${escapeHtml(contact)}
+                            </div>
+                        </div>
+
+                        <div class="info-row">
+                            <div class="label">Project Details</div>
+                            <div class="value">
+                                ${escapeHtml(details)}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="submitted">
+                        🕒 Submitted: ${escapeHtml(createdAt)}
+                    </div>
+
+                    ${payButton}
+
+                </article>
+            `;
+        }).join("");
+    }
 
     // ==========================================
     // HTML ESCAPE
     // ==========================================
 
     function escapeHtml(value) {
-
         return String(value)
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
-
     }
 
+    // ==========================================
+    // REFRESH
+    // ==========================================
+
+    refreshBtn.addEventListener("click", loadRequests);
 
     // ==========================================
-    // START
+    // INITIAL LOAD
     // ==========================================
 
     loadRequests();
+</script>
 
-</script></body>
+</body>
 </html>
+
+[/]
+
+Bayan ka saka shi
+
+1. A Acode/GitHub, buɗe "requests.html".
+2. Replace dukkan tsohon code da wannan.
+3. Save/commit zuwa "main".
+4. Jira Vercel ya yi deployment.
+5. Buɗe PConnect a Pi Browser.
+6. Je My Requests.
+7. A ƙarƙashin Request #38 — Approved, ya kamata ka ga:
+   💳 Pay for Request #38
+8. Danna wannan button kawai.
+9. Ya kamata URL ya zama:
+   "payments.html?request_id=38"
+
+⚠️ Kada ka yi payment tukuna. Bayan ka danna button, turo min abin da Payments page ta nuna, musamman ko ta nuna Request #38 — Approved.
