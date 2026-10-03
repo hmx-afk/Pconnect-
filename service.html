@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Service Details | PConnect</title>
 
@@ -59,13 +62,21 @@
 
         .status {
             display: inline-block;
-            background: #183b2a;
-            color: #5ee38a;
             padding: 7px 11px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: bold;
             margin-bottom: 18px;
+        }
+
+        .available {
+            background: #183b2a;
+            color: #5ee38a;
+        }
+
+        .coming {
+            background: #342b16;
+            color: #f5b942;
         }
 
         .description {
@@ -139,12 +150,34 @@
             opacity: 0.9;
         }
 
+        .disabled-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #29233a;
+            color: #777083;
+            border-radius: 11px;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 18px;
+        }
+
         .notice {
             text-align: center;
             color: #aaa3ba;
             font-size: 12px;
             line-height: 1.5;
             margin-top: 15px;
+        }
+
+        .error-box {
+            background: #321c27;
+            border: 1px solid #6b3042;
+            border-radius: 14px;
+            padding: 18px;
+            text-align: center;
+            color: #ff9a9a;
+            line-height: 1.5;
         }
 
         .bottom-nav {
@@ -181,86 +214,108 @@
         ← Back to Browse
     </a>
 
-    <div class="service-card">
 
-        <div class="service-icon" id="serviceIcon">
-            💻
+    <div id="serviceContent">
+
+        <div class="service-card">
+
+            <div
+                class="service-icon"
+                id="serviceIcon"
+            >
+                💻
+            </div>
+
+            <h1 id="serviceName">
+                Web Development
+            </h1>
+
+            <span
+                class="status available"
+                id="serviceStatus"
+            >
+                AVAILABLE
+            </span>
+
+            <p
+                class="description"
+                id="serviceDescription"
+            >
+                Build modern websites and web applications
+                for your business, project, or community.
+            </p>
+
         </div>
 
-        <h1 id="serviceName">
-            Web Development
-        </h1>
 
-        <span class="status">
-            AVAILABLE
-        </span>
+        <div class="section">
 
-        <p class="description" id="serviceDescription">
-            Build modern websites and web applications
-            for your business, project, or community.
-        </p>
+            <h2>🛠️ What We Offer</h2>
+
+            <ul id="serviceFeatures"></ul>
+
+        </div>
+
+
+        <div class="section">
+
+            <h2>💳 Payment</h2>
+
+            <div class="payment-box">
+
+                <span class="label">
+                    Payment method
+                </span>
+
+                <span class="value pi">
+                    Pi Network
+                </span>
+
+            </div>
+
+
+            <div class="payment-box">
+
+                <span class="label">
+                    Network
+                </span>
+
+                <span class="value">
+                    Testnet
+                </span>
+
+            </div>
+
+
+            <div id="requestArea"></div>
+
+            <p class="notice">
+                Payment will be requested after the
+                service request is reviewed and approved.
+            </p>
+
+        </div>
 
     </div>
 
 
-    <div class="section">
+    <div
+        id="errorContent"
+        class="error-box"
+        style="display:none;"
+    >
+        ⚠️ Service not found.
 
-        <h2>🛠️ What We Offer</h2>
+        <br><br>
 
-        <ul id="serviceFeatures">
-
-            <li>🌐 Modern responsive websites</li>
-            <li>📱 Mobile-friendly design</li>
-            <li>⚡ Fast and clean web pages</li>
-            <li>🔧 Website updates and improvements</li>
-            <li>🚀 Project deployment support</li>
-
-        </ul>
-
-    </div>
-
-
-    <div class="section">
-
-        <h2>💳 Payment</h2>
-
-        <div class="payment-box">
-            <span class="label">
-                Payment method
-            </span>
-
-            <span class="value pi">
-                Pi Network
-            </span>
-        </div>
-
-        <div class="payment-box">
-            <span class="label">
-                Network
-            </span>
-
-            <span class="value">
-                Testnet
-            </span>
-        </div>
-
-        <a
-            href="/request.html?service=Web%20Development"
-            class="request-btn"
-            id="requestBtn"
-        >
-            📩 Request This Service
-        </a>
-
-        <p class="notice">
-            Payment will be requested after the service request
-            is reviewed and approved.
-        </p>
-
+        Please return to Browse Services and
+        select a valid service.
     </div>
 
 </div>
 
+
+<!-- BOTTOM NAV -->
 
 <div class="bottom-nav">
 
@@ -268,7 +323,10 @@
         🏠<br>Home
     </a>
 
-    <a href="/browse.html" class="active">
+    <a
+        href="/browse.html"
+        class="active"
+    >
         🔎<br>Browse
     </a>
 
@@ -294,33 +352,67 @@
     // ==========================================
 
     const params =
-        new URLSearchParams(window.location.search);
+        new URLSearchParams(
+            window.location.search
+        );
+
 
     const selectedService =
         params.get("service");
 
 
     const serviceName =
-        document.getElementById("serviceName");
-
-    const serviceDescription =
-        document.getElementById("serviceDescription");
+        document.getElementById(
+            "serviceName"
+        );
 
     const serviceIcon =
-        document.getElementById("serviceIcon");
+        document.getElementById(
+            "serviceIcon"
+        );
+
+    const serviceStatus =
+        document.getElementById(
+            "serviceStatus"
+        );
+
+    const serviceDescription =
+        document.getElementById(
+            "serviceDescription"
+        );
 
     const serviceFeatures =
-        document.getElementById("serviceFeatures");
+        document.getElementById(
+            "serviceFeatures"
+        );
 
-    const requestBtn =
-        document.getElementById("requestBtn");
+    const requestArea =
+        document.getElementById(
+            "requestArea"
+        );
 
+    const serviceContent =
+        document.getElementById(
+            "serviceContent"
+        );
+
+    const errorContent =
+        document.getElementById(
+            "errorContent"
+        );
+
+
+    // ==========================================
+    // SERVICES
+    // ==========================================
 
     const services = {
 
         "Web Development": {
 
             icon: "💻",
+
+            status: "AVAILABLE",
 
             description:
                 "Build modern websites and web applications for your business, project, or community.",
@@ -335,9 +427,12 @@
 
         },
 
+
         "Graphic Design": {
 
             icon: "🎨",
+
+            status: "AVAILABLE",
 
             description:
                 "Create professional visual content for your brand, business, community, or social media.",
@@ -350,46 +445,199 @@
                 "📦 Digital marketing graphics"
             ]
 
+        },
+
+
+        "Content Writing": {
+
+            icon: "✍️",
+
+            status: "AVAILABLE",
+
+            description:
+                "Create clear and engaging content for websites, businesses, products, and online platforms.",
+
+            features: [
+                "📝 Article and blog writing",
+                "🌐 Website content",
+                "📄 Copywriting",
+                "📢 Promotional content",
+                "✏️ Content editing and improvement"
+            ]
+
+        },
+
+
+        "Digital Marketing": {
+
+            icon: "📣",
+
+            status: "AVAILABLE",
+
+            description:
+                "Marketing support for businesses, products, communities, and online projects.",
+
+            features: [
+                "📣 Online promotion",
+                "📱 Social media support",
+                "📈 Growth strategies",
+                "🎯 Audience targeting",
+                "📊 Basic marketing guidance"
+            ]
+
+        },
+
+
+        "Tech Support": {
+
+            icon: "🔧",
+
+            status: "AVAILABLE",
+
+            description:
+                "Get help with websites, basic technical issues, setup, troubleshooting, and digital tools.",
+
+            features: [
+                "🔧 Technical troubleshooting",
+                "⚙️ Software and tool setup",
+                "💻 Website support",
+                "📱 Basic device and app guidance",
+                "🛠️ Digital tools assistance"
+            ]
+
+        },
+
+
+        "App Development": {
+
+            icon: "📱",
+
+            status: "COMING SOON",
+
+            description:
+                "Mobile application development services will be available soon.",
+
+            features: [
+                "📱 Mobile application development",
+                "🎨 App interface design",
+                "⚙️ App functionality",
+                "🚀 App deployment",
+                "🔒 Basic app security"
+            ]
+
         }
 
     };
 
 
+    // ==========================================
+    // VALIDATE SERVICE
+    // ==========================================
+
     const service =
-        services[selectedService] ||
-        services["Web Development"];
+        services[selectedService];
 
 
-    serviceName.textContent =
-        selectedService || "Web Development";
+    if (!service) {
 
-    serviceIcon.textContent =
-        service.icon;
+        serviceContent.style.display =
+            "none";
 
-    serviceDescription.textContent =
-        service.description;
+        errorContent.style.display =
+            "block";
+
+    } else {
+
+        // ======================================
+        // BASIC INFORMATION
+        // ======================================
+
+        serviceName.textContent =
+            selectedService;
+
+        serviceIcon.textContent =
+            service.icon;
+
+        serviceDescription.textContent =
+            service.description;
 
 
-    serviceFeatures.innerHTML = "";
+        // ======================================
+        // STATUS
+        // ======================================
 
-    service.features.forEach(feature => {
-
-        const li =
-            document.createElement("li");
-
-        li.textContent =
-            feature;
-
-        serviceFeatures.appendChild(li);
-
-    });
+        serviceStatus.textContent =
+            service.status;
 
 
-    requestBtn.href =
-        "/request.html?service=" +
-        encodeURIComponent(
-            selectedService || "Web Development"
+        serviceStatus.className =
+            "status " +
+            (
+                service.status === "AVAILABLE"
+                    ? "available"
+                    : "coming"
+            );
+
+
+        // ======================================
+        // FEATURES
+        // ======================================
+
+        serviceFeatures.innerHTML = "";
+
+
+        service.features.forEach(
+            function(feature) {
+
+                const li =
+                    document.createElement(
+                        "li"
+                    );
+
+                li.textContent =
+                    feature;
+
+                serviceFeatures.appendChild(
+                    li
+                );
+
+            }
         );
+
+
+        // ======================================
+        // REQUEST BUTTON
+        // ======================================
+
+        if (
+            service.status ===
+            "AVAILABLE"
+        ) {
+
+            requestArea.innerHTML = `
+
+                <a
+                    href="/request.html?service=${encodeURIComponent(selectedService)}"
+                    class="request-btn"
+                >
+                    📩 Request This Service
+                </a>
+
+            `;
+
+        } else {
+
+            requestArea.innerHTML = `
+
+                <div class="disabled-btn">
+                    📱 Coming Soon
+                </div>
+
+            `;
+
+        }
+
+    }
 
 </script>
 
