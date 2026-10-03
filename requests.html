@@ -1,4 +1,4 @@
- html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -141,6 +141,18 @@
         .waiting {
             background: #3d3217;
             color: #ffd76a;
+        }
+
+        .paid-status {
+            margin-top: 12px;
+            background: #173d29;
+            color: #6ff0a4;
+            border: 1px solid #286443;
+            border-radius: 10px;
+            padding: 11px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
         }
 
         .info {
@@ -329,10 +341,11 @@
     const refreshBtn = document.getElementById("refreshBtn");
 
     // ==========================================
-    // LOAD REQUESTS
+    // LOAD REQUESTS + TRANSACTIONS
     // ==========================================
 
     async function loadRequests() {
+
         requestsList.innerHTML = `
             <div class="empty">
                 Loading requests...
@@ -340,28 +353,67 @@
         `;
 
         try {
-            const response = await fetch("/api/requests", {
-                method: "GET",
-                cache: "no-store"
-            });
 
-            const result = await response.json();
+            const [requestsResponse, transactionsResponse] =
+                await Promise.all([
+                    fetch("/api/requests", {
+                        method: "GET",
+                        cache: "no-store"
+                    }),
+                    fetch("/api/transactions", {
+                        method: "GET",
+                        cache: "no-store"
+                    })
+                ]);
 
-            if (!response.ok || !result.success) {
+            const requestsResult = await requestsResponse.json();
+            const transactionsResult = await transactionsResponse.json();
+
+            if (
+                !requestsResponse.ok ||
+                !requestsResult.success
+            ) {
                 throw new Error(
-                    result.error || "Failed to load requests"
+                    requestsResult.error ||
+                    "Failed to load requests"
                 );
             }
 
-            const requests = Array.isArray(result.requests)
-                ? result.requests
+            if (
+                !transactionsResponse.ok ||
+                !transactionsResult.success
+            ) {
+                throw new Error(
+                    transactionsResult.error ||
+                    "Failed to load transactions"
+                );
+            }
+
+            const requests = Array.isArray(
+                requestsResult.requests
+            )
+                ? requestsResult.requests
+                : [];
+
+            const transactions = Array.isArray(
+                transactionsResult.transactions
+            )
+                ? transactionsResult.transactions
                 : [];
 
             updateStats(requests);
-            renderRequests(requests);
+
+            renderRequests(
+                requests,
+                transactions
+            );
 
         } catch (error) {
-            console.error("Requests loading error:", error);
+
+            console.error(
+                "Requests loading error:",
+                error
+            );
 
             requestsList.innerHTML = `
                 <div class="error">
@@ -379,120 +431,233 @@
     function updateStats(requests) {
 
         const waiting = requests.filter(request =>
-            String(request.review_status || "").toLowerCase() ===
+            String(
+                request.review_status || ""
+            ).toLowerCase() ===
             "waiting for review"
         );
 
         const approved = requests.filter(request =>
-            String(request.review_status || "").toLowerCase() ===
+            String(
+                request.review_status || ""
+            ).toLowerCase() ===
             "approved"
         );
 
-        totalRequests.textContent = requests.length;
-        waitingRequests.textContent = waiting.length;
-        approvedRequests.textContent = approved.length;
+        totalRequests.textContent =
+            requests.length;
+
+        waitingRequests.textContent =
+            waiting.length;
+
+        approvedRequests.textContent =
+            approved.length;
+    }
+
+    // ==========================================
+    // CHECK IF REQUEST IS PAID
+    // ==========================================
+
+    function isRequestPaid(
+        requestId,
+        transactions
+    ) {
+
+        return transactions.some(transaction => {
+
+            const transactionRequestId =
+                Number(transaction.request_id);
+
+            const status =
+                String(
+                    transaction.status || ""
+                ).toLowerCase();
+
+            return (
+                transactionRequestId ===
+                Number(requestId) &&
+                status === "completed"
+            );
+        });
     }
 
     // ==========================================
     // RENDER REQUESTS
     // ==========================================
 
-    function renderRequests(requests) {
+    function renderRequests(
+        requests,
+        transactions
+    ) {
 
         if (!requests.length) {
+
             requestsList.innerHTML = `
                 <div class="empty">
                     No service requests found.
                 </div>
             `;
+
             return;
         }
 
-        requestsList.innerHTML = requests.map(request => {
+        requestsList.innerHTML =
+            requests.map(request => {
 
-            const id = Number(request.id);
-            const service = request.service || "Web Development";
-            const name = request.name || "N/A";
-            const contact = request.contact || "N/A";
-            const details = request.details || "No project details";
-            const reviewStatus = request.review_status || "Waiting for review";
-            const createdAt = request.created_at
-                ? new Date(request.created_at).toLocaleString()
-                : "Unknown";
+                const id = Number(request.id);
 
-            const isApproved =
-                String(reviewStatus).toLowerCase() === "approved";
+                const service =
+                    request.service ||
+                    "Web Development";
 
-            const statusClass = isApproved
-                ? "approved"
-                : "waiting";
+                const name =
+                    request.name ||
+                    "N/A";
 
-            const payButton = isApproved && Number.isInteger(id) && id > 0
-                ? `
-                    <a
-                        href="/payments.html?request_id=${encodeURIComponent(id)}"
-                        class="pay-btn"
-                    >
-                        💳 Pay for Request #${id}
-                    </a>
-                  `
-                : "";
+                const contact =
+                    request.contact ||
+                    "N/A";
 
-            return `
-                <article class="request-card">
+                const details =
+                    request.details ||
+                    "No project details";
 
-                    <div class="request-header">
+                const reviewStatus =
+                    request.review_status ||
+                    "Waiting for review";
 
-                        <div>
-                            <div class="request-title">
-                                📋 Request #${escapeHtml(String(id))}
+                const createdAt =
+                    request.created_at
+                        ? new Date(
+                            request.created_at
+                        ).toLocaleString()
+                        : "Unknown";
+
+                const isApproved =
+                    String(
+                        reviewStatus
+                    ).toLowerCase() ===
+                    "approved";
+
+                const paid =
+                    isRequestPaid(
+                        id,
+                        transactions
+                    );
+
+                const statusClass =
+                    isApproved
+                        ? "approved"
+                        : "waiting";
+
+                let paymentAction = "";
+
+                if (paid) {
+
+                    paymentAction = `
+                        <div class="paid-status">
+                            💳 Paid ✅
+                        </div>
+                    `;
+
+                } else if (
+                    isApproved &&
+                    Number.isInteger(id) &&
+                    id > 0
+                ) {
+
+                    paymentAction = `
+                        <a
+                            href="/payments.html?request_id=${encodeURIComponent(id)}"
+                            class="pay-btn"
+                        >
+                            💳 Pay for Request #${id}
+                        </a>
+                    `;
+                }
+
+                return `
+                    <article class="request-card">
+
+                        <div class="request-header">
+
+                            <div>
+
+                                <div class="request-title">
+                                    📋 Request #${escapeHtml(
+                                        String(id)
+                                    )}
+                                </div>
+
+                                <div class="service">
+                                    ${escapeHtml(
+                                        service
+                                    )}
+                                </div>
+
                             </div>
 
-                            <div class="service">
-                                ${escapeHtml(service)}
+                            <div class="status ${statusClass}">
+                                ${escapeHtml(
+                                    reviewStatus
+                                )}
                             </div>
+
                         </div>
 
-                        <div class="status ${statusClass}">
-                            ${escapeHtml(reviewStatus)}
-                        </div>
+                        <div class="info">
 
-                    </div>
+                            <div class="info-row">
+                                <div class="label">
+                                    Name
+                                </div>
 
-                    <div class="info">
-
-                        <div class="info-row">
-                            <div class="label">Name</div>
-                            <div class="value">
-                                ${escapeHtml(name)}
+                                <div class="value">
+                                    ${escapeHtml(
+                                        name
+                                    )}
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="info-row">
-                            <div class="label">Contact</div>
-                            <div class="value">
-                                ${escapeHtml(contact)}
+                            <div class="info-row">
+                                <div class="label">
+                                    Contact
+                                </div>
+
+                                <div class="value">
+                                    ${escapeHtml(
+                                        contact
+                                    )}
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="info-row">
-                            <div class="label">Project Details</div>
-                            <div class="value">
-                                ${escapeHtml(details)}
+                            <div class="info-row">
+                                <div class="label">
+                                    Project Details
+                                </div>
+
+                                <div class="value">
+                                    ${escapeHtml(
+                                        details
+                                    )}
+                                </div>
                             </div>
+
                         </div>
 
-                    </div>
+                        <div class="submitted">
+                            🕒 Submitted:
+                            ${escapeHtml(
+                                createdAt
+                            )}
+                        </div>
 
-                    <div class="submitted">
-                        🕒 Submitted: ${escapeHtml(createdAt)}
-                    </div>
+                        ${paymentAction}
 
-                    ${payButton}
+                    </article>
+                `;
 
-                </article>
-            `;
-        }).join("");
+            }).join("");
     }
 
     // ==========================================
@@ -500,19 +665,38 @@
     // ==========================================
 
     function escapeHtml(value) {
+
         return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
     }
 
     // ==========================================
     // REFRESH
     // ==========================================
 
-    refreshBtn.addEventListener("click", loadRequests);
+    refreshBtn.addEventListener(
+        "click",
+        loadRequests
+    );
 
     // ==========================================
     // INITIAL LOAD
@@ -523,21 +707,3 @@
 
 </body>
 </html>
-
-[/]
-
-Bayan ka saka shi
-
-1. A Acode/GitHub, buɗe "requests.html".
-2. Replace dukkan tsohon code da wannan.
-3. Save/commit zuwa "main".
-4. Jira Vercel ya yi deployment.
-5. Buɗe PConnect a Pi Browser.
-6. Je My Requests.
-7. A ƙarƙashin Request #38 — Approved, ya kamata ka ga:
-   💳 Pay for Request #38
-8. Danna wannan button kawai.
-9. Ya kamata URL ya zama:
-   "payments.html?request_id=38"
-
-⚠️ Kada ka yi payment tukuna. Bayan ka danna button, turo min abin da Payments page ta nuna, musamman ko ta nuna Request #38 — Approved.
