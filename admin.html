@@ -64,6 +64,11 @@
             margin: 5px 5px 0 0;
         }
 
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .login-btn {
             background: #ffbf00;
             color: #180b25;
@@ -209,19 +214,36 @@
 
 <script>
 
-let adminKey = sessionStorage.getItem("pconnect_admin_key") || "";
+let adminKey =
+    sessionStorage.getItem("pconnect_admin_key") || "";
 
-const loginBox = document.getElementById("loginBox");
-const adminContent = document.getElementById("adminContent");
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const adminKeyInput = document.getElementById("adminKey");
-const loginMessage = document.getElementById("loginMessage");
-const requestsContainer = document.getElementById("requestsContainer");
-const totalCount = document.getElementById("totalCount");
+const loginBox =
+    document.getElementById("loginBox");
+
+const adminContent =
+    document.getElementById("adminContent");
+
+const loginBtn =
+    document.getElementById("loginBtn");
+
+const logoutBtn =
+    document.getElementById("logoutBtn");
+
+const adminKeyInput =
+    document.getElementById("adminKey");
+
+const loginMessage =
+    document.getElementById("loginMessage");
+
+const requestsContainer =
+    document.getElementById("requestsContainer");
+
+const totalCount =
+    document.getElementById("totalCount");
 
 
 function escapeHtml(value) {
+
     return String(value ?? "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -231,73 +253,102 @@ function escapeHtml(value) {
 }
 
 
+/* ==========================================
+   SHOW ADMIN
+========================================== */
+
 function showAdmin() {
+
     loginBox.classList.add("hidden");
+
     adminContent.classList.remove("hidden");
+
     logoutBtn.classList.remove("hidden");
 
     loadRequests();
 }
 
 
+/* ==========================================
+   SHOW LOGIN
+========================================== */
+
 function showLogin() {
+
     loginBox.classList.remove("hidden");
+
     adminContent.classList.add("hidden");
+
     logoutBtn.classList.add("hidden");
 }
 
 
+/* ==========================================
+   LOGIN
+========================================== */
+
 async function login() {
 
-    const key = adminKeyInput.value.trim();
+    const key =
+        adminKeyInput.value.trim();
 
     if (!key) {
+
         loginMessage.innerHTML =
             '<div class="error">Please enter your admin key.</div>';
 
         return;
     }
 
-    /*
-      We test the key with a harmless request.
-      If the server accepts it, we save it only
-      in this browser session.
-    */
+    loginBtn.disabled = true;
+
+    loginMessage.innerHTML =
+        '<div class="message">Checking admin key...</div>';
 
     try {
 
-        const response = await fetch("/api/requests", {
-            method: "GET",
-            headers: {
-                "x-admin-key": key
-            }
-        });
+        const response =
+            await fetch("/api/admin-requests", {
+
+                method: "GET",
+
+                headers: {
+                    "x-admin-key": key
+                }
+            });
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            loginMessage.innerHTML =
+                `<div class="error">
+                    ${escapeHtml(
+                        data.error ||
+                        "Invalid admin key."
+                    )}
+                </div>`;
+
+            return;
+        }
 
         /*
-          The current requests API may not require the key.
-          Therefore we only use this step to continue
-          after a non-server-error response.
-        */
+         * Server accepted the key.
+         * Save it only for this browser session.
+         */
 
-        if (response.ok) {
+        adminKey = key;
 
-            adminKey = key;
+        sessionStorage.setItem(
+            "pconnect_admin_key",
+            adminKey
+        );
 
-            sessionStorage.setItem(
-                "pconnect_admin_key",
-                adminKey
-            );
+        loginMessage.innerHTML =
+            '<div class="success">Admin access granted.</div>';
 
-            loginMessage.innerHTML =
-                '<div class="success">Admin access granted.</div>';
-
-            showAdmin();
-
-        } else {
-
-            loginMessage.innerHTML =
-                '<div class="error">Unable to access admin data.</div>';
-        }
+        showAdmin();
 
     } catch (error) {
 
@@ -305,9 +356,17 @@ async function login() {
 
         loginMessage.innerHTML =
             '<div class="error">Connection error.</div>';
+
+    } finally {
+
+        loginBtn.disabled = false;
     }
 }
 
+
+/* ==========================================
+   LOAD REQUESTS
+========================================== */
 
 async function loadRequests() {
 
@@ -316,17 +375,53 @@ async function loadRequests() {
 
     try {
 
-        const response = await fetch("/api/requests");
+        const response =
+            await fetch("/api/admin-requests", {
 
-        const data = await response.json();
+                method: "GET",
 
-        if (!response.ok) {
-            throw new Error(data.error || "Failed to load requests");
+                headers: {
+                    "x-admin-key": adminKey
+                }
+            });
+
+        const data =
+            await response.json();
+
+        /*
+         * If saved session key is no longer valid,
+         * return to login.
+         */
+
+        if (response.status === 401) {
+
+            sessionStorage.removeItem(
+                "pconnect_admin_key"
+            );
+
+            adminKey = "";
+
+            showLogin();
+
+            loginMessage.innerHTML =
+                '<div class="error">Admin session expired. Please login again.</div>';
+
+            return;
         }
 
-        const requests = data.requests || [];
+        if (!response.ok) {
 
-        totalCount.textContent = requests.length;
+            throw new Error(
+                data.error ||
+                "Failed to load requests"
+            );
+        }
+
+        const requests =
+            data.requests || [];
+
+        totalCount.textContent =
+            requests.length;
 
         if (requests.length === 0) {
 
@@ -336,71 +431,75 @@ async function loadRequests() {
             return;
         }
 
-        requestsContainer.innerHTML = requests.map(request => {
+        requestsContainer.innerHTML =
+            requests.map(request => {
 
-            const status =
-                request.review_status || "Waiting for review";
+                const status =
+                    request.review_status ||
+                    "Waiting for review";
 
-            let statusClass = "";
+                let statusClass = "";
 
-            if (status === "Approved") {
-                statusClass = "approved";
-            }
+                if (status === "Approved") {
+                    statusClass = "approved";
+                }
 
-            if (status === "Rejected") {
-                statusClass = "rejected";
-            }
+                if (status === "Rejected") {
+                    statusClass = "rejected";
+                }
 
-            return `
-                <div class="request-card">
+                return `
+                    <div class="request-card">
 
-                    <h3>${escapeHtml(request.name)}</h3>
+                        <h3>
+                            ${escapeHtml(request.name)}
+                        </h3>
 
-                    <div class="info">
+                        <div class="info">
 
-                        <strong>Service:</strong>
-                        ${escapeHtml(request.service)}
+                            <strong>Service:</strong>
+                            ${escapeHtml(request.service)}
 
-                        <br>
+                            <br>
 
-                        <strong>Contact:</strong>
-                        ${escapeHtml(request.contact)}
+                            <strong>Contact:</strong>
+                            ${escapeHtml(request.contact)}
 
-                        <br>
+                            <br>
 
-                        <strong>Details:</strong>
-                        ${escapeHtml(request.details)}
+                            <strong>Details:</strong>
+                            ${escapeHtml(request.details)}
+
+                        </div>
+
+                        <div class="status ${statusClass}">
+                            ${escapeHtml(status)}
+                        </div>
+
+                        <div>
+
+                            <button
+                                class="approve"
+                                onclick="reviewRequest('${request.id}', 'approve')"
+                                ${status === "Approved" ? "disabled" : ""}
+                            >
+                                ✅ Approve
+                            </button>
+
+                            <button
+                                class="reject"
+                                onclick="reviewRequest('${request.id}', 'reject')"
+                                ${status === "Rejected" ? "disabled" : ""}
+                            >
+                                ❌ Reject
+                            </button>
+
+                        </div>
 
                     </div>
+                `;
 
-                    <div class="status ${statusClass}">
-                        ${escapeHtml(status)}
-                    </div>
-
-                    <div>
-
-                        <button
-                            class="approve"
-                            onclick="reviewRequest('${request.id}', 'approve')"
-                            ${status === "Approved" ? "disabled" : ""}
-                        >
-                            ✅ Approve
-                        </button>
-
-                        <button
-                            class="reject"
-                            onclick="reviewRequest('${request.id}', 'reject')"
-                            ${status === "Rejected" ? "disabled" : ""}
-                        >
-                            ❌ Reject
-                        </button>
-
-                    </div>
-
-                </div>
-            `;
-
-        }).join("");
+            }).join("");
 
     } catch (error) {
 
@@ -416,6 +515,10 @@ async function loadRequests() {
 }
 
 
+/* ==========================================
+   APPROVE / REJECT REQUEST
+========================================== */
+
 async function reviewRequest(id, action) {
 
     const confirmText =
@@ -429,23 +532,40 @@ async function reviewRequest(id, action) {
 
     try {
 
-        const response = await fetch("/api/admin-review", {
+        const response =
+            await fetch("/api/admin-review", {
 
-            method: "POST",
+                method: "POST",
 
-            headers: {
-                "Content-Type": "application/json",
-                "x-admin-key": adminKey
-            },
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-admin-key": adminKey
+                },
 
-            body: JSON.stringify({
-                id: id,
-                action: action
-            })
+                body: JSON.stringify({
+                    id: id,
+                    action: action
+                })
+            });
 
-        });
+        const data =
+            await response.json();
 
-        const data = await response.json();
+        if (response.status === 401) {
+
+            sessionStorage.removeItem(
+                "pconnect_admin_key"
+            );
+
+            adminKey = "";
+
+            showLogin();
+
+            loginMessage.innerHTML =
+                '<div class="error">Admin session expired. Please login again.</div>';
+
+            return;
+        }
 
         if (!response.ok) {
 
@@ -476,6 +596,10 @@ async function reviewRequest(id, action) {
 }
 
 
+/* ==========================================
+   LOGOUT
+========================================== */
+
 function logout() {
 
     sessionStorage.removeItem(
@@ -486,29 +610,100 @@ function logout() {
 
     adminKeyInput.value = "";
 
+    loginMessage.innerHTML = "";
+
     showLogin();
 }
 
 
-loginBtn.addEventListener("click", login);
+/* ==========================================
+   EVENTS
+========================================== */
 
-logoutBtn.addEventListener("click", logout);
+loginBtn.addEventListener(
+    "click",
+    login
+);
+
+logoutBtn.addEventListener(
+    "click",
+    logout
+);
+
+adminKeyInput.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (event.key === "Enter") {
+            login();
+        }
+
+    }
+);
 
 
-adminKeyInput.addEventListener("keydown", function(event) {
+/* ==========================================
+   RESTORE SESSION SECURELY
+========================================== */
 
-    if (event.key === "Enter") {
-        login();
+async function restoreAdminSession() {
+
+    if (!adminKey) {
+
+        showLogin();
+
+        return;
     }
 
-});
+    loginMessage.innerHTML =
+        '<div class="message">Checking admin session...</div>';
 
+    try {
 
-if (adminKey) {
-    showAdmin();
-} else {
+        const response =
+            await fetch("/api/admin-requests", {
+
+                method: "GET",
+
+                headers: {
+                    "x-admin-key": adminKey
+                }
+            });
+
+        if (response.ok) {
+
+            showAdmin();
+
+            return;
+        }
+
+    } catch (error) {
+
+        console.error(error);
+    }
+
+    /*
+     * Stored key is invalid or session check failed.
+     */
+
+    sessionStorage.removeItem(
+        "pconnect_admin_key"
+    );
+
+    adminKey = "";
+
     showLogin();
+
+    loginMessage.innerHTML =
+        '<div class="error">Please login again.</div>';
 }
+
+
+/* ==========================================
+   START
+========================================== */
+
+restoreAdminSession();
 
 </script>
 
