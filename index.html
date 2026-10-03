@@ -471,6 +471,28 @@
         </div>
 
 
+        <!-- REJECTED -->
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                ❌
+            </div>
+
+            <div class="stat-label">
+                REJECTED
+            </div>
+
+            <div
+                class="stat-value"
+                id="rejectedRequests"
+            >
+                0
+            </div>
+
+        </div>
+
+
         <div class="stat-card">
 
             <div class="stat-icon">
@@ -681,7 +703,7 @@
 
 <script>
 
-const dashboardActivities = [];
+let dashboardActivities = [];
 
 
 // ==========================================
@@ -726,6 +748,10 @@ function formatActivityDate(value) {
 // ==========================================
 
 async function loadDashboard() {
+
+    // Clear old activity before refreshing.
+    // This prevents duplicate Recent Activity entries.
+    dashboardActivities = [];
 
     const recentActivity =
         document.getElementById(
@@ -839,6 +865,30 @@ async function loadDashboard() {
             "approvedRequests"
         ).textContent =
             approved;
+
+
+        // REJECTED
+
+        const rejected =
+            requests.filter(
+                function(request) {
+
+                    return (
+                        String(
+                            request.review_status ||
+                            ""
+                        ).toLowerCase() ===
+                        "rejected"
+                    );
+
+                }
+            ).length;
+
+
+        document.getElementById(
+            "rejectedRequests"
+        ).textContent =
+            rejected;
 
 
         // REQUEST ACTIVITY
