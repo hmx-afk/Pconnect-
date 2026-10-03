@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Browse Services | PConnect</title>
 
@@ -29,12 +32,13 @@
 
         .header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 22px;
         }
 
         .header h1 {
             color: #f5b942;
             margin-bottom: 8px;
+            font-size: 27px;
         }
 
         .header p {
@@ -51,7 +55,58 @@
             text-align: center;
             color: #c9c2d8;
             font-size: 13px;
+            margin-bottom: 18px;
+        }
+
+        .search-box {
+            margin-bottom: 18px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 15px;
+            border-radius: 12px;
+            border: 1px solid #3a2d59;
+            background: #171025;
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: #f5b942;
+        }
+
+        .categories {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
             margin-bottom: 22px;
+        }
+
+        .category-btn {
+            flex-shrink: 0;
+            border: 1px solid #3a2d59;
+            background: #171025;
+            color: #aaa3ba;
+            padding: 9px 13px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .category-btn.active {
+            background: #f5b942;
+            color: #171025;
+            border-color: #f5b942;
+            font-weight: bold;
+        }
+
+        .section-title {
+            font-size: 17px;
+            color: #f5b942;
+            margin-bottom: 12px;
         }
 
         .service-card {
@@ -62,24 +117,6 @@
             margin-bottom: 16px;
         }
 
-        .service-icon {
-            font-size: 35px;
-            margin-bottom: 12px;
-        }
-
-        .service-card h2 {
-            color: #ffffff;
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-
-        .service-card p {
-            color: #aaa3ba;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 15px;
-        }
-
         .service-top {
             display: flex;
             align-items: flex-start;
@@ -87,10 +124,15 @@
             gap: 10px;
         }
 
+        .service-icon {
+            font-size: 35px;
+            margin-bottom: 12px;
+        }
+
         .badge {
             padding: 6px 9px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             white-space: nowrap;
         }
@@ -103,6 +145,35 @@
         .coming {
             background: #342b16;
             color: #f5b942;
+        }
+
+        .service-card h2 {
+            color: #ffffff;
+            font-size: 19px;
+            margin-bottom: 8px;
+        }
+
+        .service-card p {
+            color: #aaa3ba;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .service-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .meta {
+            background: #171025;
+            color: #c9c2d8;
+            border: 1px solid #30234d;
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-size: 11px;
         }
 
         .view-btn {
@@ -130,10 +201,15 @@
             font-size: 14px;
         }
 
-        .section-title {
-            font-size: 16px;
-            color: #f5b942;
-            margin: 25px 0 12px;
+        .no-results {
+            display: none;
+            background: #171025;
+            border: 1px solid #30234d;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            color: #aaa3ba;
+            font-size: 14px;
         }
 
         .bottom-nav {
@@ -168,14 +244,78 @@
 
     <div class="header">
         <h1>🔎 Browse Services</h1>
+
         <p>
             Discover services available through
             the PConnect ecosystem.
         </p>
     </div>
 
+
     <div class="trust">
         🔐 Trusted services in the Pi ecosystem
+    </div>
+
+
+    <!-- SEARCH -->
+
+    <div class="search-box">
+
+        <input
+            type="search"
+            id="serviceSearch"
+            placeholder="🔎 Search services..."
+        >
+
+    </div>
+
+
+    <!-- CATEGORIES -->
+
+    <div class="categories">
+
+        <button
+            class="category-btn active"
+            data-category="all"
+        >
+            All
+        </button>
+
+        <button
+            class="category-btn"
+            data-category="development"
+        >
+            💻 Development
+        </button>
+
+        <button
+            class="category-btn"
+            data-category="design"
+        >
+            🎨 Design
+        </button>
+
+        <button
+            class="category-btn"
+            data-category="marketing"
+        >
+            📣 Marketing
+        </button>
+
+        <button
+            class="category-btn"
+            data-category="writing"
+        >
+            ✍️ Writing
+        </button>
+
+        <button
+            class="category-btn"
+            data-category="support"
+        >
+            🔧 Support
+        </button>
+
     </div>
 
 
@@ -186,7 +326,11 @@
 
     <!-- WEB DEVELOPMENT -->
 
-    <div class="service-card">
+    <div
+        class="service-card"
+        data-category="development"
+        data-name="Web Development"
+    >
 
         <div class="service-top">
 
@@ -209,6 +353,22 @@
             for your business, project, or community.
         </p>
 
+        <div class="service-meta">
+
+            <span class="meta">
+                🌐 Websites
+            </span>
+
+            <span class="meta">
+                📱 Responsive
+            </span>
+
+            <span class="meta">
+                🚀 Deployment
+            </span>
+
+        </div>
+
         <a
             href="/service.html?service=Web%20Development"
             class="view-btn"
@@ -221,7 +381,11 @@
 
     <!-- GRAPHIC DESIGN -->
 
-    <div class="service-card">
+    <div
+        class="service-card"
+        data-category="design"
+        data-name="Graphic Design"
+    >
 
         <div class="service-top">
 
@@ -240,9 +404,25 @@
         </h2>
 
         <p>
-            Create logos, social media graphics,
-            banners, and visual content.
+            Create professional visual content for your
+            brand, business, community, or social media.
         </p>
+
+        <div class="service-meta">
+
+            <span class="meta">
+                🎨 Logos
+            </span>
+
+            <span class="meta">
+                🖼️ Banners
+            </span>
+
+            <span class="meta">
+                📱 Social Media
+            </span>
+
+        </div>
 
         <a
             href="/service.html?service=Graphic%20Design"
@@ -254,9 +434,178 @@
     </div>
 
 
+    <!-- CONTENT WRITING -->
+
+    <div
+        class="service-card"
+        data-category="writing"
+        data-name="Content Writing"
+    >
+
+        <div class="service-top">
+
+            <div class="service-icon">
+                ✍️
+            </div>
+
+            <span class="badge available">
+                AVAILABLE
+            </span>
+
+        </div>
+
+        <h2>
+            Content Writing
+        </h2>
+
+        <p>
+            Create clear and engaging content for websites,
+            businesses, products, and online platforms.
+        </p>
+
+        <div class="service-meta">
+
+            <span class="meta">
+                📝 Articles
+            </span>
+
+            <span class="meta">
+                🌐 Web Content
+            </span>
+
+            <span class="meta">
+                📄 Copywriting
+            </span>
+
+        </div>
+
+        <a
+            href="/service.html?service=Content%20Writing"
+            class="view-btn"
+        >
+            View Service
+        </a>
+
+    </div>
+
+
+    <!-- DIGITAL MARKETING -->
+
+    <div
+        class="service-card"
+        data-category="marketing"
+        data-name="Digital Marketing"
+    >
+
+        <div class="service-top">
+
+            <div class="service-icon">
+                📣
+            </div>
+
+            <span class="badge available">
+                AVAILABLE
+            </span>
+
+        </div>
+
+        <h2>
+            Digital Marketing
+        </h2>
+
+        <p>
+            Marketing support for businesses, products,
+            communities, and online projects.
+        </p>
+
+        <div class="service-meta">
+
+            <span class="meta">
+                📣 Promotion
+            </span>
+
+            <span class="meta">
+                📱 Social Media
+            </span>
+
+            <span class="meta">
+                📈 Growth
+            </span>
+
+        </div>
+
+        <a
+            href="/service.html?service=Digital%20Marketing"
+            class="view-btn"
+        >
+            View Service
+        </a>
+
+    </div>
+
+
+    <!-- TECH SUPPORT -->
+
+    <div
+        class="service-card"
+        data-category="support"
+        data-name="Tech Support"
+    >
+
+        <div class="service-top">
+
+            <div class="service-icon">
+                🔧
+            </div>
+
+            <span class="badge available">
+                AVAILABLE
+            </span>
+
+        </div>
+
+        <h2>
+            Tech Support
+        </h2>
+
+        <p>
+            Get help with websites, basic technical issues,
+            setup, troubleshooting, and digital tools.
+        </p>
+
+        <div class="service-meta">
+
+            <span class="meta">
+                🔧 Troubleshooting
+            </span>
+
+            <span class="meta">
+                ⚙️ Setup
+            </span>
+
+            <span class="meta">
+                💻 Technical Help
+            </span>
+
+        </div>
+
+        <a
+            href="/service.html?service=Tech%20Support"
+            class="view-btn"
+        >
+            View Service
+        </a>
+
+    </div>
+
+
     <!-- APP DEVELOPMENT -->
 
-    <div class="service-card">
+    <div
+        class="service-card"
+        data-category="development"
+        data-name="App Development"
+    >
 
         <div class="service-top">
 
@@ -279,12 +628,33 @@
             will be available soon.
         </p>
 
+        <div class="service-meta">
+
+            <span class="meta">
+                📱 Mobile Apps
+            </span>
+
+            <span class="meta">
+                🚀 Coming Soon
+            </span>
+
+        </div>
+
         <div class="disabled-btn">
             Coming Soon
         </div>
 
     </div>
 
+
+    <div
+        class="no-results"
+        id="noResults"
+    >
+        🔎 No services found.
+        <br>
+        Try another search or category.
+    </div>
 
 </div>
 
@@ -297,7 +667,10 @@
         🏠<br>Home
     </a>
 
-    <a href="/browse.html" class="active">
+    <a
+        href="/browse.html"
+        class="active"
+    >
         🔎<br>Browse
     </a>
 
@@ -314,6 +687,137 @@
     </a>
 
 </div>
+
+
+<script>
+
+    // ==========================================
+    // PConnect - Service Marketplace
+    // ==========================================
+
+    const searchInput =
+        document.getElementById("serviceSearch");
+
+    const serviceCards =
+        document.querySelectorAll(".service-card");
+
+    const categoryButtons =
+        document.querySelectorAll(".category-btn");
+
+    const noResults =
+        document.getElementById("noResults");
+
+    let selectedCategory = "all";
+
+
+    // ==========================================
+    // FILTER SERVICES
+    // ==========================================
+
+    function filterServices() {
+
+        const search =
+            searchInput.value
+                .trim()
+                .toLowerCase();
+
+        let visibleCount = 0;
+
+
+        serviceCards.forEach(function(card) {
+
+            const name =
+                card.dataset.name
+                    .toLowerCase();
+
+            const category =
+                card.dataset.category;
+
+
+            const matchesSearch =
+                name.includes(search);
+
+            const matchesCategory =
+                selectedCategory === "all" ||
+                category === selectedCategory;
+
+
+            if (
+                matchesSearch &&
+                matchesCategory
+            ) {
+
+                card.style.display = "block";
+
+                visibleCount++;
+
+            } else {
+
+                card.style.display = "none";
+
+            }
+
+        });
+
+
+        if (visibleCount === 0) {
+
+            noResults.style.display =
+                "block";
+
+        } else {
+
+            noResults.style.display =
+                "none";
+
+        }
+
+    }
+
+
+    // ==========================================
+    // SEARCH
+    // ==========================================
+
+    searchInput.addEventListener(
+        "input",
+        filterServices
+    );
+
+
+    // ==========================================
+    // CATEGORIES
+    // ==========================================
+
+    categoryButtons.forEach(function(button) {
+
+        button.addEventListener(
+            "click",
+            function() {
+
+                categoryButtons.forEach(
+                    function(btn) {
+                        btn.classList.remove(
+                            "active"
+                        );
+                    }
+                );
+
+                button.classList.add(
+                    "active"
+                );
+
+                selectedCategory =
+                    button.dataset.category;
+
+                filterServices();
+
+            }
+        );
+
+    });
+
+</script>
 
 </body>
 </html>
