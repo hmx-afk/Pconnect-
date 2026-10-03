@@ -1,14 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Profile | PConnect</title>
 
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <style>
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -72,6 +78,7 @@
             font-size: 22px;
             font-weight: bold;
             margin-bottom: 6px;
+            word-break: break-word;
         }
 
         .connected {
@@ -94,6 +101,7 @@
 
         .login-btn:disabled {
             opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .stats {
@@ -107,8 +115,13 @@
             background: #1b1430;
             border: 1px solid #30234d;
             border-radius: 15px;
-            padding: 20px;
+            padding: 18px;
             text-align: center;
+        }
+
+        .stat-icon {
+            font-size: 21px;
+            margin-bottom: 7px;
         }
 
         .stat-number {
@@ -120,7 +133,7 @@
 
         .stat-label {
             color: #aaa3ba;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .info-card {
@@ -128,6 +141,7 @@
             border: 1px solid #30234d;
             border-radius: 15px;
             padding: 20px;
+            margin-bottom: 18px;
         }
 
         .info-card h2 {
@@ -161,6 +175,7 @@
             text-align: center;
             color: #aaa3ba;
             font-size: 14px;
+            line-height: 1.5;
             margin-top: 15px;
         }
 
@@ -189,6 +204,7 @@
         }
 
         @media (max-width: 400px) {
+
             .container {
                 padding: 15px;
             }
@@ -196,124 +212,338 @@
             .stats {
                 gap: 8px;
             }
+
+            .stat-card {
+                padding: 15px 10px;
+            }
+
+            .stat-number {
+                font-size: 22px;
+            }
+
+            .info-row {
+                font-size: 13px;
+            }
+
         }
+
     </style>
+
 </head>
 
 <body>
 
 <div class="container">
 
+    <!-- HEADER -->
+
     <div class="header">
-        <h1>👤 Profile</h1>
-        <p>Your PConnect account</p>
+
+        <h1>
+            👤 Profile
+        </h1>
+
+        <p>
+            Your PConnect account
+        </p>
+
     </div>
+
+
+    <!-- PROFILE -->
 
     <div class="profile-card">
 
-        <div class="avatar" id="avatar">
+        <div
+            class="avatar"
+            id="avatar"
+        >
             ?
         </div>
 
-        <div class="username" id="username">
+        <div
+            class="username"
+            id="username"
+        >
             Not connected
         </div>
 
-        <div class="connected" id="connectionStatus">
+        <div
+            class="connected"
+            id="connectionStatus"
+        >
             ⚪ Not connected
         </div>
 
-        <button class="login-btn" id="loginBtn">
+        <button
+            class="login-btn"
+            id="loginBtn"
+        >
             Sign in with Pi
         </button>
 
     </div>
 
+
+    <!-- STATS -->
+
     <div class="stats">
 
-        <div class="stat-card">
-            <div class="stat-number" id="transactionCount">
-                —
-            </div>
-
-            <div class="stat-label">
-                Transactions
-            </div>
-        </div>
+        <!-- REQUESTS -->
 
         <div class="stat-card">
-            <div class="stat-number" id="requestCount">
+
+            <div class="stat-icon">
+                📋
+            </div>
+
+            <div
+                class="stat-number"
+                id="requestCount"
+            >
                 —
             </div>
 
             <div class="stat-label">
                 Requests
             </div>
+
+        </div>
+
+
+        <!-- WAITING -->
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                ⏳
+            </div>
+
+            <div
+                class="stat-number"
+                id="waitingCount"
+            >
+                —
+            </div>
+
+            <div class="stat-label">
+                Waiting Review
+            </div>
+
+        </div>
+
+
+        <!-- APPROVED -->
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                ✅
+            </div>
+
+            <div
+                class="stat-number"
+                id="approvedCount"
+            >
+                —
+            </div>
+
+            <div class="stat-label">
+                Approved
+            </div>
+
+        </div>
+
+
+        <!-- REJECTED -->
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                ❌
+            </div>
+
+            <div
+                class="stat-number"
+                id="rejectedCount"
+            >
+                —
+            </div>
+
+            <div class="stat-label">
+                Rejected
+            </div>
+
+        </div>
+
+
+        <!-- PAYMENTS -->
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                💳
+            </div>
+
+            <div
+                class="stat-number"
+                id="transactionCount"
+            >
+                —
+            </div>
+
+            <div class="stat-label">
+                Transactions
+            </div>
+
+        </div>
+
+
+        <!-- COMPLETED -->
+
+        <div class="stat-card">
+
+            <div class="stat-icon">
+                💰
+            </div>
+
+            <div
+                class="stat-number"
+                id="completedCount"
+            >
+                —
+            </div>
+
+            <div class="stat-label">
+                Completed Payments
+            </div>
+
         </div>
 
     </div>
+
+
+    <!-- ACCOUNT INFORMATION -->
 
     <div class="info-card">
 
-        <h2>Account Information</h2>
+        <h2>
+            Account Information
+        </h2>
+
 
         <div class="info-row">
-            <span class="label">Pi Username</span>
-            <span class="value" id="piUsername">
+
+            <span class="label">
+                Pi Username
+            </span>
+
+            <span
+                class="value"
+                id="piUsername"
+            >
                 Not available
             </span>
+
         </div>
 
+
         <div class="info-row">
-            <span class="label">Network</span>
+
+            <span class="label">
+                Network
+            </span>
+
             <span class="value">
                 Pi Testnet
             </span>
+
         </div>
 
+
         <div class="info-row">
-            <span class="label">App</span>
+
+            <span class="label">
+                App
+            </span>
+
             <span class="value">
                 PConnect
             </span>
+
         </div>
 
+
         <div class="info-row">
-            <span class="label">Payment</span>
+
+            <span class="label">
+                Payment
+            </span>
+
             <span class="value">
                 Testnet only
             </span>
+
+        </div>
+
+
+        <div class="info-row">
+
+            <span class="label">
+                Payment Amount
+            </span>
+
+            <span class="value">
+                0.01 π Test-Pi
+            </span>
+
         </div>
 
     </div>
 
-    <div class="message" id="message">
+
+    <!-- MESSAGE -->
+
+    <div
+        class="message"
+        id="message"
+    >
         Connect with Pi to view your profile.
     </div>
 
 </div>
 
 
+<!-- BOTTOM NAV -->
+
 <div class="bottom-nav">
 
     <a href="/index.html">
-        🏠<br>Home
+        🏠<br>
+        Home
     </a>
 
     <a href="/browse.html">
-        🔎<br>Browse
+        🔎<br>
+        Browse
     </a>
 
     <a href="/requests.html">
-        📋<br>Requests
+        📋<br>
+        Requests
     </a>
 
     <a href="/payments.html">
-        💳<br>Payments
+        💳<br>
+        Payments
     </a>
 
-    <a href="/profile.html" class="active">
-        👤<br>Profile
+    <a
+        href="/profile.html"
+        class="active"
+    >
+        👤<br>
+        Profile
     </a>
 
 </div>
@@ -330,6 +560,10 @@
         sandbox: true
     });
 
+
+    // ==========================================
+    // ELEMENTS
+    // ==========================================
 
     const loginBtn =
         document.getElementById("loginBtn");
@@ -352,8 +586,20 @@
     const transactionCount =
         document.getElementById("transactionCount");
 
+    const completedCount =
+        document.getElementById("completedCount");
+
     const requestCount =
         document.getElementById("requestCount");
+
+    const waitingCount =
+        document.getElementById("waitingCount");
+
+    const approvedCount =
+        document.getElementById("approvedCount");
+
+    const rejectedCount =
+        document.getElementById("rejectedCount");
 
 
     let currentUsername = null;
@@ -363,75 +609,103 @@
     // LOGIN
     // ==========================================
 
-    loginBtn.addEventListener("click", async () => {
+    loginBtn.addEventListener(
+        "click",
+        async function() {
 
-        loginBtn.disabled = true;
-        loginBtn.textContent = "Connecting...";
+            loginBtn.disabled = true;
+            loginBtn.textContent = "Connecting...";
 
-        try {
+            try {
 
-            const authResult =
-                await Pi.authenticate(
-                    ["username", "payments"],
-                    function(payment) {
-                        console.log(
-                            "Incomplete payment:",
-                            payment
-                        );
-                    }
+                const authResult =
+                    await Pi.authenticate(
+                        ["username", "payments"],
+                        function(payment) {
+
+                            console.log(
+                                "Incomplete payment:",
+                                payment
+                            );
+
+                        }
+                    );
+
+
+                currentUsername =
+                    authResult.user.username;
+
+
+                if (!currentUsername) {
+
+                    throw new Error(
+                        "Pi username was not returned"
+                    );
+
+                }
+
+
+                usernameElement.textContent =
+                    currentUsername;
+
+
+                piUsernameElement.textContent =
+                    currentUsername;
+
+
+                avatarElement.textContent =
+                    currentUsername
+                        .charAt(0)
+                        .toUpperCase();
+
+
+                connectionStatus.textContent =
+                    "🟢 Connected with Pi";
+
+
+                message.textContent =
+                    "Your Pi profile is connected.";
+
+
+                loginBtn.textContent =
+                    "Connected ✔️";
+
+
+                await Promise.all([
+                    loadTransactions(),
+                    loadRequests()
+                ]);
+
+            } catch (error) {
+
+                console.error(
+                    "Pi authentication error:",
+                    error
                 );
 
-            currentUsername =
-                authResult.user.username;
 
-            usernameElement.textContent =
-                currentUsername;
+                connectionStatus.textContent =
+                    "⚠️ Connection failed";
 
-            piUsernameElement.textContent =
-                currentUsername;
 
-            avatarElement.textContent =
-                currentUsername
-                    .charAt(0)
-                    .toUpperCase();
+                message.textContent =
+                    "Could not connect with Pi. Please try again.";
 
-            connectionStatus.textContent =
-                "🟢 Connected with Pi";
 
-            message.textContent =
-                "Your Pi profile is connected.";
+                loginBtn.textContent =
+                    "Sign in with Pi";
 
-            loginBtn.textContent =
-                "Connected ✔️";
 
-            await loadTransactions();
+                loginBtn.disabled = false;
 
-            await loadRequests();
+            }
 
-        } catch (error) {
-
-            console.error(
-                "Pi authentication error:",
-                error
-            );
-
-            connectionStatus.textContent =
-                "⚠️ Connection failed";
-
-            message.textContent =
-                "Could not connect with Pi. Please try again.";
-
-            loginBtn.textContent =
-                "Sign in with Pi";
-
-            loginBtn.disabled = false;
         }
-
-    });
+    );
 
 
     // ==========================================
-    // TRANSACTIONS
+    // LOAD TRANSACTIONS
     // ==========================================
 
     async function loadTransactions() {
@@ -439,24 +713,69 @@
         try {
 
             const response =
-                await fetch("/api/transactions");
+                await fetch(
+                    "/api/transactions?refresh=" +
+                    Date.now(),
+                    {
+                        method: "GET",
+                        cache: "no-store",
+                        headers: {
+                            "Cache-Control": "no-cache"
+                        }
+                    }
+                );
+
 
             const data =
                 await response.json();
 
+
             if (
-                data.success &&
-                Array.isArray(data.transactions)
+                !response.ok ||
+                !data.success ||
+                !Array.isArray(
+                    data.transactions
+                )
             ) {
 
-                transactionCount.textContent =
-                    data.transactions.length;
+                throw new Error(
+                    data.error ||
+                    "Failed to load transactions"
+                );
 
-            } else {
-
-                transactionCount.textContent =
-                    "0";
             }
+
+
+            const transactions =
+                data.transactions;
+
+
+            // ALL TRANSACTIONS
+
+            transactionCount.textContent =
+                transactions.length;
+
+
+            // COMPLETED PAYMENTS
+
+            const completed =
+                transactions.filter(
+                    function(transaction) {
+
+                        return (
+                            String(
+                                transaction.status ||
+                                ""
+                            ).toLowerCase() ===
+                            "completed"
+                        );
+
+                    }
+                ).length;
+
+
+            completedCount.textContent =
+                completed;
 
         } catch (error) {
 
@@ -465,14 +784,21 @@
                 error
             );
 
+
             transactionCount.textContent =
                 "0";
+
+
+            completedCount.textContent =
+                "0";
+
         }
+
     }
 
 
     // ==========================================
-    // REQUESTS
+    // LOAD REQUESTS
     // ==========================================
 
     async function loadRequests() {
@@ -480,24 +806,117 @@
         try {
 
             const response =
-                await fetch("/api/requests");
+                await fetch(
+                    "/api/requests?refresh=" +
+                    Date.now(),
+                    {
+                        method: "GET",
+                        cache: "no-store",
+                        headers: {
+                            "Cache-Control": "no-cache"
+                        }
+                    }
+                );
+
 
             const data =
                 await response.json();
 
+
             if (
-                data.success &&
-                Array.isArray(data.requests)
+                !response.ok ||
+                !data.success ||
+                !Array.isArray(
+                    data.requests
+                )
             ) {
 
-                requestCount.textContent =
-                    data.requests.length;
+                throw new Error(
+                    data.error ||
+                    "Failed to load requests"
+                );
 
-            } else {
-
-                requestCount.textContent =
-                    "0";
             }
+
+
+            const requests =
+                data.requests;
+
+
+            // TOTAL REQUESTS
+
+            requestCount.textContent =
+                requests.length;
+
+
+            // WAITING
+
+            const waiting =
+                requests.filter(
+                    function(request) {
+
+                        const review =
+                            String(
+                                request.review_status ||
+                                ""
+                            ).toLowerCase();
+
+
+                        return (
+                            review.includes("waiting") ||
+                            review.includes("review")
+                        );
+
+                    }
+                ).length;
+
+
+            waitingCount.textContent =
+                waiting;
+
+
+            // APPROVED
+
+            const approved =
+                requests.filter(
+                    function(request) {
+
+                        return (
+                            String(
+                                request.review_status ||
+                                ""
+                            ).toLowerCase() ===
+                            "approved"
+                        );
+
+                    }
+                ).length;
+
+
+            approvedCount.textContent =
+                approved;
+
+
+            // REJECTED
+
+            const rejected =
+                requests.filter(
+                    function(request) {
+
+                        return (
+                            String(
+                                request.review_status ||
+                                ""
+                            ).toLowerCase() ===
+                            "rejected"
+                        );
+
+                    }
+                ).length;
+
+
+            rejectedCount.textContent =
+                rejected;
 
         } catch (error) {
 
@@ -506,12 +925,29 @@
                 error
             );
 
+
             requestCount.textContent =
                 "0";
+
+
+            waitingCount.textContent =
+                "0";
+
+
+            approvedCount.textContent =
+                "0";
+
+
+            rejectedCount.textContent =
+                "0";
+
         }
+
     }
+
 
 </script>
 
 </body>
+
 </html>
