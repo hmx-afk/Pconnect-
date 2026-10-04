@@ -85,6 +85,21 @@
             color: white;
         }
 
+        .progress {
+            background: #2980b9;
+            color: white;
+        }
+
+        .complete {
+            background: #16a085;
+            color: white;
+        }
+
+        .cancel {
+            background: #8e44ad;
+            color: white;
+        }
+
         .logout {
             background: #5b3a70;
             color: white;
@@ -96,7 +111,7 @@
             padding: 6px 10px;
             border-radius: 20px;
             font-size: 13px;
-            margin: 8px 0;
+            margin: 8px 5px 8px 0;
             background: #6b4d00;
         }
 
@@ -105,6 +120,26 @@
         }
 
         .rejected {
+            background: #70231d;
+        }
+
+        .pending {
+            background: #6b4d00;
+        }
+
+        .paid {
+            background: #176b3a;
+        }
+
+        .in-progress {
+            background: #245a8a;
+        }
+
+        .completed {
+            background: #087f5b;
+        }
+
+        .cancelled {
             background: #70231d;
         }
 
@@ -154,6 +189,17 @@
             color: #ffbf00;
             font-weight: bold;
         }
+
+        .section-title {
+            color: #ffbf00;
+            margin-top: 14px;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .action-box {
+            margin-top: 8px;
+        }
     </style>
 </head>
 
@@ -162,18 +208,30 @@
 <div class="container">
 
     <div class="topbar">
+
         <div>
             <h1>🔐 PConnect Admin</h1>
-            <div class="subtitle">Request Review System</div>
+            <div class="subtitle">
+                Request Review & Order Management
+            </div>
         </div>
 
-        <button class="logout hidden" id="logoutBtn">
+        <button
+            class="logout hidden"
+            id="logoutBtn"
+        >
             Logout
         </button>
+
     </div>
 
+
     <!-- LOGIN -->
-    <div class="login-box" id="loginBox">
+
+    <div
+        class="login-box"
+        id="loginBox"
+    >
 
         <h3>Admin Access</h3>
 
@@ -188,7 +246,10 @@
             autocomplete="off"
         >
 
-        <button class="login-btn" id="loginBtn">
+        <button
+            class="login-btn"
+            id="loginBtn"
+        >
             Login
         </button>
 
@@ -196,14 +257,28 @@
 
     </div>
 
+
     <!-- ADMIN CONTENT -->
-    <div id="adminContent" class="hidden">
+
+    <div
+        id="adminContent"
+        class="hidden"
+    >
 
         <div class="message">
+
             <strong>Review Requests</strong>
+
             <br>
+
             Total:
-            <span class="count" id="totalCount">0</span>
+            <span
+                class="count"
+                id="totalCount"
+            >
+                0
+            </span>
+
         </div>
 
         <div id="requestsContainer"></div>
@@ -212,35 +287,59 @@
 
 </div>
 
+
 <script>
 
 let adminKey =
-    sessionStorage.getItem("pconnect_admin_key") || "";
+    sessionStorage.getItem(
+        "pconnect_admin_key"
+    ) || "";
+
 
 const loginBox =
-    document.getElementById("loginBox");
+    document.getElementById(
+        "loginBox"
+    );
 
 const adminContent =
-    document.getElementById("adminContent");
+    document.getElementById(
+        "adminContent"
+    );
 
 const loginBtn =
-    document.getElementById("loginBtn");
+    document.getElementById(
+        "loginBtn"
+    );
 
 const logoutBtn =
-    document.getElementById("logoutBtn");
+    document.getElementById(
+        "logoutBtn"
+    );
 
 const adminKeyInput =
-    document.getElementById("adminKey");
+    document.getElementById(
+        "adminKey"
+    );
 
 const loginMessage =
-    document.getElementById("loginMessage");
+    document.getElementById(
+        "loginMessage"
+    );
 
 const requestsContainer =
-    document.getElementById("requestsContainer");
+    document.getElementById(
+        "requestsContainer"
+    );
 
 const totalCount =
-    document.getElementById("totalCount");
+    document.getElementById(
+        "totalCount"
+    );
 
+
+/* ==========================================
+   ESCAPE HTML
+========================================== */
 
 function escapeHtml(value) {
 
@@ -254,16 +353,48 @@ function escapeHtml(value) {
 
 
 /* ==========================================
+   STATUS CLASS
+========================================== */
+
+function getOrderStatusClass(status) {
+
+    switch (status) {
+
+        case "Paid":
+            return "paid";
+
+        case "In Progress":
+            return "in-progress";
+
+        case "Completed":
+            return "completed";
+
+        case "Cancelled":
+            return "cancelled";
+
+        default:
+            return "pending";
+    }
+}
+
+
+/* ==========================================
    SHOW ADMIN
 ========================================== */
 
 function showAdmin() {
 
-    loginBox.classList.add("hidden");
+    loginBox.classList.add(
+        "hidden"
+    );
 
-    adminContent.classList.remove("hidden");
+    adminContent.classList.remove(
+        "hidden"
+    );
 
-    logoutBtn.classList.remove("hidden");
+    logoutBtn.classList.remove(
+        "hidden"
+    );
 
     loadRequests();
 }
@@ -275,11 +406,17 @@ function showAdmin() {
 
 function showLogin() {
 
-    loginBox.classList.remove("hidden");
+    loginBox.classList.remove(
+        "hidden"
+    );
 
-    adminContent.classList.add("hidden");
+    adminContent.classList.add(
+        "hidden"
+    );
 
-    logoutBtn.classList.add("hidden");
+    logoutBtn.classList.add(
+        "hidden"
+    );
 }
 
 
@@ -292,6 +429,7 @@ async function login() {
     const key =
         adminKeyInput.value.trim();
 
+
     if (!key) {
 
         loginMessage.innerHTML =
@@ -300,25 +438,32 @@ async function login() {
         return;
     }
 
+
     loginBtn.disabled = true;
+
 
     loginMessage.innerHTML =
         '<div class="message">Checking admin key...</div>';
 
+
     try {
 
         const response =
-            await fetch("/api/admin-requests", {
+            await fetch(
+                "/api/admin-requests",
+                {
+                    method: "GET",
 
-                method: "GET",
-
-                headers: {
-                    "x-admin-key": key
+                    headers: {
+                        "x-admin-key": key
+                    }
                 }
-            });
+            );
+
 
         const data =
             await response.json();
+
 
         if (!response.ok) {
 
@@ -333,22 +478,22 @@ async function login() {
             return;
         }
 
-        /*
-         * Server accepted the key.
-         * Save it only for this browser session.
-         */
 
         adminKey = key;
+
 
         sessionStorage.setItem(
             "pconnect_admin_key",
             adminKey
         );
 
+
         loginMessage.innerHTML =
             '<div class="success">Admin access granted.</div>';
 
+
         showAdmin();
+
 
     } catch (error) {
 
@@ -373,25 +518,25 @@ async function loadRequests() {
     requestsContainer.innerHTML =
         '<div class="empty">Loading requests...</div>';
 
+
     try {
 
         const response =
-            await fetch("/api/admin-requests", {
+            await fetch(
+                "/api/admin-requests",
+                {
+                    method: "GET",
 
-                method: "GET",
-
-                headers: {
-                    "x-admin-key": adminKey
+                    headers: {
+                        "x-admin-key": adminKey
+                    }
                 }
-            });
+            );
+
 
         const data =
             await response.json();
 
-        /*
-         * If saved session key is no longer valid,
-         * return to login.
-         */
 
         if (response.status === 401) {
 
@@ -408,6 +553,7 @@ async function loadRequests() {
 
             return;
         }
+
 
         if (!response.ok) {
 
@@ -417,11 +563,14 @@ async function loadRequests() {
             );
         }
 
+
         const requests =
             data.requests || [];
 
+
         totalCount.textContent =
             requests.length;
+
 
         if (requests.length === 0) {
 
@@ -431,75 +580,210 @@ async function loadRequests() {
             return;
         }
 
+
         requestsContainer.innerHTML =
-            requests.map(request => {
+            requests.map(
+                request => {
 
-                const status =
-                    request.review_status ||
-                    "Waiting for review";
+                    const reviewStatus =
+                        request.review_status ||
+                        "Waiting for review";
 
-                let statusClass = "";
 
-                if (status === "Approved") {
-                    statusClass = "approved";
-                }
+                    const orderStatus =
+                        request.order_status ||
+                        "Pending";
 
-                if (status === "Rejected") {
-                    statusClass = "rejected";
-                }
 
-                return `
-                    <div class="request-card">
+                    let reviewClass = "";
 
-                        <h3>
-                            ${escapeHtml(request.name)}
-                        </h3>
 
-                        <div class="info">
+                    if (
+                        reviewStatus ===
+                        "Approved"
+                    ) {
 
-                            <strong>Service:</strong>
-                            ${escapeHtml(request.service)}
+                        reviewClass =
+                            "approved";
+                    }
 
-                            <br>
 
-                            <strong>Contact:</strong>
-                            ${escapeHtml(request.contact)}
+                    if (
+                        reviewStatus ===
+                        "Rejected"
+                    ) {
 
-                            <br>
+                        reviewClass =
+                            "rejected";
+                    }
 
-                            <strong>Details:</strong>
-                            ${escapeHtml(request.details)}
 
-                        </div>
+                    const orderClass =
+                        getOrderStatusClass(
+                            orderStatus
+                        );
 
-                        <div class="status ${statusClass}">
-                            ${escapeHtml(status)}
-                        </div>
 
-                        <div>
+                    const canStart =
+                        orderStatus ===
+                        "Paid";
 
-                            <button
-                                class="approve"
-                                onclick="reviewRequest('${request.id}', 'approve')"
-                                ${status === "Approved" ? "disabled" : ""}
+
+                    const canComplete =
+                        orderStatus ===
+                        "In Progress";
+
+
+                    const canCancel =
+                        orderStatus !==
+                            "Completed" &&
+                        orderStatus !==
+                            "Cancelled";
+
+
+                    return `
+
+                        <div class="request-card">
+
+                            <h3>
+                                ${escapeHtml(
+                                    request.name
+                                )}
+                            </h3>
+
+
+                            <div class="info">
+
+                                <strong>Request ID:</strong>
+                                #${escapeHtml(
+                                    request.id
+                                )}
+
+                                <br>
+
+                                <strong>Service:</strong>
+                                ${escapeHtml(
+                                    request.service
+                                )}
+
+                                <br>
+
+                                <strong>Contact:</strong>
+                                ${escapeHtml(
+                                    request.contact
+                                )}
+
+                                <br>
+
+                                <strong>Details:</strong>
+                                ${escapeHtml(
+                                    request.details
+                                )}
+
+                            </div>
+
+
+                            <div class="section-title">
+                                Review Status
+                            </div>
+
+
+                            <div
+                                class="status ${reviewClass}"
                             >
-                                ✅ Approve
-                            </button>
+                                ${escapeHtml(
+                                    reviewStatus
+                                )}
+                            </div>
 
-                            <button
-                                class="reject"
-                                onclick="reviewRequest('${request.id}', 'reject')"
-                                ${status === "Rejected" ? "disabled" : ""}
+
+                            <div class="section-title">
+                                Order Status
+                            </div>
+
+
+                            <div
+                                class="status ${orderClass}"
                             >
-                                ❌ Reject
-                            </button>
+                                ${escapeHtml(
+                                    orderStatus
+                                )}
+                            </div>
+
+
+                            <!-- REVIEW ACTIONS -->
+
+                            <div class="action-box">
+
+                                <button
+                                    class="approve"
+                                    onclick="reviewRequest('${request.id}', 'approve')"
+                                    ${reviewStatus === "Approved"
+                                        ? "disabled"
+                                        : ""}
+                                >
+                                    ✅ Approve
+                                </button>
+
+
+                                <button
+                                    class="reject"
+                                    onclick="reviewRequest('${request.id}', 'reject')"
+                                    ${reviewStatus === "Rejected"
+                                        ? "disabled"
+                                        : ""}
+                                >
+                                    ❌ Reject
+                                </button>
+
+                            </div>
+
+
+                            <!-- ORDER ACTIONS -->
+
+                            <div class="action-box">
+
+                                <button
+                                    class="progress"
+                                    onclick="reviewRequest('${request.id}', 'in_progress')"
+                                    ${canStart
+                                        ? ""
+                                        : "disabled"}
+                                >
+                                    🔵 Start / In Progress
+                                </button>
+
+
+                                <button
+                                    class="complete"
+                                    onclick="reviewRequest('${request.id}', 'complete')"
+                                    ${canComplete
+                                        ? ""
+                                        : "disabled"}
+                                >
+                                    🟢 Complete
+                                </button>
+
+
+                                <button
+                                    class="cancel"
+                                    onclick="reviewRequest('${request.id}', 'cancel')"
+                                    ${canCancel
+                                        ? ""
+                                        : "disabled"}
+                                >
+                                    ❌ Cancel
+                                </button>
+
+                            </div>
 
                         </div>
 
-                    </div>
-                `;
+                    `;
 
-            }).join("");
+                }
+            ).join("");
+
 
     } catch (error) {
 
@@ -509,49 +793,103 @@ async function loadRequests() {
             `<div class="empty">
                 Failed to load requests.
                 <br>
-                ${escapeHtml(error.message)}
+                ${escapeHtml(
+                    error.message
+                )}
             </div>`;
     }
 }
 
 
 /* ==========================================
-   APPROVE / REJECT REQUEST
+   REVIEW / ORDER ACTION
 ========================================== */
 
-async function reviewRequest(id, action) {
+async function reviewRequest(
+    id,
+    action
+) {
 
-    const confirmText =
-        action === "approve"
-            ? "Approve this request?"
-            : "Reject this request?";
+    let confirmText =
+        "Continue with this action?";
+
+
+    if (action === "approve") {
+
+        confirmText =
+            "Approve this request?";
+    }
+
+
+    if (action === "reject") {
+
+        confirmText =
+            "Reject this request?";
+    }
+
+
+    if (action === "in_progress") {
+
+        confirmText =
+            "Start this service request?";
+    }
+
+
+    if (action === "complete") {
+
+        confirmText =
+            "Mark this request as Completed?";
+    }
+
+
+    if (action === "cancel") {
+
+        confirmText =
+            "Cancel this request?";
+    }
+
 
     if (!confirm(confirmText)) {
+
         return;
     }
+
 
     try {
 
         const response =
-            await fetch("/api/admin-review", {
+            await fetch(
+                "/api/admin-review",
+                {
+                    method: "POST",
 
-                method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json",
 
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-admin-key": adminKey
-                },
+                        "x-admin-key":
+                            adminKey
+                    },
 
-                body: JSON.stringify({
-                    id: id,
-                    action: action
-                })
-            });
+                    body: JSON.stringify({
+
+                        id: id,
+
+                        action: action
+
+                    })
+                }
+            );
+
 
         const data =
             await response.json();
 
-        if (response.status === 401) {
+
+        if (
+            response.status ===
+            401
+        ) {
 
             sessionStorage.removeItem(
                 "pconnect_admin_key"
@@ -566,6 +904,7 @@ async function reviewRequest(id, action) {
 
             return;
         }
+
 
         if (!response.ok) {
 
@@ -577,13 +916,55 @@ async function reviewRequest(id, action) {
             return;
         }
 
-        alert(
-            action === "approve"
-                ? "Request approved successfully."
-                : "Request rejected successfully."
-        );
+
+        if (action === "approve") {
+
+            alert(
+                "Request approved successfully."
+            );
+        }
+
+
+        else if (action === "reject") {
+
+            alert(
+                "Request rejected successfully."
+            );
+        }
+
+
+        else if (
+            action === "in_progress"
+        ) {
+
+            alert(
+                "Request is now In Progress."
+            );
+        }
+
+
+        else if (
+            action === "complete"
+        ) {
+
+            alert(
+                "Request marked as Completed."
+            );
+        }
+
+
+        else if (
+            action === "cancel"
+        ) {
+
+            alert(
+                "Request cancelled successfully."
+            );
+        }
+
 
         await loadRequests();
+
 
     } catch (error) {
 
@@ -625,16 +1006,19 @@ loginBtn.addEventListener(
     login
 );
 
+
 logoutBtn.addEventListener(
     "click",
     logout
 );
+
 
 adminKeyInput.addEventListener(
     "keydown",
     function(event) {
 
         if (event.key === "Enter") {
+
             login();
         }
 
@@ -643,7 +1027,7 @@ adminKeyInput.addEventListener(
 
 
 /* ==========================================
-   RESTORE SESSION SECURELY
+   RESTORE SESSION
 ========================================== */
 
 async function restoreAdminSession() {
@@ -655,20 +1039,26 @@ async function restoreAdminSession() {
         return;
     }
 
+
     loginMessage.innerHTML =
         '<div class="message">Checking admin session...</div>';
+
 
     try {
 
         const response =
-            await fetch("/api/admin-requests", {
+            await fetch(
+                "/api/admin-requests",
+                {
+                    method: "GET",
 
-                method: "GET",
-
-                headers: {
-                    "x-admin-key": adminKey
+                    headers: {
+                        "x-admin-key":
+                            adminKey
+                    }
                 }
-            });
+            );
+
 
         if (response.ok) {
 
@@ -677,22 +1067,23 @@ async function restoreAdminSession() {
             return;
         }
 
+
     } catch (error) {
 
         console.error(error);
     }
 
-    /*
-     * Stored key is invalid or session check failed.
-     */
 
     sessionStorage.removeItem(
         "pconnect_admin_key"
     );
 
+
     adminKey = "";
 
+
     showLogin();
+
 
     loginMessage.innerHTML =
         '<div class="error">Please login again.</div>';
