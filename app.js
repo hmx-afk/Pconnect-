@@ -250,6 +250,16 @@ if (loginBtn) {
 
 
                 // ==================================
+                // SAVE USERNAME FOR DASHBOARD
+                // ==================================
+
+                sessionStorage.setItem(
+                    "pconnect_pi_username",
+                    currentPiUsername
+                );
+
+
+                // ==================================
                 // UPDATE ACCOUNT UI
                 // ==================================
 
@@ -278,6 +288,20 @@ if (loginBtn) {
 
                     payStatus.textContent =
                         "Pi connected successfully. You can now make the 0.01 π Test-Pi payment.";
+
+                }
+
+
+                // ==================================
+                // REFRESH NOTIFICATIONS
+                // ==================================
+
+                if (
+                    typeof loadNotifications ===
+                    "function"
+                ) {
+
+                    loadNotifications();
 
                 }
 
@@ -821,6 +845,17 @@ if (payBtn) {
                                         ) {
 
                                             loadDashboard();
+
+                                        }
+
+
+                                        // Refresh notifications
+                                        if (
+                                            typeof loadNotifications ===
+                                            "function"
+                                        ) {
+
+                                            loadNotifications();
 
                                         }
 
