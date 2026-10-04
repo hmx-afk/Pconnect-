@@ -230,7 +230,7 @@ export default async function handler(req, res) {
 
 
             // ------------------------------------------
-            // No Pi username = skip notification
+            // No Pi username
             // ------------------------------------------
 
             if (!piUsername) {
@@ -244,66 +244,130 @@ export default async function handler(req, res) {
             }
 
 
-            const notificationResponse =
-                await fetch(
+            // ------------------------------------------
+            // CHECK FOR EXISTING NOTIFICATION
+            // Prevent duplicate notifications
+            // ------------------------------------------
 
-                    `${supabaseUrl}/rest/v1/notifications`,
+            try {
 
-                    {
-                        method: "POST",
+                const existingResponse =
+                    await fetch(
 
-                        headers: {
-                            ...headers,
-                            "Prefer":
-                                "return=representation"
-                        },
+                        `${supabaseUrl}/rest/v1/notifications?request_id=eq.${encodeURIComponent(parsedId)}&type=eq.${encodeURIComponent(type)}&select=id&limit=1`,
 
-                        body: JSON.stringify({
+                        {
+                            method: "GET",
+                            headers
+                        }
 
-                            request_id:
-                                parsedId,
-
-                            pi_username:
-                                piUsername,
-
-                            type,
-
-                            title,
-
-                            message
-
-                        })
-
-                    }
-
-                );
+                    );
 
 
-            const notificationData =
-                await notificationResponse.json();
+                const existingData =
+                    await existingResponse.json();
 
 
-            if (!notificationResponse.ok) {
+                if (
+                    existingResponse.ok &&
+                    Array.isArray(existingData) &&
+                    existingData.length > 0
+                ) {
+
+                    console.log(
+                        `Notification already exists for request #${parsedId}: ${type}`
+                    );
+
+                    return existingData[0];
+
+                }
+
+            } catch (checkError) {
 
                 console.error(
-                    "Notification creation error:",
-                    notificationData
+                    "Notification duplicate check error:",
+                    checkError
                 );
-
-                // ------------------------------------------
-                // Notification failure does NOT break
-                // the successful admin action
-                // ------------------------------------------
-
-                return null;
 
             }
 
 
-            return (
-                notificationData?.[0] ||
-                notificationData
-            );
+            // ------------------------------------------
+            // CREATE NEW NOTIFICATION
+            // ------------------------------------------
+
+            try {
+
+                const notificationResponse =
+                    await fetch(
+
+                        `${supabaseUrl}/rest/v1/notifications`,
+
+                        {
+                            method: "POST",
+
+                            headers: {
+                                ...headers,
+
+                                "Prefer":
+                                    "return=representation"
+                            },
+
+                            body: JSON.stringify({
+
+                                request_id:
+                                    parsedId,
+
+                                pi_username:
+                                    piUsername,
+
+                                type,
+
+                                title,
+
+                                message,
+
+                                is_read:
+                                    false
+
+                            })
+
+                        }
+
+                    );
+
+
+                const notificationData =
+                    await notificationResponse.json();
+
+
+                if (!notificationResponse.ok) {
+
+                    console.error(
+                        "Notification creation error:",
+                        notificationData
+                    );
+
+                    return null;
+
+                }
+
+
+                return (
+                    notificationData?.[0] ||
+                    notificationData
+                );
+
+            } catch (notificationError) {
+
+                console.error(
+                    "Notification request error:",
+                    notificationError
+                );
+
+                return null;
+
+            }
 
         }
 
@@ -324,6 +388,7 @@ export default async function handler(req, res) {
 
                         headers: {
                             ...headers,
+
                             "Prefer":
                                 "return=representation"
                         },
@@ -368,10 +433,6 @@ export default async function handler(req, res) {
             }
 
 
-            // ==========================================
-            // CREATE APPROVED NOTIFICATION
-            // ==========================================
-
             await createNotification(
                 "approved",
                 "Request Approved",
@@ -410,6 +471,7 @@ export default async function handler(req, res) {
 
                         headers: {
                             ...headers,
+
                             "Prefer":
                                 "return=representation"
                         },
@@ -454,10 +516,6 @@ export default async function handler(req, res) {
             }
 
 
-            // ==========================================
-            // CREATE REJECTED NOTIFICATION
-            // ==========================================
-
             await createNotification(
                 "rejected",
                 "Request Rejected",
@@ -492,6 +550,10 @@ export default async function handler(req, res) {
         let newOrderStatus = null;
 
 
+        // ==========================================
+        // START / IN PROGRESS
+        // ==========================================
+
         if (action === "in_progress") {
 
             if (
@@ -516,6 +578,10 @@ export default async function handler(req, res) {
         }
 
 
+        // ==========================================
+        // COMPLETE
+        // ==========================================
+
         if (action === "complete") {
 
             if (
@@ -539,6 +605,10 @@ export default async function handler(req, res) {
 
         }
 
+
+        // ==========================================
+        // CANCEL
+        // ==========================================
 
         if (action === "cancel") {
 
@@ -578,6 +648,7 @@ export default async function handler(req, res) {
 
                     headers: {
                         ...headers,
+
                         "Prefer":
                             "return=representation"
                     },
@@ -597,10 +668,6 @@ export default async function handler(req, res) {
         const statusData =
             await statusResponse.json();
 
-
-        // ==========================================
-        // SUPABASE ERROR
-        // ==========================================
 
         if (!statusResponse.ok) {
 
@@ -627,7 +694,7 @@ export default async function handler(req, res) {
 
 
         // ==========================================
-        // ORDER STATUS NOTIFICATIONS
+        // IN PROGRESS NOTIFICATION
         // ==========================================
 
         if (action === "in_progress") {
@@ -641,6 +708,10 @@ export default async function handler(req, res) {
         }
 
 
+        // ==========================================
+        // COMPLETED NOTIFICATION
+        // ==========================================
+
         if (action === "complete") {
 
             await createNotification(
@@ -651,6 +722,10 @@ export default async function handler(req, res) {
 
         }
 
+
+        // ==========================================
+        // CANCELLED NOTIFICATION
+        // ==========================================
 
         if (action === "cancel") {
 
