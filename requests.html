@@ -143,6 +143,46 @@
             color: #ffd76a;
         }
 
+        .order-status {
+            margin-top: 12px;
+            border-radius: 10px;
+            padding: 11px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid;
+        }
+
+        .order-pending {
+            background: #2d2718;
+            color: #ffd76a;
+            border-color: #66521f;
+        }
+
+        .order-paid {
+            background: #173d29;
+            color: #6ff0a4;
+            border-color: #286443;
+        }
+
+        .order-progress {
+            background: #182e45;
+            color: #73b9ff;
+            border-color: #2d5c86;
+        }
+
+        .order-completed {
+            background: #173d29;
+            color: #6ff0a4;
+            border-color: #286443;
+        }
+
+        .order-cancelled {
+            background: #3d1c22;
+            color: #ff8c8c;
+            border-color: #6d3039;
+        }
+
         .paid-status {
             margin-top: 12px;
             background: #173d29;
@@ -366,8 +406,11 @@
                     })
                 ]);
 
-            const requestsResult = await requestsResponse.json();
-            const transactionsResult = await transactionsResponse.json();
+            const requestsResult =
+                await requestsResponse.json();
+
+            const transactionsResult =
+                await transactionsResponse.json();
 
             if (
                 !requestsResponse.ok ||
@@ -389,17 +432,19 @@
                 );
             }
 
-            const requests = Array.isArray(
-                requestsResult.requests
-            )
-                ? requestsResult.requests
-                : [];
+            const requests =
+                Array.isArray(
+                    requestsResult.requests
+                )
+                    ? requestsResult.requests
+                    : [];
 
-            const transactions = Array.isArray(
-                transactionsResult.transactions
-            )
-                ? transactionsResult.transactions
-                : [];
+            const transactions =
+                Array.isArray(
+                    transactionsResult.transactions
+                )
+                    ? transactionsResult.transactions
+                    : [];
 
             updateStats(requests);
 
@@ -482,6 +527,57 @@
     }
 
     // ==========================================
+    // ORDER STATUS UI
+    // ==========================================
+
+    function getOrderStatus(request) {
+
+        let orderStatus =
+            String(
+                request.order_status || "Pending"
+            ).trim();
+
+        const normalized =
+            orderStatus.toLowerCase();
+
+        if (normalized === "paid") {
+            return {
+                text: "💳 Paid",
+                className: "order-paid"
+            };
+        }
+
+        if (
+            normalized === "in progress" ||
+            normalized === "in_progress"
+        ) {
+            return {
+                text: "🔵 In Progress",
+                className: "order-progress"
+            };
+        }
+
+        if (normalized === "completed") {
+            return {
+                text: "🟢 Completed",
+                className: "order-completed"
+            };
+        }
+
+        if (normalized === "cancelled") {
+            return {
+                text: "❌ Cancelled",
+                className: "order-cancelled"
+            };
+        }
+
+        return {
+            text: "⏳ Pending",
+            className: "order-pending"
+        };
+    }
+
+    // ==========================================
     // RENDER REQUESTS
     // ==========================================
 
@@ -504,7 +600,8 @@
         requestsList.innerHTML =
             requests.map(request => {
 
-                const id = Number(request.id);
+                const id =
+                    Number(request.id);
 
                 const service =
                     request.service ||
@@ -545,6 +642,9 @@
                         transactions
                     );
 
+                const orderStatus =
+                    getOrderStatus(request);
+
                 const statusClass =
                     isApproved
                         ? "approved"
@@ -552,11 +652,22 @@
 
                 let paymentAction = "";
 
-                if (paid) {
+                if (
+                    paid ||
+                    [
+                        "paid",
+                        "in progress",
+                        "completed"
+                    ].includes(
+                        String(
+                            request.order_status || ""
+                        ).toLowerCase()
+                    )
+                ) {
 
                     paymentAction = `
                         <div class="paid-status">
-                            💳 Paid ✅
+                            💳 Payment confirmed ✅
                         </div>
                     `;
 
@@ -649,6 +760,12 @@
                             🕒 Submitted:
                             ${escapeHtml(
                                 createdAt
+                            )}
+                        </div>
+
+                        <div class="order-status ${orderStatus.className}">
+                            Order Status: ${escapeHtml(
+                                orderStatus.text
                             )}
                         </div>
 
