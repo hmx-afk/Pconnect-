@@ -1,5 +1,10 @@
+// ==========================================
+// PConnect - Create Service Request API
+// ==========================================
+
 export default async function handler(req, res) {
     try {
+
         if (req.method !== "POST") {
             return res.status(405).json({
                 error: "Method not allowed"
@@ -9,32 +14,44 @@ export default async function handler(req, res) {
         const {
             name,
             contact,
-            details
+            details,
+            pi_username
         } = req.body || {};
 
         const service = "Web Development";
 
-        if (!name || !contact || !details) {
+        // ==========================================
+        // VALIDATION
+        // ==========================================
+
+        if (!name || !contact || !details || !pi_username) {
             return res.status(400).json({
                 error: "Missing required fields"
             });
         }
 
+        // ==========================================
+        // SAVE REQUEST
+        // ==========================================
+
         const response = await fetch(
             `${process.env.SUPABASE_URL}/rest/v1/requests`,
             {
                 method: "POST",
+
                 headers: {
                     "Content-Type": "application/json",
                     "apikey": process.env.SUPABASE_SECRET_KEY,
                     "Authorization": `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
                     "Prefer": "return=representation"
                 },
+
                 body: JSON.stringify({
                     service,
                     name,
                     contact,
                     details,
+                    pi_username,
                     payment: "Pi Network",
                     status: "Submitted",
                     review_status: "Waiting for review"
@@ -45,7 +62,11 @@ export default async function handler(req, res) {
         const data = await response.json();
 
         if (!response.ok) {
-            console.error("Supabase error:", data);
+
+            console.error(
+                "Supabase error:",
+                data
+            );
 
             return res.status(response.status).json({
                 error: "Failed to save request",
@@ -60,7 +81,11 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error("Request API error:", error);
+
+        console.error(
+            "Request API error:",
+            error
+        );
 
         return res.status(500).json({
             error: "Internal server error",
