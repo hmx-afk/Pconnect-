@@ -1,154 +1,530 @@
 // ==========================================
-// PConnect - Admin Review API
+// PConnect - Admin Review & Order Status API
 // ==========================================
 
 export default async function handler(req, res) {
+
     try {
 
-        // Only POST is allowed
+        // ==========================================
+        // ONLY POST
+        // ==========================================
+
         if (req.method !== "POST") {
+
             return res.status(405).json({
                 success: false,
                 error: "Method not allowed"
             });
+
         }
+
 
         // ==========================================
         // ADMIN AUTHENTICATION
         // ==========================================
 
-        const adminKey = req.headers["x-admin-key"];
-        const correctAdminKey = process.env.ADMIN_REVIEW_KEY;
+        const adminKey =
+            req.headers["x-admin-key"];
+
+        const correctAdminKey =
+            process.env.ADMIN_REVIEW_KEY;
+
 
         if (!correctAdminKey) {
-            console.error("Missing ADMIN_REVIEW_KEY");
+
+            console.error(
+                "Missing ADMIN_REVIEW_KEY"
+            );
 
             return res.status(500).json({
                 success: false,
-                error: "Admin authentication is not configured"
+                error:
+                    "Admin authentication is not configured"
             });
+
         }
 
-        if (!adminKey || adminKey !== correctAdminKey) {
+
+        if (
+            !adminKey ||
+            adminKey !== correctAdminKey
+        ) {
+
             return res.status(401).json({
                 success: false,
                 error: "Unauthorized"
             });
+
         }
+
 
         // ==========================================
         // REQUEST DATA
         // ==========================================
 
-        const { id, action } = req.body || {};
+        const {
+            id,
+            action
+        } = req.body || {};
 
-        if (!id) {
+
+        // ==========================================
+        // VALIDATE REQUEST ID
+        // ==========================================
+
+        const parsedId =
+            Number(id);
+
+
+        if (
+            !Number.isInteger(parsedId) ||
+            parsedId <= 0
+        ) {
+
             return res.status(400).json({
                 success: false,
-                error: "Missing request id"
+                error: "Invalid request id"
             });
+
         }
 
-        if (!["approve", "reject"].includes(action)) {
+
+        // ==========================================
+        // VALID ACTIONS
+        // ==========================================
+
+        const validActions = [
+            "approve",
+            "reject",
+            "in_progress",
+            "complete",
+            "cancel"
+        ];
+
+
+        if (!validActions.includes(action)) {
+
             return res.status(400).json({
                 success: false,
                 error: "Invalid action"
             });
+
         }
 
-        // ==========================================
-        // REVIEW STATUS
-        // ==========================================
-
-        const reviewStatus =
-            action === "approve"
-                ? "Approved"
-                : "Rejected";
 
         // ==========================================
         // SUPABASE CONFIG
         // ==========================================
 
-        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseUrl =
+            process.env.SUPABASE_URL;
+
         const supabaseSecretKey =
             process.env.SUPABASE_SECRET_KEY;
 
-        if (!supabaseUrl || !supabaseSecretKey) {
+
+        if (
+            !supabaseUrl ||
+            !supabaseSecretKey
+        ) {
+
             console.error(
                 "Missing Supabase environment variables"
             );
 
             return res.status(500).json({
                 success: false,
-                error: "Server configuration error"
+                error:
+                    "Server configuration error"
             });
+
         }
 
+
+        const headers = {
+
+            "Content-Type":
+                "application/json",
+
+            "apikey":
+                supabaseSecretKey,
+
+            "Authorization":
+                `Bearer ${supabaseSecretKey}`
+
+        };
+
+
         // ==========================================
-        // UPDATE REQUEST
+        // GET CURRENT REQUEST
         // ==========================================
 
-        const response = await fetch(
-            `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(id)}`,
-            {
-                method: "PATCH",
+        const requestResponse =
+            await fetch(
 
-                headers: {
-                    "Content-Type": "application/json",
-                    "apikey": supabaseSecretKey,
-                    "Authorization":
-                        `Bearer ${supabaseSecretKey}`,
-                    "Prefer": "return=representation"
-                },
+                `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedId)}&select=*`,
 
-                body: JSON.stringify({
-                    review_status: reviewStatus
-                })
+                {
+                    method: "GET",
+                    headers
+                }
+
+            );
+
+
+        const requestData =
+            await requestResponse.json();
+
+
+        if (!requestResponse.ok) {
+
+            console.error(
+                "Request fetch error:",
+                requestData
+            );
+
+            return res.status(500).json({
+                success: false,
+                error:
+                    "Failed to load request",
+                details:
+                    requestData
+            });
+
+        }
+
+
+        if (
+            !requestData ||
+            requestData.length === 0
+        ) {
+
+            return res.status(404).json({
+                success: false,
+                error:
+                    "Request not found"
+            });
+
+        }
+
+
+        const request =
+            requestData[0];
+
+
+        // ==========================================
+        // APPROVE
+        // ==========================================
+
+        if (action === "approve") {
+
+            const response =
+                await fetch(
+
+                    `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedId)}`,
+
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            ...headers,
+                            "Prefer":
+                                "return=representation"
+                        },
+
+                        body: JSON.stringify({
+
+                            review_status:
+                                "Approved"
+
+                        })
+
+                    }
+
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                console.error(
+                    "Approve error:",
+                    data
+                );
+
+                return res.status(
+                    response.status
+                ).json({
+
+                    success: false,
+
+                    error:
+                        "Failed to approve request",
+
+                    details:
+                        data
+
+                });
+
             }
-        );
 
-        const data = await response.json();
+
+            return res.status(200).json({
+
+                success: true,
+
+                message:
+                    "Request approved successfully",
+
+                request:
+                    data[0]
+
+            });
+
+        }
+
+
+        // ==========================================
+        // REJECT
+        // ==========================================
+
+        if (action === "reject") {
+
+            const response =
+                await fetch(
+
+                    `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedId)}`,
+
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            ...headers,
+                            "Prefer":
+                                "return=representation"
+                        },
+
+                        body: JSON.stringify({
+
+                            review_status:
+                                "Rejected"
+
+                        })
+
+                    }
+
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                console.error(
+                    "Reject error:",
+                    data
+                );
+
+                return res.status(
+                    response.status
+                ).json({
+
+                    success: false,
+
+                    error:
+                        "Failed to reject request",
+
+                    details:
+                        data
+
+                });
+
+            }
+
+
+            return res.status(200).json({
+
+                success: true,
+
+                message:
+                    "Request rejected successfully",
+
+                request:
+                    data[0]
+
+            });
+
+        }
+
+
+        // ==========================================
+        // ORDER STATUS ACTIONS
+        // ==========================================
+
+        const currentOrderStatus =
+            request.order_status ||
+            "Pending";
+
+
+        let newOrderStatus = null;
+
+
+        if (action === "in_progress") {
+
+            if (
+                currentOrderStatus !==
+                "Paid"
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Request must be Paid before it can be marked In Progress"
+
+                });
+
+            }
+
+            newOrderStatus =
+                "In Progress";
+
+        }
+
+
+        if (action === "complete") {
+
+            if (
+                currentOrderStatus !==
+                "In Progress"
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Request must be In Progress before it can be Completed"
+
+                });
+
+            }
+
+            newOrderStatus =
+                "Completed";
+
+        }
+
+
+        if (action === "cancel") {
+
+            if (
+                currentOrderStatus ===
+                "Completed"
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    error:
+                        "Completed requests cannot be cancelled"
+
+                });
+
+            }
+
+            newOrderStatus =
+                "Cancelled";
+
+        }
+
+
+        // ==========================================
+        // UPDATE ORDER STATUS
+        // ==========================================
+
+        const statusResponse =
+            await fetch(
+
+                `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedId)}`,
+
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        ...headers,
+                        "Prefer":
+                            "return=representation"
+                    },
+
+                    body: JSON.stringify({
+
+                        order_status:
+                            newOrderStatus
+
+                    })
+
+                }
+
+            );
+
+
+        const statusData =
+            await statusResponse.json();
+
 
         // ==========================================
         // SUPABASE ERROR
         // ==========================================
 
-        if (!response.ok) {
+        if (!statusResponse.ok) {
 
             console.error(
-                "Admin review error:",
-                data
+                "Order status update error:",
+                statusData
             );
 
-            return res.status(response.status).json({
+            return res.status(
+                statusResponse.status
+            ).json({
+
                 success: false,
-                error: "Failed to update request",
-                details: data
+
+                error:
+                    "Failed to update order status",
+
+                details:
+                    statusData
+
             });
+
         }
 
-        // ==========================================
-        // REQUEST NOT FOUND
-        // ==========================================
-
-        if (!data || data.length === 0) {
-
-            return res.status(404).json({
-                success: false,
-                error: "Request not found"
-            });
-        }
 
         // ==========================================
         // SUCCESS
         // ==========================================
 
         return res.status(200).json({
+
             success: true,
+
             message:
-                `Request ${reviewStatus.toLowerCase()} successfully`,
-            request: data[0]
+                `Request marked as ${newOrderStatus}`,
+
+            request:
+                statusData[0]
+
         });
+
 
     } catch (error) {
 
@@ -158,9 +534,17 @@ export default async function handler(req, res) {
         );
 
         return res.status(500).json({
+
             success: false,
-            error: "Internal server error",
-            details: error.message
+
+            error:
+                "Internal server error",
+
+            details:
+                error.message
+
         });
+
     }
+
 }
