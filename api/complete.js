@@ -136,7 +136,7 @@ export default async function handler(req, res) {
         const requestResponse =
             await fetch(
 
-                `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedRequestId)}&select=id,service,review_status`,
+                `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedRequestId)}&select=id,service,review_status,order_status`,
 
                 {
                     method: "GET",
@@ -255,6 +255,63 @@ export default async function handler(req, res) {
             duplicateData.length > 0
         ) {
 
+            // ------------------------------------------
+            // Make sure linked request is marked Paid
+            // ------------------------------------------
+
+            const paidRequestResponse =
+                await fetch(
+
+                    `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedRequestId)}`,
+
+                    {
+                        method: "PATCH",
+
+                        headers: {
+
+                            ...supabaseHeaders,
+
+                            "Prefer":
+                                "return=representation"
+
+                        },
+
+                        body: JSON.stringify({
+
+                            order_status:
+                                "Paid"
+
+                        })
+
+                    }
+
+                );
+
+
+            const paidRequestData =
+                await paidRequestResponse.json();
+
+
+            if (!paidRequestResponse.ok) {
+
+                console.error(
+                    "Request Paid status update error:",
+                    paidRequestData
+                );
+
+                return res.status(500).json({
+
+                    error:
+                        "Payment already completed, but request status could not be updated",
+
+                    transaction:
+                        duplicateData[0]
+
+                });
+
+            }
+
+
             return res.status(200).json({
 
                 success:
@@ -267,7 +324,10 @@ export default async function handler(req, res) {
                     "Payment was already completed",
 
                 transaction:
-                    duplicateData[0]
+                    duplicateData[0],
+
+                request:
+                    paidRequestData[0]
 
             });
 
@@ -448,6 +508,63 @@ export default async function handler(req, res) {
                 existingData.length > 0
             ) {
 
+                // ------------------------------------------
+                // Mark linked request as Paid
+                // ------------------------------------------
+
+                const paidRequestResponse =
+                    await fetch(
+
+                        `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedRequestId)}`,
+
+                        {
+                            method: "PATCH",
+
+                            headers: {
+
+                                ...supabaseHeaders,
+
+                                "Prefer":
+                                    "return=representation"
+
+                            },
+
+                            body: JSON.stringify({
+
+                                order_status:
+                                    "Paid"
+
+                            })
+
+                        }
+
+                    );
+
+
+                const paidRequestData =
+                    await paidRequestResponse.json();
+
+
+                if (!paidRequestResponse.ok) {
+
+                    console.error(
+                        "Request Paid status update error:",
+                        paidRequestData
+                    );
+
+                    return res.status(500).json({
+
+                        error:
+                            "Payment was completed, but request status could not be updated",
+
+                        transaction:
+                            existingData[0]
+
+                    });
+
+                }
+
+
                 return res.status(200).json({
 
                     success:
@@ -460,7 +577,10 @@ export default async function handler(req, res) {
                         "Payment was already completed",
 
                     transaction:
-                        existingData[0]
+                        existingData[0],
+
+                    request:
+                        paidRequestData[0]
 
                 });
 
@@ -505,6 +625,66 @@ export default async function handler(req, res) {
 
 
         // ==========================================
+        // 5. UPDATE REQUEST ORDER STATUS
+        // ==========================================
+
+        const orderStatusResponse =
+            await fetch(
+
+                `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedRequestId)}`,
+
+                {
+                    method: "PATCH",
+
+                    headers: {
+
+                        ...supabaseHeaders,
+
+                        "Prefer":
+                            "return=representation"
+
+                    },
+
+                    body: JSON.stringify({
+
+                        order_status:
+                            "Paid"
+
+                    })
+
+                }
+
+            );
+
+
+        const orderStatusData =
+            await orderStatusResponse.json();
+
+
+        if (!orderStatusResponse.ok) {
+
+            console.error(
+                "Order status update error:",
+                orderStatusData
+            );
+
+            return res.status(500).json({
+
+                error:
+                    "Payment completed and transaction saved, but request status could not be updated",
+
+                transaction:
+                    supabaseData[0],
+
+                details:
+                    orderStatusData
+
+            });
+
+        }
+
+
+        // ==========================================
         // SUCCESS
         // ==========================================
 
@@ -514,13 +694,16 @@ export default async function handler(req, res) {
                 true,
 
             message:
-                "Payment completed and transaction saved",
+                "Payment completed, transaction saved, and request marked as Paid",
 
             payment:
                 piData,
 
             transaction:
-                supabaseData[0]
+                supabaseData[0],
+
+            request:
+                orderStatusData[0]
 
         });
 
