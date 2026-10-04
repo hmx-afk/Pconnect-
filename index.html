@@ -237,6 +237,85 @@
             text-align: center;
         }
 
+        /* ==========================================
+           NOTIFICATIONS
+        ========================================== */
+
+        .notifications-card {
+            background: #1b1430;
+            border: 1px solid #30234d;
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+
+        .notifications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .notifications-title {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .notification-badge {
+            background: #f5b942;
+            color: #171025;
+            min-width: 24px;
+            height: 24px;
+            padding: 0 7px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .notification-item {
+            background: #21183a;
+            border: 1px solid #30234d;
+            border-left: 3px solid #f5b942;
+            border-radius: 12px;
+            padding: 13px;
+            margin-bottom: 10px;
+        }
+
+        .notification-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-title {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .notification-message {
+            color: #aaa3ba;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .notification-date {
+            color: #77718a;
+            font-size: 11px;
+            margin-top: 7px;
+        }
+
+        .notifications-empty {
+            color: #aaa3ba;
+            font-size: 13px;
+            text-align: center;
+            padding: 12px 0;
+        }
+
         .activity {
             background: #1b1430;
             border: 1px solid #30234d;
@@ -646,6 +725,37 @@
     </div>
 
 
+    <!-- NOTIFICATIONS -->
+
+    <div class="notifications-card">
+
+        <div class="notifications-header">
+
+            <div class="notifications-title">
+                🔔 Notifications
+            </div>
+
+            <span
+                id="notificationBadge"
+                class="notification-badge"
+                style="display:none;"
+            >
+                0
+            </span>
+
+        </div>
+
+        <div id="notificationsList">
+
+            <div class="notifications-empty">
+                🔐 Sign in with Pi to view notifications.
+            </div>
+
+        </div>
+
+    </div>
+
+
     <!-- RECENT ACTIVITY -->
 
     <div class="section-title">
@@ -739,6 +849,239 @@ function formatActivityDate(value) {
     }
 
     return date.toLocaleString();
+
+}
+
+
+// ==========================================
+// LOAD NOTIFICATIONS
+// ==========================================
+
+async function loadNotifications() {
+
+    const list =
+        document.getElementById(
+            "notificationsList"
+        );
+
+    const badge =
+        document.getElementById(
+            "notificationBadge"
+        );
+
+
+    if (!list) {
+        return;
+    }
+
+
+    // ==========================================
+    // GET PI USERNAME
+    // ==========================================
+
+    const username =
+        sessionStorage.getItem(
+            "pconnect_pi_username"
+        );
+
+
+    if (!username) {
+
+        list.innerHTML = `
+
+            <div class="notifications-empty">
+                🔐 Sign in with Pi to view notifications.
+            </div>
+
+        `;
+
+        if (badge) {
+            badge.style.display = "none";
+        }
+
+        return;
+
+    }
+
+
+    // ==========================================
+    // LOAD FROM API
+    // ==========================================
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/notifications?pi_username=" +
+                encodeURIComponent(username) +
+                "&refresh=" +
+                Date.now(),
+                {
+                    method: "GET",
+                    cache: "no-store",
+                    headers: {
+                        "Cache-Control": "no-cache"
+                    }
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.error ||
+                "Failed to load notifications"
+            );
+
+        }
+
+
+        const notifications =
+            Array.isArray(
+                data.notifications
+            )
+                ? data.notifications
+                : [];
+
+
+        // ==========================================
+        // EMPTY
+        // ==========================================
+
+        if (
+            notifications.length === 0
+        ) {
+
+            list.innerHTML = `
+
+                <div class="notifications-empty">
+                    🔔 No notifications yet.
+                </div>
+
+            `;
+
+            if (badge) {
+                badge.style.display = "none";
+            }
+
+            return;
+
+        }
+
+
+        // ==========================================
+        // UNREAD COUNT
+        // ==========================================
+
+        const unreadCount =
+            notifications.filter(
+                function(notification) {
+
+                    return (
+                        notification.is_read === false ||
+                        notification.is_read === null ||
+                        notification.is_read === undefined
+                    );
+
+                }
+            ).length;
+
+
+        if (badge) {
+
+            if (unreadCount > 0) {
+
+                badge.textContent =
+                    unreadCount;
+
+                badge.style.display =
+                    "flex";
+
+            } else {
+
+                badge.style.display =
+                    "none";
+
+            }
+
+        }
+
+
+        // ==========================================
+        // SHOW LAST 5
+        // ==========================================
+
+        const recentNotifications =
+            notifications.slice(
+                0,
+                5
+            );
+
+
+        list.innerHTML =
+            recentNotifications
+                .map(
+                    function(notification) {
+
+                        return `
+
+                            <div class="notification-item">
+
+                                <div class="notification-title">
+                                    ${escapeHtml(
+                                        notification.title ||
+                                        "Notification"
+                                    )}
+                                </div>
+
+                                <div class="notification-message">
+                                    ${escapeHtml(
+                                        notification.message ||
+                                        ""
+                                    )}
+                                </div>
+
+                                <div class="notification-date">
+                                    ${escapeHtml(
+                                        formatActivityDate(
+                                            notification.created_at
+                                        )
+                                    )}
+                                </div>
+
+                            </div>
+
+                        `;
+
+                    }
+                )
+                .join("");
+
+
+    } catch (error) {
+
+        console.error(
+            "Notifications dashboard error:",
+            error
+        );
+
+
+        list.innerHTML = `
+
+            <div class="notifications-empty">
+                ⚠️ Unable to load notifications.
+            </div>
+
+        `;
+
+    }
 
 }
 
@@ -1189,6 +1532,8 @@ async function loadDashboard() {
 // ==========================================
 
 loadDashboard();
+
+loadNotifications();
 
 </script>
 
