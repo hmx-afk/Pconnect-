@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PConnect Notifications Test</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        #status {
+            margin: 15px 0;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .notification {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🔔 PConnect Notifications Test</h1>
+
+    <div id="status">
+        Loading notifications...
+    </div>
+
+    <div id="notifications"></div>
+
+    <script>
+        async function loadNotifications() {
+            const status = document.getElementById("status");
+            const container = document.getElementById("notifications");
+
+            try {
+                const response = await fetch(
+                    "/api/notifications?pi_username=hamzaomar62"
+                );
+
+                const data = await response.json();
+
+                console.log("Notifications API:", data);
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.error || "API request failed"
+                    );
+                }
+
+                const notifications =
+                    data.notifications || [];
+
+                status.textContent =
+                    `Success ✅ — ${notifications.length} notification(s) found`;
+
+                if (notifications.length === 0) {
+                    container.innerHTML =
+                        "<p>No notifications found.</p>";
+                    return;
+                }
+
+                container.innerHTML =
+                    notifications.map(notification => `
+                        <div class="notification">
+                            <h3>
+                                ${notification.title}
+                            </h3>
+
+                            <p>
+                                ${notification.message}
+                            </p>
+
+                            <small>
+                                Type: ${notification.type}
+                                <br>
+                                Request #${notification.request_id}
+                                <br>
+                                Read: ${notification.is_read}
+                            </small>
+                        </div>
+                    `).join("");
+
+            } catch (error) {
+                console.error(error);
+
+                status.innerHTML =
+                    `<span class="error">
+                        ❌ Error: ${error.message}
+                    </span>`;
+            }
+        }
+
+        loadNotifications();
+    </script>
+
+</body>
+</html>
