@@ -214,6 +214,101 @@ export default async function handler(req, res) {
 
 
         // ==========================================
+        // NOTIFICATION HELPER
+        // ==========================================
+
+        async function createNotification(
+            type,
+            title,
+            message
+        ) {
+
+            const piUsername =
+                String(
+                    request.pi_username || ""
+                ).trim();
+
+
+            // ------------------------------------------
+            // No Pi username = skip notification
+            // ------------------------------------------
+
+            if (!piUsername) {
+
+                console.warn(
+                    `No pi_username for request #${parsedId}. Notification skipped.`
+                );
+
+                return null;
+
+            }
+
+
+            const notificationResponse =
+                await fetch(
+
+                    `${supabaseUrl}/rest/v1/notifications`,
+
+                    {
+                        method: "POST",
+
+                        headers: {
+                            ...headers,
+                            "Prefer":
+                                "return=representation"
+                        },
+
+                        body: JSON.stringify({
+
+                            request_id:
+                                parsedId,
+
+                            pi_username:
+                                piUsername,
+
+                            type,
+
+                            title,
+
+                            message
+
+                        })
+
+                    }
+
+                );
+
+
+            const notificationData =
+                await notificationResponse.json();
+
+
+            if (!notificationResponse.ok) {
+
+                console.error(
+                    "Notification creation error:",
+                    notificationData
+                );
+
+                // ------------------------------------------
+                // Notification failure does NOT break
+                // the successful admin action
+                // ------------------------------------------
+
+                return null;
+
+            }
+
+
+            return (
+                notificationData?.[0] ||
+                notificationData
+            );
+
+        }
+
+
+        // ==========================================
         // APPROVE
         // ==========================================
 
@@ -271,6 +366,17 @@ export default async function handler(req, res) {
                 });
 
             }
+
+
+            // ==========================================
+            // CREATE APPROVED NOTIFICATION
+            // ==========================================
+
+            await createNotification(
+                "approved",
+                "Request Approved",
+                `Your request #${parsedId} has been approved.`
+            );
 
 
             return res.status(200).json({
@@ -346,6 +452,17 @@ export default async function handler(req, res) {
                 });
 
             }
+
+
+            // ==========================================
+            // CREATE REJECTED NOTIFICATION
+            // ==========================================
+
+            await createNotification(
+                "rejected",
+                "Request Rejected",
+                `Your request #${parsedId} has been rejected.`
+            );
 
 
             return res.status(200).json({
@@ -505,6 +622,43 @@ export default async function handler(req, res) {
                     statusData
 
             });
+
+        }
+
+
+        // ==========================================
+        // ORDER STATUS NOTIFICATIONS
+        // ==========================================
+
+        if (action === "in_progress") {
+
+            await createNotification(
+                "in_progress",
+                "Order In Progress",
+                `Your order for request #${parsedId} is now in progress.`
+            );
+
+        }
+
+
+        if (action === "complete") {
+
+            await createNotification(
+                "completed",
+                "Order Completed",
+                `Your order for request #${parsedId} has been completed.`
+            );
+
+        }
+
+
+        if (action === "cancel") {
+
+            await createNotification(
+                "cancelled",
+                "Order Cancelled",
+                `Your order for request #${parsedId} has been cancelled.`
+            );
 
         }
 
