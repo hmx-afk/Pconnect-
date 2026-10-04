@@ -66,7 +66,7 @@
             border-radius: 20px;
             font-size: 11px;
             font-weight: bold;
-            margin-bottom: 18px;
+            margin-bottom: 12px;
         }
 
         .available {
@@ -79,10 +79,22 @@
             color: #f5b942;
         }
 
+        .price {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 7px 11px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            background: #30234d;
+            color: #f5b942;
+        }
+
         .description {
             color: #c5bfd2;
             line-height: 1.6;
             font-size: 15px;
+            margin-top: 8px;
         }
 
         .section {
@@ -237,6 +249,13 @@
                 AVAILABLE
             </span>
 
+            <span
+                class="price"
+                id="servicePrice"
+            >
+                From 1 π
+            </span>
+
             <p
                 class="description"
                 id="serviceDescription"
@@ -376,6 +395,11 @@
             "serviceStatus"
         );
 
+    const servicePrice =
+        document.getElementById(
+            "servicePrice"
+        );
+
     const serviceDescription =
         document.getElementById(
             "serviceDescription"
@@ -414,6 +438,8 @@
 
             status: "AVAILABLE",
 
+            price: "From 1 π",
+
             description:
                 "Build modern websites and web applications for your business, project, or community.",
 
@@ -433,6 +459,8 @@
             icon: "🎨",
 
             status: "AVAILABLE",
+
+            price: "From 0.5 π",
 
             description:
                 "Create professional visual content for your brand, business, community, or social media.",
@@ -454,6 +482,8 @@
 
             status: "AVAILABLE",
 
+            price: "From 0.3 π",
+
             description:
                 "Create clear and engaging content for websites, businesses, products, and online platforms.",
 
@@ -473,6 +503,8 @@
             icon: "📣",
 
             status: "AVAILABLE",
+
+            price: "From 1 π",
 
             description:
                 "Marketing support for businesses, products, communities, and online projects.",
@@ -494,6 +526,8 @@
 
             status: "AVAILABLE",
 
+            price: "From 0.3 π",
+
             description:
                 "Get help with websites, basic technical issues, setup, troubleshooting, and digital tools.",
 
@@ -513,6 +547,8 @@
             icon: "📱",
 
             status: "COMING SOON",
+
+            price: "Coming Soon",
 
             description:
                 "Mobile application development services will be available soon.",
@@ -577,6 +613,14 @@
                     ? "available"
                     : "coming"
             );
+
+
+        // ======================================
+        // PRICE
+        // ======================================
+
+        servicePrice.textContent =
+            service.price;
 
 
         // ======================================
