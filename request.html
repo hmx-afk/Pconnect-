@@ -203,7 +203,6 @@
         </p>
     </div>
 
-
     <div class="service-box">
 
         <div class="service-label">
@@ -215,7 +214,6 @@
         </div>
 
     </div>
-
 
     <div class="form-card">
 
@@ -237,7 +235,6 @@
 
             </div>
 
-
             <div class="form-group">
 
                 <label for="contact">
@@ -254,7 +251,6 @@
 
             </div>
 
-
             <div class="form-group">
 
                 <label for="details">
@@ -270,7 +266,6 @@
 
             </div>
 
-
             <button
                 type="submit"
                 class="submit-btn"
@@ -281,12 +276,10 @@
 
         </form>
 
-
         <div
             id="status"
             class="status"
         ></div>
-
 
         <div class="notice">
             🔐 Your request will be submitted for review.
@@ -297,7 +290,6 @@
     </div>
 
 </div>
-
 
 <div class="bottom-nav">
 
@@ -323,7 +315,6 @@
 
 </div>
 
-
 <script>
 
     // ==========================================
@@ -336,7 +327,6 @@
     const selectedService =
         params.get("service") || "Web Development";
 
-
     const serviceName =
         document.getElementById("serviceName");
 
@@ -348,7 +338,6 @@
 
     const status =
         document.getElementById("status");
-
 
     serviceName.textContent =
         selectedService;
@@ -377,17 +366,48 @@
                     .value.trim();
 
 
+            // Get Pi username at submission time
+            const piUsername =
+                sessionStorage.getItem(
+                    "pconnect_pi_username"
+                );
+
+
+            // ==========================================
+            // CHECK FORM
+            // ==========================================
+
             if (!name || !contact || !details) {
 
                 status.className =
                     "status error";
 
                 status.textContent =
-                    "Please complete all fields.";
+                    "⚠️ Please complete all fields.";
 
                 return;
             }
 
+
+            // ==========================================
+            // CHECK PI ACCOUNT
+            // ==========================================
+
+            if (!piUsername) {
+
+                status.className =
+                    "status error";
+
+                status.textContent =
+                    "⚠️ Please sign in with Pi before submitting a request.";
+
+                return;
+            }
+
+
+            // ==========================================
+            // SUBMITTING
+            // ==========================================
 
             submitBtn.disabled = true;
 
@@ -425,7 +445,10 @@
                                 contact,
 
                             details:
-                                details
+                                details,
+
+                            pi_username:
+                                piUsername
 
                         })
 
@@ -436,6 +459,10 @@
                     await response.json();
 
 
+                // ==========================================
+                // API ERROR
+                // ==========================================
+
                 if (!response.ok || data.error) {
 
                     throw new Error(
@@ -445,6 +472,10 @@
 
                 }
 
+
+                // ==========================================
+                // SUCCESS
+                // ==========================================
 
                 status.className =
                     "status success";
@@ -458,6 +489,10 @@
                 serviceName.textContent =
                     selectedService;
 
+
+                // ==========================================
+                // REDIRECT
+                // ==========================================
 
                 setTimeout(function() {
 
@@ -484,6 +519,7 @@
 
                 submitBtn.textContent =
                     "📩 Submit Request";
+
             }
 
         }
