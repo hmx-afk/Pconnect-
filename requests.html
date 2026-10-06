@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Request Service | PConnect</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>My Requests | PConnect</title>
+
+    <!-- Pi SDK -->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <style>
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -15,500 +24,812 @@
 
         body {
             font-family: Arial, sans-serif;
-            background: #0f0b1f;
-            color: #ffffff;
-            min-height: 100vh;
-            padding-bottom: 80px;
+            background: #f5f7fb;
+            color: #222;
+            padding-bottom: 90px;
+        }
+
+        header {
+            background: #6c4cff;
+            color: white;
+            padding: 20px;
+        }
+
+        header a {
+            color: white;
+            text-decoration: none;
+            font-size: 15px;
         }
 
         .container {
-            max-width: 650px;
-            margin: auto;
-            padding: 20px;
+            max-width: 700px;
+            margin: 25px auto;
+            padding: 0 18px;
         }
 
-        .back {
-            display: inline-block;
-            color: #aaa3ba;
-            text-decoration: none;
-            font-size: 14px;
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
             margin-bottom: 20px;
-        }
-
-        .back:hover {
-            color: #f5b942;
-        }
-
-        .header {
-            margin-bottom: 20px;
-        }
-
-        .header h1 {
-            color: #f5b942;
-            font-size: 27px;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            color: #aaa3ba;
             line-height: 1.5;
-            font-size: 14px;
         }
 
-        .service-box {
-            background: #1b1430;
-            border: 1px solid #30234d;
+        .loading,
+        .empty,
+        .error {
+            background: white;
+            padding: 25px;
             border-radius: 16px;
-            padding: 18px;
-            margin-bottom: 18px;
+            text-align: center;
+            color: #666;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         }
 
-        .service-label {
-            color: #aaa3ba;
-            font-size: 12px;
-            margin-bottom: 7px;
+        .error {
+            color: #b42318;
         }
 
-        .service-name {
-            color: #f5b942;
-            font-size: 19px;
-            font-weight: bold;
-        }
-
-        .form-card {
-            background: #1b1430;
-            border: 1px solid #30234d;
-            border-radius: 18px;
+        .card {
+            background: white;
             padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         }
 
-        .form-group {
-            margin-bottom: 17px;
-        }
-
-        label {
-            display: block;
-            color: #ddd8e7;
-            font-size: 14px;
+        .service-title {
+            font-size: 20px;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
-        input,
-        textarea {
+        .request-id {
+            color: #777;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            margin: 3px 5px 12px 0;
+        }
+
+        .approved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .waiting {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .pending {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .paid {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .progress {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .cancelled {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .details {
+            color: #555;
+            line-height: 1.6;
+            margin-top: 8px;
+        }
+
+        .details strong {
+            color: #222;
+        }
+
+        .pay-button {
+            display: block;
             width: 100%;
-            border: 1px solid #3a2d59;
-            border-radius: 10px;
-            background: #171025;
-            color: #ffffff;
+            margin-top: 18px;
             padding: 13px;
-            font-size: 14px;
-            outline: none;
-        }
-
-        input:focus,
-        textarea:focus {
-            border-color: #f5b942;
-        }
-
-        textarea {
-            min-height: 140px;
-            resize: vertical;
-            line-height: 1.5;
-        }
-
-        .submit-btn {
-            width: 100%;
+            background: #6c4cff;
+            color: white;
+            text-align: center;
+            text-decoration: none;
             border: none;
-            border-radius: 11px;
-            padding: 15px;
-            background: #f5b942;
-            color: #171025;
+            border-radius: 10px;
             font-size: 15px;
             font-weight: bold;
             cursor: pointer;
         }
 
-        .submit-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .pay-button:hover {
+            opacity: 0.9;
         }
 
-        .status {
+        .refresh-button {
+            display: block;
+            width: 100%;
             margin-top: 15px;
-            text-align: center;
+            padding: 12px;
+            background: white;
+            color: #6c4cff;
+            border: 2px solid #6c4cff;
+            border-radius: 10px;
             font-size: 14px;
-            line-height: 1.5;
+            font-weight: bold;
+            cursor: pointer;
         }
 
-        .success {
-            color: #5ee38a;
-        }
-
-        .error {
-            color: #ff7676;
-        }
-
-        .notice {
-            background: #171025;
-            border: 1px solid #30234d;
-            border-radius: 12px;
-            padding: 13px;
-            margin-top: 16px;
-            color: #aaa3ba;
-            font-size: 12px;
-            line-height: 1.5;
-        }
-
-        .bottom-nav {
+        nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: #171025;
-            border-top: 1px solid #30234d;
+            background: white;
             display: flex;
             justify-content: space-around;
-            padding: 10px 5px;
-            z-index: 100;
+            padding: 14px 5px;
+            box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.08);
+            z-index: 1000;
         }
 
-        .bottom-nav a {
-            color: #aaa3ba;
+        nav a {
             text-decoration: none;
-            font-size: 11px;
+            color: #555;
+            font-size: 13px;
             text-align: center;
+            line-height: 1.5;
         }
 
-        .bottom-nav a.active {
-            color: #f5b942;
+        nav a.active {
+            color: #6c4cff;
+            font-weight: bold;
         }
+
     </style>
 </head>
 
 <body>
 
-<div class="container">
+    <header>
+        <a href="index.html">← Back to Home</a>
+    </header>
 
-    <a href="/browse.html" class="back">
-        ← Back to Browse
-    </a>
+    <div class="container">
 
-    <div class="header">
-        <h1>📩 Request Service</h1>
+        <h1>📋 My Requests</h1>
 
-        <p>
-            Tell us what you need and submit your
-            service request to PConnect.
+        <p class="subtitle">
+            View your service requests and their current status.
         </p>
-    </div>
 
-    <div class="service-box">
-
-        <div class="service-label">
-            SELECTED SERVICE
+        <div id="requestsContainer">
+            <div class="loading">
+                Loading your requests...
+            </div>
         </div>
 
-        <div class="service-name" id="serviceName">
-            Web Development
-        </div>
-
-    </div>
-
-    <div class="form-card">
-
-        <form id="requestForm">
-
-            <div class="form-group">
-
-                <label for="name">
-                    👤 Your Name
-                </label>
-
-                <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    placeholder="Enter your name"
-                    required
-                >
-
-            </div>
-
-            <div class="form-group">
-
-                <label for="contact">
-                    📞 Contact
-                </label>
-
-                <input
-                    type="text"
-                    id="contact"
-                    name="contact"
-                    placeholder="Phone, Telegram, email, or other contact"
-                    required
-                >
-
-            </div>
-
-            <div class="form-group">
-
-                <label for="details">
-                    📝 Project Details
-                </label>
-
-                <textarea
-                    id="details"
-                    name="details"
-                    placeholder="Describe what you want us to build or design..."
-                    required
-                ></textarea>
-
-            </div>
-
-            <button
-                type="submit"
-                class="submit-btn"
-                id="submitBtn"
-            >
-                📩 Submit Request
-            </button>
-
-        </form>
-
-        <div
-            id="status"
-            class="status"
-        ></div>
-
-        <div class="notice">
-            🔐 Your request will be submitted for review.
-            Payment will only be requested after the
-            service request is approved.
-        </div>
+        <button
+            class="refresh-button"
+            onclick="loadRequests()"
+        >
+            🔄 Refresh Requests
+        </button>
 
     </div>
 
-</div>
+    <nav>
 
-<div class="bottom-nav">
+        <a href="index.html">
+            🏠<br>Home
+        </a>
 
-    <a href="/index.html">
-        🏠<br>Home
-    </a>
+        <a href="browse.html">
+            🔎<br>Browse
+        </a>
 
-    <a href="/browse.html">
-        🔎<br>Browse
-    </a>
+        <a
+            href="requests.html"
+            class="active"
+        >
+            📋<br>Requests
+        </a>
 
-    <a href="/requests.html" class="active">
-        📋<br>Requests
-    </a>
+        <a href="payments.html">
+            💳<br>Payments
+        </a>
 
-    <a href="/payments.html">
-        💳<br>Payments
-    </a>
+        <a href="profile.html">
+            👤<br>Profile
+        </a>
 
-    <a href="/profile.html">
-        👤<br>Profile
-    </a>
+    </nav>
 
-</div>
+    <script>
 
-<script>
+        // ==========================================
+        // PConnect - My Requests
+        // ==========================================
 
-    // ==========================================
-    // PConnect - Request Service
-    // ==========================================
+        let piUsername = "";
 
-    const params =
-        new URLSearchParams(window.location.search);
+        // ==========================================
+        // Get saved Pi username
+        // ==========================================
 
-    const selectedService =
-        params.get("service") || "Web Development";
+        function getSavedUsername() {
 
-    const serviceName =
-        document.getElementById("serviceName");
+            const possibleKeys = [
+                "pconnect_pi_username",
+                "pi_username",
+                "piUsername"
+            ];
 
-    const requestForm =
-        document.getElementById("requestForm");
+            for (const key of possibleKeys) {
 
-    const submitBtn =
-        document.getElementById("submitBtn");
+                const value =
+                    localStorage.getItem(key);
 
-    const status =
-        document.getElementById("status");
+                if (value && value.trim()) {
 
+                    return value.trim();
 
-    serviceName.textContent =
-        selectedService;
+                }
 
-
-    // ==========================================
-    // PI USERNAME
-    // ==========================================
-
-    const piUsername =
-        sessionStorage.getItem(
-            "pconnect_pi_username"
-        );
-
-
-    // ==========================================
-    // SUBMIT REQUEST
-    // ==========================================
-
-    requestForm.addEventListener(
-        "submit",
-        async function(event) {
-
-            event.preventDefault();
-
-            const name =
-                document.getElementById("name")
-                    .value.trim();
-
-            const contact =
-                document.getElementById("contact")
-                    .value.trim();
-
-            const details =
-                document.getElementById("details")
-                    .value.trim();
-
-
-            if (!name || !contact || !details) {
-
-                status.className =
-                    "status error";
-
-                status.textContent =
-                    "Please complete all fields.";
-
-                return;
             }
 
+            return "";
 
-            // ==========================================
-            // REQUIRE PI LOGIN
-            // ==========================================
+        }
 
-            if (!piUsername) {
 
-                status.className =
-                    "status error";
+        // ==========================================
+        // Escape HTML
+        // ==========================================
 
-                status.textContent =
-                    "⚠️ Please sign in with Pi before submitting a request.";
+        function escapeHtml(value) {
 
-                return;
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
+        }
+
+
+        // ==========================================
+        // Review Status
+        // ==========================================
+
+        function reviewStatusClass(status) {
+
+            const value =
+                String(status || "")
+                    .toLowerCase();
+
+            if (value === "approved") {
+                return "approved";
             }
 
+            if (value === "rejected") {
+                return "rejected";
+            }
 
-            submitBtn.disabled = true;
+            return "waiting";
+        }
 
-            submitBtn.textContent =
-                "Submitting...";
 
-            status.className =
-                "status";
+        // ==========================================
+        // Order Status
+        // ==========================================
 
-            status.textContent =
-                "Sending your request...";
+        function orderStatusClass(status) {
 
+            const value =
+                String(status || "")
+                    .toLowerCase()
+                    .replace(/\s+/g, "_");
+
+            if (value === "paid") {
+                return "paid";
+            }
+
+            if (
+                value === "in_progress" ||
+                value === "in progress"
+            ) {
+                return "progress";
+            }
+
+            if (value === "completed") {
+                return "completed";
+            }
+
+            if (value === "cancelled") {
+                return "cancelled";
+            }
+
+            return "pending";
+        }
+
+
+        // ==========================================
+        // Display order status
+        // ==========================================
+
+        function getOrderStatus(request) {
+
+            return (
+                request.order_status ||
+                request.orderStatus ||
+                "Pending"
+            );
+
+        }
+
+
+        // ==========================================
+        // Load Requests
+        // ==========================================
+
+        async function loadRequests() {
+
+            const container =
+                document.getElementById(
+                    "requestsContainer"
+                );
+
+            container.innerHTML = `
+                <div class="loading">
+                    Loading your requests...
+                </div>
+            `;
 
             try {
 
+                piUsername =
+                    getSavedUsername();
+
+                // ==================================
+                // If username is not saved,
+                // try Pi authentication
+                // ==================================
+
+                if (!piUsername) {
+
+                    if (
+                        typeof Pi !== "undefined"
+                    ) {
+
+                        try {
+
+                            Pi.init({
+                                version: "2.0",
+                                sandbox: true
+                            });
+
+                            const auth =
+                                await Pi.authenticate(
+                                    [
+                                        "username"
+                                    ],
+                                    function(payment) {
+                                        console.log(
+                                            "Incomplete payment:",
+                                            payment
+                                        );
+                                    }
+                                );
+
+                            if (
+                                auth &&
+                                auth.user &&
+                                auth.user.username
+                            ) {
+
+                                piUsername =
+                                    auth.user.username;
+
+                                localStorage.setItem(
+                                    "pconnect_pi_username",
+                                    piUsername
+                                );
+
+                            }
+
+                        } catch (authError) {
+
+                            console.error(
+                                "Pi authentication error:",
+                                authError
+                            );
+
+                        }
+
+                    }
+
+                }
+
+
+                // ==================================
+                // Username still missing
+                // ==================================
+
+                if (!piUsername) {
+
+                    container.innerHTML = `
+                        <div class="error">
+                            <h3>🔐 Pi Account Required</h3>
+                            <p style="margin-top:10px;">
+                                Please sign in with Pi to view your requests.
+                            </p>
+                        </div>
+                    `;
+
+                    return;
+                }
+
+
+                // ==================================
+                // API request
+                // ==================================
+
                 const response =
-                    await fetch("/api/request", {
-
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body: JSON.stringify({
-
-                            service:
-                                selectedService,
-
-                            name:
-                                name,
-
-                            contact:
-                                contact,
-
-                            details:
-                                details,
-
-                            pi_username:
-                                piUsername
-
-                        })
-
-                    });
+                    await fetch(
+                        "/api/requests?pi_username=" +
+                        encodeURIComponent(piUsername),
+                        {
+                            method: "GET",
+                            cache: "no-store"
+                        }
+                    );
 
 
-                const data =
+                const result =
                     await response.json();
 
 
-                if (!response.ok || data.error) {
+                if (
+                    !response.ok ||
+                    !result.success
+                ) {
 
                     throw new Error(
-                        data.error ||
-                        "Request submission failed."
+                        result.error ||
+                        "Failed to load requests"
                     );
 
                 }
 
 
-                status.className =
-                    "status success";
-
-                status.textContent =
-                    "✔️ Request submitted successfully!";
-
-
-                requestForm.reset();
-
-                serviceName.textContent =
-                    selectedService;
+                const requests =
+                    Array.isArray(result.requests)
+                        ? result.requests
+                        : [];
 
 
-                setTimeout(function() {
+                // ==================================
+                // No requests
+                // ==================================
 
-                    window.location.href =
-                        "/requests.html";
+                if (requests.length === 0) {
 
-                }, 1500);
+                    container.innerHTML = `
+                        <div class="empty">
+                            <h3>No requests yet</h3>
+
+                            <p style="margin-top:10px;">
+                                You have not submitted any service requests.
+                            </p>
+
+                            <a
+                                href="browse.html"
+                                class="pay-button"
+                            >
+                                🔎 Browse Services
+                            </a>
+                        </div>
+                    `;
+
+                    return;
+                }
+
+
+                // ==================================
+                // Render requests
+                // ==================================
+
+                container.innerHTML =
+                    requests.map(
+                        function(request) {
+
+                            const reviewStatus =
+                                request.review_status ||
+                                "Waiting";
+
+                            const orderStatus =
+                                getOrderStatus(
+                                    request
+                                );
+
+                            const payment =
+                                request.payment ||
+                                "Pending";
+
+                            const isApproved =
+                                String(
+                                    reviewStatus
+                                ).toLowerCase() ===
+                                "approved";
+
+                            const isPaid =
+                                String(
+                                    orderStatus
+                                ).toLowerCase() ===
+                                "paid";
+
+                            const isInProgress =
+                                String(
+                                    orderStatus
+                                ).toLowerCase()
+                                .replace(/\s+/g, "_") ===
+                                "in_progress";
+
+                            const isCompleted =
+                                String(
+                                    orderStatus
+                                ).toLowerCase() ===
+                                "completed";
+
+                            const isCancelled =
+                                String(
+                                    orderStatus
+                                ).toLowerCase() ===
+                                "cancelled";
+
+
+                            let action = "";
+
+
+                            // ==========================
+                            // Pay only when:
+                            // Approved + Pending
+                            // ==========================
+
+                            if (
+                                isApproved &&
+                                !isPaid &&
+                                !isInProgress &&
+                                !isCompleted &&
+                                !isCancelled
+                            ) {
+
+                                action = `
+                                    <a
+                                        href="payments.html?request_id=${encodeURIComponent(request.id)}"
+                                        class="pay-button"
+                                    >
+                                        💳 Pay 0.01 π
+                                    </a>
+                                `;
+
+                            }
+
+
+                            if (isPaid) {
+
+                                action = `
+                                    <div
+                                        class="status paid"
+                                        style="margin-top:15px; margin-bottom:0;"
+                                    >
+                                        ✅ Paid
+                                    </div>
+                                `;
+
+                            }
+
+
+                            if (isInProgress) {
+
+                                action = `
+                                    <div
+                                        class="status progress"
+                                        style="margin-top:15px; margin-bottom:0;"
+                                    >
+                                        🔵 Order In Progress
+                                    </div>
+                                `;
+
+                            }
+
+
+                            if (isCompleted) {
+
+                                action = `
+                                    <div
+                                        class="status completed"
+                                        style="margin-top:15px; margin-bottom:0;"
+                                    >
+                                        🟢 Completed
+                                    </div>
+                                `;
+
+                            }
+
+
+                            if (isCancelled) {
+
+                                action = `
+                                    <div
+                                        class="status cancelled"
+                                        style="margin-top:15px; margin-bottom:0;"
+                                    >
+                                        ⚪ Cancelled
+                                    </div>
+                                `;
+
+                            }
+
+
+                            return `
+                                <div class="card">
+
+                                    <div class="service-title">
+                                        💻
+                                        ${escapeHtml(
+                                            request.service ||
+                                            "Service"
+                                        )}
+                                    </div>
+
+                                    <div class="request-id">
+                                        Request ID:
+                                        <strong>
+                                            #${escapeHtml(
+                                                request.id
+                                            )}
+                                        </strong>
+                                    </div>
+
+                                    <div>
+
+                                        <span
+                                            class="status ${reviewStatusClass(
+                                                reviewStatus
+                                            )}"
+                                        >
+                                            Review:
+                                            ${escapeHtml(
+                                                reviewStatus
+                                            )}
+                                        </span>
+
+                                        <span
+                                            class="status ${orderStatusClass(
+                                                orderStatus
+                                            )}"
+                                        >
+                                            Order:
+                                            ${escapeHtml(
+                                                orderStatus
+                                            )}
+                                        </span>
+
+                                    </div>
+
+                                    <p class="details">
+
+                                        <strong>Name:</strong>
+                                        ${escapeHtml(
+                                            request.name
+                                        )}
+                                        <br><br>
+
+                                        <strong>Contact:</strong>
+                                        ${escapeHtml(
+                                            request.contact
+                                        )}
+                                        <br><br>
+
+                                        <strong>Project Details:</strong>
+                                        ${escapeHtml(
+                                            request.details
+                                        )}
+                                        <br><br>
+
+                                        <strong>Payment:</strong>
+                                        ${escapeHtml(
+                                            payment
+                                        )}
+                                        <br><br>
+
+                                        <strong>Submitted:</strong>
+                                        ${escapeHtml(
+                                            request.created_at
+                                                ? new Date(
+                                                    request.created_at
+                                                ).toLocaleString()
+                                                : "N/A"
+                                        )}
+
+                                    </p>
+
+                                    ${action}
+
+                                </div>
+                            `;
+
+                        }
+                    ).join("");
 
 
             } catch (error) {
 
                 console.error(
-                    "Request error:",
+                    "Load requests error:",
                     error
                 );
 
-                status.className =
-                    "status error";
+                container.innerHTML = `
+                    <div class="error">
 
-                status.textContent =
-                    "⚠️ " + error.message;
+                        <h3>
+                            ⚠️ Failed to Load Requests
+                        </h3>
 
-                submitBtn.disabled = false;
+                        <p style="margin-top:10px;">
+                            ${
+                                escapeHtml(
+                                    error.message ||
+                                    "Please try again."
+                                )
+                            }
+                        </p>
 
-                submitBtn.textContent =
-                    "📩 Submit Request";
+                    </div>
+                `;
+
             }
 
         }
-    );
 
-</script>
+
+        // ==========================================
+        // Start
+        // ==========================================
+
+        loadRequests();
+
+    </script>
 
 </body>
+
 </html>
