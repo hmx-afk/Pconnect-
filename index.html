@@ -798,15 +798,26 @@ async function loadDashboard() {
 
         // ==================================
         // COMPLETED PAYMENTS
+        //
+        // Paid = Pi payment completed
+        // Completed = service order completed
         // ==================================
 
         const completedPayments =
             requests.filter(
-                request =>
-                    String(
-                        request.order_status || ""
-                    ).toLowerCase()
-                    === "completed"
+                request => {
+
+                    const orderStatus =
+                        String(
+                            request.order_status || ""
+                        ).toLowerCase();
+
+                    return (
+                        orderStatus === "paid" ||
+                        orderStatus === "completed"
+                    );
+
+                }
             ).length;
 
 
@@ -1139,7 +1150,7 @@ loadNotifications();
 
 
 <!-- ========================================== -->
-<!-- IMPORTANT: PI SDK MUST LOAD BEFORE app.js -->
+<!-- PI SDK MUST LOAD BEFORE app.js -->
 <!-- ========================================== -->
 
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
