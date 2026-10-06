@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Request Service | PConnect</title>
 
+    <!-- Pi SDK -->
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
     <style>
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -183,25 +193,36 @@
         .bottom-nav a.active {
             color: #f5b942;
         }
+
     </style>
+
 </head>
 
 <body>
 
 <div class="container">
 
-    <a href="/browse.html" class="back">
+    <a
+        href="/browse.html"
+        class="back"
+    >
         ← Back to Browse
     </a>
 
+
     <div class="header">
-        <h1>📩 Request Service</h1>
+
+        <h1>
+            📩 Request Service
+        </h1>
 
         <p>
             Tell us what you need and submit your
             service request to PConnect.
         </p>
+
     </div>
+
 
     <div class="service-box">
 
@@ -209,11 +230,15 @@
             SELECTED SERVICE
         </div>
 
-        <div class="service-name" id="serviceName">
+        <div
+            class="service-name"
+            id="serviceName"
+        >
             Web Development
         </div>
 
     </div>
+
 
     <div class="form-card">
 
@@ -230,10 +255,12 @@
                     id="name"
                     name="name"
                     placeholder="Enter your name"
+                    maxlength="100"
                     required
                 >
 
             </div>
+
 
             <div class="form-group">
 
@@ -246,10 +273,12 @@
                     id="contact"
                     name="contact"
                     placeholder="Phone, Telegram, email, or other contact"
+                    maxlength="150"
                     required
                 >
 
             </div>
+
 
             <div class="form-group">
 
@@ -261,10 +290,12 @@
                     id="details"
                     name="details"
                     placeholder="Describe what you want us to build or design..."
+                    maxlength="2000"
                     required
                 ></textarea>
 
             </div>
+
 
             <button
                 type="submit"
@@ -276,20 +307,25 @@
 
         </form>
 
+
         <div
             id="status"
             class="status"
         ></div>
 
+
         <div class="notice">
+
             🔐 Your request will be submitted for review.
             Payment will only be requested after the
             service request is approved.
+
         </div>
 
     </div>
 
 </div>
+
 
 <div class="bottom-nav">
 
@@ -301,7 +337,10 @@
         🔎<br>Browse
     </a>
 
-    <a href="/requests.html" class="active">
+    <a
+        href="/requests.html"
+        class="active"
+    >
         📋<br>Requests
     </a>
 
@@ -315,32 +354,154 @@
 
 </div>
 
+
 <script>
 
     // ==========================================
-    // PConnect - Request Service
+    // PConnect - Secure Request Submission
+    // ==========================================
+
+
+    // ==========================================
+    // PI SDK
+    // ==========================================
+
+    Pi.init({
+        version: "2.0",
+        sandbox: true
+    });
+
+
+    // ==========================================
+    // PAGE ELEMENTS
     // ==========================================
 
     const params =
-        new URLSearchParams(window.location.search);
+        new URLSearchParams(
+            window.location.search
+        );
+
 
     const selectedService =
-        params.get("service") || "Web Development";
+        params.get("service") ||
+        "Web Development";
+
 
     const serviceName =
-        document.getElementById("serviceName");
+        document.getElementById(
+            "serviceName"
+        );
+
 
     const requestForm =
-        document.getElementById("requestForm");
+        document.getElementById(
+            "requestForm"
+        );
+
 
     const submitBtn =
-        document.getElementById("submitBtn");
+        document.getElementById(
+            "submitBtn"
+        );
+
 
     const status =
-        document.getElementById("status");
+        document.getElementById(
+            "status"
+        );
+
 
     serviceName.textContent =
         selectedService;
+
+
+    // ==========================================
+    // PI AUTHENTICATION
+    // ==========================================
+
+    let piAccessToken = null;
+
+    let piUsername = null;
+
+
+    async function authenticatePi() {
+
+        try {
+
+            const authResult =
+                await Pi.authenticate(
+                    ["username"],
+                    function(payment) {
+
+                        console.log(
+                            "Incomplete payment:",
+                            payment
+                        );
+
+                    }
+                );
+
+
+            if (
+                !authResult ||
+                !authResult.accessToken ||
+                !authResult.user
+            ) {
+
+                throw new Error(
+                    "Pi authentication failed."
+                );
+
+            }
+
+
+            piAccessToken =
+                String(
+                    authResult.accessToken
+                ).trim();
+
+
+            piUsername =
+                String(
+                    authResult.user.username ||
+                    ""
+                ).trim();
+
+
+            if (!piAccessToken) {
+
+                throw new Error(
+                    "Pi access token not available."
+                );
+
+            }
+
+
+            if (piUsername) {
+
+                sessionStorage.setItem(
+                    "pconnect_pi_username",
+                    piUsername
+                );
+
+            }
+
+
+            return true;
+
+
+        } catch (error) {
+
+            console.error(
+                "Pi authentication error:",
+                error
+            );
+
+            return false;
+
+        }
+
+    }
 
 
     // ==========================================
@@ -353,31 +514,34 @@
 
             event.preventDefault();
 
+
             const name =
-                document.getElementById("name")
-                    .value.trim();
+                document.getElementById(
+                    "name"
+                ).value.trim();
+
 
             const contact =
-                document.getElementById("contact")
-                    .value.trim();
+                document.getElementById(
+                    "contact"
+                ).value.trim();
+
 
             const details =
-                document.getElementById("details")
-                    .value.trim();
-
-
-            // Get Pi username at submission time
-            const piUsername =
-                sessionStorage.getItem(
-                    "pconnect_pi_username"
-                );
+                document.getElementById(
+                    "details"
+                ).value.trim();
 
 
             // ==========================================
             // CHECK FORM
             // ==========================================
 
-            if (!name || !contact || !details) {
+            if (
+                !name ||
+                !contact ||
+                !details
+            ) {
 
                 status.className =
                     "status error";
@@ -386,73 +550,97 @@
                     "⚠️ Please complete all fields.";
 
                 return;
+
             }
 
 
             // ==========================================
-            // CHECK PI ACCOUNT
-            // ==========================================
-
-            if (!piUsername) {
-
-                status.className =
-                    "status error";
-
-                status.textContent =
-                    "⚠️ Please sign in with Pi before submitting a request.";
-
-                return;
-            }
-
-
-            // ==========================================
-            // SUBMITTING
+            // DISABLE BUTTON
             // ==========================================
 
             submitBtn.disabled = true;
 
             submitBtn.textContent =
-                "Submitting...";
+                "Connecting to Pi...";
+
 
             status.className =
                 "status";
 
             status.textContent =
-                "Sending your request...";
+                "Authenticating your Pi account...";
 
 
             try {
 
+                // ==========================================
+                // GET FRESH PI ACCESS TOKEN
+                // ==========================================
+
+                const authenticated =
+                    await authenticatePi();
+
+
+                if (!authenticated) {
+
+                    throw new Error(
+                        "Please sign in with Pi and try again."
+                    );
+
+                }
+
+
+                // ==========================================
+                // SUBMIT TO SERVER
+                // ==========================================
+
+                submitBtn.textContent =
+                    "Submitting...";
+
+
+                status.textContent =
+                    "Sending your request securely...";
+
+
                 const response =
-                    await fetch("/api/request", {
+                    await fetch(
+                        "/api/request",
+                        {
 
-                        method: "POST",
+                            method: "POST",
 
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
+                            headers: {
 
-                        body: JSON.stringify({
+                                "Content-Type":
+                                    "application/json"
 
-                            service:
-                                selectedService,
+                            },
 
-                            name:
-                                name,
+                            body:
+                                JSON.stringify({
 
-                            contact:
-                                contact,
+                                    service:
+                                        selectedService,
 
-                            details:
-                                details,
+                                    name:
+                                        name,
 
-                            pi_username:
-                                piUsername
+                                    contact:
+                                        contact,
 
-                        })
+                                    details:
+                                        details,
 
-                    });
+                                    // IMPORTANT:
+                                    // We send the Pi access token.
+                                    // Server verifies the identity.
+                                    accessToken:
+                                        piAccessToken
+
+                                })
+
+                        }
+                    );
 
 
                 const data =
@@ -463,7 +651,10 @@
                 // API ERROR
                 // ==========================================
 
-                if (!response.ok || data.error) {
+                if (
+                    !response.ok ||
+                    data.error
+                ) {
 
                     throw new Error(
                         data.error ||
@@ -486,6 +677,7 @@
 
                 requestForm.reset();
 
+
                 serviceName.textContent =
                     selectedService;
 
@@ -494,12 +686,15 @@
                 // REDIRECT
                 // ==========================================
 
-                setTimeout(function() {
+                setTimeout(
+                    function() {
 
-                    window.location.href =
-                        "/requests.html";
+                        window.location.href =
+                            "/requests.html";
 
-                }, 1500);
+                    },
+                    1500
+                );
 
 
             } catch (error) {
@@ -509,13 +704,19 @@
                     error
                 );
 
+
                 status.className =
                     "status error";
 
-                status.textContent =
-                    "⚠️ " + error.message;
 
-                submitBtn.disabled = false;
+                status.textContent =
+                    "⚠️ " +
+                    error.message;
+
+
+                submitBtn.disabled =
+                    false;
+
 
                 submitBtn.textContent =
                     "📩 Submit Request";
