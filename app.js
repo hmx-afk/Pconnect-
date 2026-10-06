@@ -250,7 +250,7 @@ if (loginBtn) {
 
 
                 // ==================================
-                // SAVE USERNAME FOR DASHBOARD
+                // SAVE USERNAME FOR PCONNECT
                 // ==================================
 
                 sessionStorage.setItem(
@@ -288,6 +288,21 @@ if (loginBtn) {
 
                     payStatus.textContent =
                         "Pi connected successfully. You can now make the 0.01 π Test-Pi payment.";
+
+                }
+
+
+                // ==================================
+                // REFRESH TRANSACTION HISTORY
+                // AFTER PI LOGIN
+                // ==================================
+
+                if (
+                    typeof loadTransactions ===
+                    "function"
+                ) {
+
+                    loadTransactions();
 
                 }
 
@@ -827,7 +842,10 @@ if (payBtn) {
                                             false;
 
 
-                                        // Refresh transaction history
+                                        // ==================================
+                                        // REFRESH TRANSACTION HISTORY
+                                        // ==================================
+
                                         if (
                                             typeof loadTransactions ===
                                             "function"
@@ -838,7 +856,10 @@ if (payBtn) {
                                         }
 
 
-                                        // Refresh dashboard
+                                        // ==================================
+                                        // REFRESH DASHBOARD
+                                        // ==================================
+
                                         if (
                                             typeof loadDashboard ===
                                             "function"
@@ -849,7 +870,10 @@ if (payBtn) {
                                         }
 
 
-                                        // Refresh notifications
+                                        // ==================================
+                                        // REFRESH NOTIFICATIONS
+                                        // ==================================
+
                                         if (
                                             typeof loadNotifications ===
                                             "function"
