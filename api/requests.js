@@ -2,138 +2,148 @@ import { createClient } from "@supabase/supabase-js";
 
 export default async function handler(req, res) {
 
-// ==========================================
-// METHOD CHECK
-// ==========================================
-
-if (req.method !== "GET") {
-    return res.status(405).json({
-        success: false,
-        error: "Method not allowed"
-    });
-}
-
-
-try {
-
     // ==========================================
-    // ENVIRONMENT VARIABLES
+    // CACHE CONTROL
     // ==========================================
 
-    const supabaseUrl =
-        process.env.SUPABASE_URL;
-
-    const supabaseSecretKey =
-        process.env.SUPABASE_SECRET_KEY;
+    res.setHeader("Cache-Control", "no-store");
 
 
-    if (!supabaseUrl) {
+    // ==========================================
+    // METHOD CHECK
+    // ==========================================
 
-        console.error(
-            "Missing SUPABASE_URL"
-        );
-
-        return res.status(500).json({
+    if (req.method !== "GET") {
+        return res.status(405).json({
             success: false,
-            error: "SUPABASE_URL is not configured"
+            error: "Method not allowed"
         });
-
     }
 
 
-    if (!supabaseSecretKey) {
+    try {
 
-        console.error(
-            "Missing SUPABASE_SECRET_KEY"
-        );
+        // ==========================================
+        // ENVIRONMENT VARIABLES
+        // ==========================================
 
-        return res.status(500).json({
-            success: false,
-            error: "SUPABASE_SECRET_KEY is not configured"
-        });
+        const supabaseUrl =
+            process.env.SUPABASE_URL;
 
-    }
-
-
-    // ==========================================
-    // SUPABASE CLIENT
-    // ==========================================
-
-    const supabase =
-        createClient(
-            supabaseUrl,
-            supabaseSecretKey
-        );
+        const supabaseSecretKey =
+            process.env.SUPABASE_SECRET_KEY;
 
 
-    // ==========================================
-    // GET REQUESTS
-    // ==========================================
+        if (!supabaseUrl || !supabaseSecretKey) {
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("requests")
-        .select("*")
-        .order(
-            "created_at",
-            {
-                ascending: false
-            }
-        );
+            console.error(
+                "Missing Supabase environment variables"
+            );
+
+            return res.status(500).json({
+                success: false,
+                error: "Server configuration error"
+            });
+
+        }
 
 
-    if (error) {
+        // ==========================================
+        // PI USERNAME
+        // ==========================================
 
-        console.error(
-            "Supabase requests error:",
+        const piUsername =
+            String(
+                req.query?.pi_username || ""
+            ).trim();
+
+
+        if (!piUsername) {
+
+            return res.status(401).json({
+                success: false,
+                error: "Pi username is required"
+            });
+
+        }
+
+
+        // ==========================================
+        // SUPABASE CLIENT
+        // ==========================================
+
+        const supabase =
+            createClient(
+                supabaseUrl,
+                supabaseSecretKey
+            );
+
+
+        // ==========================================
+        // GET ONLY USER'S REQUESTS
+        // ==========================================
+
+        const {
+            data,
             error
+        } = await supabase
+            .from("requests")
+            .select("*")
+            .eq("pi_username", piUsername)
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+        // ==========================================
+        // SUPABASE ERROR
+        // ==========================================
+
+        if (error) {
+
+            console.error(
+                "Supabase requests error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                error: "Failed to load requests"
+            });
+
+        }
+
+
+        // ==========================================
+        // SUCCESS
+        // ==========================================
+
+        return res.status(200).json({
+
+            success: true,
+
+            requests:
+                Array.isArray(data)
+                    ? data
+                    : []
+
+        });
+
+    } catch (err) {
+
+        console.error(
+            "Requests API error:",
+            err
         );
 
         return res.status(500).json({
             success: false,
-            error:
-                error.message ||
-                "Failed to load requests"
+            error: "Internal server error"
         });
 
     }
-
-
-    // ==========================================
-    // SUCCESS
-    // ==========================================
-
-    return res.status(200).json({
-
-        success: true,
-
-        requests:
-            Array.isArray(data)
-                ? data
-                : []
-
-    });
-
-} catch (err) {
-
-    console.error(
-        "requests API error:",
-        err
-    );
-
-
-    return res.status(500).json({
-
-        success: false,
-
-        error:
-            err?.message ||
-            "Failed to load requests"
-
-    });
-
-}
 
 }
