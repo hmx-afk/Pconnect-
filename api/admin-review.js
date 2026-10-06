@@ -1,6 +1,9 @@
 // ==========================================
 // PConnect - Admin Review & Order Status API
+// Security Patched Version
 // ==========================================
+
+import crypto from "crypto";
 
 export default async function handler(req, res) {
 
@@ -25,10 +28,14 @@ export default async function handler(req, res) {
         // ==========================================
 
         const adminKey =
-            req.headers["x-admin-key"];
+            String(
+                req.headers["x-admin-key"] || ""
+            );
 
         const correctAdminKey =
-            process.env.ADMIN_REVIEW_KEY;
+            String(
+                process.env.ADMIN_REVIEW_KEY || ""
+            );
 
 
         if (!correctAdminKey) {
@@ -46,10 +53,53 @@ export default async function handler(req, res) {
         }
 
 
-        if (
-            !adminKey ||
-            adminKey !== correctAdminKey
-        ) {
+        // ==========================================
+        // TIMING-SAFE ADMIN KEY COMPARISON
+        // ==========================================
+
+        let adminKeyValid = false;
+
+        try {
+
+            const providedKeyBuffer =
+                Buffer.from(
+                    adminKey,
+                    "utf8"
+                );
+
+            const correctKeyBuffer =
+                Buffer.from(
+                    correctAdminKey,
+                    "utf8"
+                );
+
+
+            if (
+                providedKeyBuffer.length ===
+                correctKeyBuffer.length
+            ) {
+
+                adminKeyValid =
+                    crypto.timingSafeEqual(
+                        providedKeyBuffer,
+                        correctKeyBuffer
+                    );
+
+            }
+
+        } catch (authError) {
+
+            console.error(
+                "Admin authentication comparison error:",
+                authError
+            );
+
+            adminKeyValid = false;
+
+        }
+
+
+        if (!adminKeyValid) {
 
             return res.status(401).json({
                 success: false,
@@ -187,9 +237,7 @@ export default async function handler(req, res) {
             return res.status(500).json({
                 success: false,
                 error:
-                    "Failed to load request",
-                details:
-                    requestData
+                    "Failed to load request"
             });
 
         }
@@ -423,10 +471,7 @@ export default async function handler(req, res) {
                     success: false,
 
                     error:
-                        "Failed to approve request",
-
-                    details:
-                        data
+                        "Failed to approve request"
 
                 });
 
@@ -506,10 +551,7 @@ export default async function handler(req, res) {
                     success: false,
 
                     error:
-                        "Failed to reject request",
-
-                    details:
-                        data
+                        "Failed to reject request"
 
                 });
 
@@ -683,10 +725,7 @@ export default async function handler(req, res) {
                 success: false,
 
                 error:
-                    "Failed to update order status",
-
-                details:
-                    statusData
+                    "Failed to update order status"
 
             });
 
@@ -762,15 +801,17 @@ export default async function handler(req, res) {
             error
         );
 
+        // ==========================================
+        // SECURITY PATCH:
+        // Do NOT expose server error details
+        // ==========================================
+
         return res.status(500).json({
 
             success: false,
 
             error:
-                "Internal server error",
-
-            details:
-                error.message
+                "Internal server error"
 
         });
 
