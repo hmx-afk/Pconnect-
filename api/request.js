@@ -1,6 +1,6 @@
 // ==========================================
 // PConnect - Create Service Request API
-// Secure Input Validation
+// Secure Pi Identity Verification
 // ==========================================
 
 export default async function handler(req, res) {
@@ -32,7 +32,6 @@ export default async function handler(req, res) {
             !supabaseUrl ||
             !supabaseSecretKey
         ) {
-
             console.error(
                 "Missing Supabase environment variables"
             );
@@ -66,9 +65,9 @@ export default async function handler(req, res) {
                 body.details || ""
             ).trim();
 
-        const piUsername =
+        const accessToken =
             String(
-                body.pi_username || ""
+                body.accessToken || ""
             ).trim();
 
 
@@ -88,9 +87,8 @@ export default async function handler(req, res) {
             !name ||
             !contact ||
             !details ||
-            !piUsername
+            !accessToken
         ) {
-
             return res.status(400).json({
                 success: false,
                 error: "Missing required fields"
@@ -103,7 +101,6 @@ export default async function handler(req, res) {
         // ==========================================
 
         if (name.length > 100) {
-
             return res.status(400).json({
                 success: false,
                 error: "Name is too long"
@@ -112,7 +109,6 @@ export default async function handler(req, res) {
 
 
         if (contact.length > 150) {
-
             return res.status(400).json({
                 success: false,
                 error: "Contact is too long"
@@ -121,7 +117,6 @@ export default async function handler(req, res) {
 
 
         if (details.length > 2000) {
-
             return res.status(400).json({
                 success: false,
                 error: "Project details are too long"
@@ -129,28 +124,106 @@ export default async function handler(req, res) {
         }
 
 
-        if (piUsername.length > 50) {
+        // ==========================================
+        // BASIC ACCESS TOKEN CHECK
+        // ==========================================
 
-            return res.status(400).json({
+        if (accessToken.length < 20) {
+            return res.status(401).json({
                 success: false,
-                error: "Invalid Pi username"
+                error: "Invalid Pi authentication"
             });
         }
 
 
         // ==========================================
-        // BASIC PI USERNAME VALIDATION
+        // VERIFY TOKEN WITH PI
+        // ==========================================
+
+        const piResponse =
+            await fetch(
+                "https://api.minepi.com/v2/me",
+                {
+                    method: "GET",
+
+                    headers: {
+                        "Authorization":
+                            `Bearer ${accessToken}`
+                    }
+                }
+            );
+
+
+        // ==========================================
+        // PI AUTHENTICATION FAILED
+        // ==========================================
+
+        if (!piResponse.ok) {
+
+            console.error(
+                "Pi identity verification failed:",
+                piResponse.status
+            );
+
+            return res.status(401).json({
+                success: false,
+                error: "Invalid Pi authentication"
+            });
+        }
+
+
+        // ==========================================
+        // READ VERIFIED PI USER
+        // ==========================================
+
+        const piUser =
+            await piResponse.json();
+
+        const piUid =
+            String(
+                piUser.uid || ""
+            ).trim();
+
+        const piUsername =
+            String(
+                piUser.username || ""
+            ).trim();
+
+
+        // ==========================================
+        // VERIFY PI IDENTITY DATA
         // ==========================================
 
         if (
+            !piUid ||
+            !piUsername
+        ) {
+
+            console.error(
+                "Pi verification returned incomplete identity"
+            );
+
+            return res.status(401).json({
+                success: false,
+                error: "Invalid Pi identity"
+            });
+        }
+
+
+        // ==========================================
+        // VERIFY USERNAME FORMAT
+        // ==========================================
+
+        if (
+            piUsername.length > 50 ||
             !/^[a-zA-Z0-9._-]+$/.test(
                 piUsername
             )
         ) {
 
-            return res.status(400).json({
+            return res.status(401).json({
                 success: false,
-                error: "Invalid Pi username"
+                error: "Invalid Pi identity"
             });
         }
 
@@ -189,6 +262,10 @@ export default async function handler(req, res) {
 
                         details,
 
+                        // IMPORTANT:
+                        // Username comes from Pi verification.
+                        // We do NOT trust browser pi_username.
+
                         pi_username:
                             piUsername,
 
@@ -219,7 +296,6 @@ export default async function handler(req, res) {
         } catch {
 
             data = null;
-
         }
 
 
