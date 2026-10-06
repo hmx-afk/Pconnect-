@@ -1,4 +1,9 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
 
 <meta
     name="viewport"
@@ -12,292 +17,298 @@
 
 <style>
 
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-    body {
-        font-family: Arial, sans-serif;
-        background: #0f0b1a;
-        color: #ffffff;
-        min-height: 100vh;
-        padding-bottom: 90px;
-    }
+body {
+    font-family: Arial, sans-serif;
+    background: #0f0b1a;
+    color: #ffffff;
+    min-height: 100vh;
+    padding-bottom: 90px;
+}
 
-    header {
-        background: #171025;
-        padding: 22px 18px;
-        border-bottom: 1px solid #2c2142;
-    }
+header {
+    background: #171025;
+    padding: 22px 18px;
+    border-bottom: 1px solid #2c2142;
+}
 
-    header h1 {
-        color: #f5b942;
-        font-size: 24px;
-        margin-bottom: 6px;
-    }
+header h1 {
+    color: #f5b942;
+    font-size: 24px;
+    margin-bottom: 6px;
+}
 
-    header p {
-        color: #aaa1b8;
-        font-size: 14px;
-    }
+header p {
+    color: #aaa1b8;
+    font-size: 14px;
+}
 
-    .container {
-        max-width: 700px;
-        margin: auto;
-        padding: 20px 15px;
-    }
+.container {
+    max-width: 700px;
+    margin: auto;
+    padding: 20px 15px;
+}
 
-    .request-info {
-        background: linear-gradient(
-            135deg,
-            #211538,
-            #171025
-        );
+.request-info {
+    background: linear-gradient(
+        135deg,
+        #211538,
+        #171025
+    );
 
-        border: 1px solid #3a2856;
-        border-radius: 16px;
-        padding: 18px;
-        margin-bottom: 20px;
-    }
+    border: 1px solid #3a2856;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 20px;
+}
 
-    .request-info-title {
-        color: #aaa1b8;
-        font-size: 13px;
-        margin-bottom: 8px;
-    }
+.request-info-title {
+    color: #aaa1b8;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
 
-    .request-info-value {
-        color: #f5b942;
-        font-size: 20px;
-        font-weight: bold;
-    }
+.request-info-value {
+    color: #f5b942;
+    font-size: 20px;
+    font-weight: bold;
+}
 
-    .request-info-note {
-        color: #aaa1b8;
-        font-size: 12px;
-        line-height: 1.5;
-        margin-top: 8px;
-    }
+.request-info-note {
+    color: #aaa1b8;
+    font-size: 12px;
+    line-height: 1.5;
+    margin-top: 8px;
+}
 
-    .payment-box {
-        background: linear-gradient(
-            135deg,
-            #211538,
-            #171025
-        );
+.payment-box {
+    background: linear-gradient(
+        135deg,
+        #211538,
+        #171025
+    );
 
-        border: 1px solid #3a2856;
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
+    border: 1px solid #3a2856;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
 
-    .payment-box h2 {
-        color: #f5b942;
-        font-size: 20px;
-        margin-bottom: 8px;
-    }
+.payment-box h2 {
+    color: #f5b942;
+    font-size: 20px;
+    margin-bottom: 8px;
+}
 
-    .payment-box p {
-        color: #aaa1b8;
-        font-size: 14px;
-        line-height: 1.5;
-        margin-bottom: 15px;
-    }
+.payment-box p {
+    color: #aaa1b8;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
 
-    .login-btn,
-    .pay-btn {
-        width: 100%;
-        border: none;
-        border-radius: 10px;
-        padding: 14px;
-        font-size: 15px;
-        font-weight: bold;
-        cursor: pointer;
-        margin-top: 10px;
-    }
+.login-btn,
+.pay-btn {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
 
-    .login-btn {
-        background: #f5b942;
-        color: #171025;
-    }
+.login-btn {
+    background: #f5b942;
+    color: #171025;
+}
 
-    .pay-btn {
-        background: #f5b942;
-        color: #171025;
-    }
+.pay-btn {
+    background: #f5b942;
+    color: #171025;
+}
 
-    .login-btn:disabled,
-    .pay-btn:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-    }
+.login-btn:disabled,
+.pay-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
 
-    .status-box {
-        margin-top: 12px;
-        padding: 12px;
-        background: #171025;
-        border: 1px solid #2c2142;
-        border-radius: 10px;
-        color: #aaa1b8;
-        font-size: 13px;
-        text-align: center;
-    }
+.status-box {
+    margin-top: 12px;
+    padding: 12px;
+    background: #171025;
+    border: 1px solid #2c2142;
+    border-radius: 10px;
+    color: #aaa1b8;
+    font-size: 13px;
+    text-align: center;
+}
 
-    .pay-status {
-        margin-top: 12px;
-        padding: 12px;
-        background: #171025;
-        border: 1px solid #2c2142;
-        border-radius: 10px;
-        color: #aaa1b8;
-        font-size: 13px;
-        text-align: center;
-        line-height: 1.5;
-    }
+.pay-status {
+    margin-top: 12px;
+    padding: 12px;
+    background: #171025;
+    border: 1px solid #2c2142;
+    border-radius: 10px;
+    color: #aaa1b8;
+    font-size: 13px;
+    text-align: center;
+    line-height: 1.5;
+}
 
-    .summary {
-        background: linear-gradient(
-            135deg,
-            #211538,
-            #171025
-        );
+.summary {
+    background: linear-gradient(
+        135deg,
+        #211538,
+        #171025
+    );
 
-        border: 1px solid #3a2856;
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
+    border: 1px solid #3a2856;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
 
-    .summary-title {
-        color: #aaa1b8;
-        font-size: 14px;
-        margin-bottom: 8px;
-    }
+.summary-title {
+    color: #aaa1b8;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
 
-    .summary-value {
-        color: #f5b942;
-        font-size: 30px;
-        font-weight: bold;
-    }
+.summary-value {
+    color: #f5b942;
+    font-size: 30px;
+    font-weight: bold;
+}
 
-    .loading,
-    .empty,
-    .error {
-        text-align: center;
-        padding: 35px 15px;
-        color: #aaa1b8;
-    }
+.loading,
+.empty,
+.error {
+    text-align: center;
+    padding: 35px 15px;
+    color: #aaa1b8;
+}
 
-    .error {
-        color: #ff7777;
-    }
+.error {
+    color: #ff7777;
+}
 
-    .transaction {
-        background: #171025;
-        border: 1px solid #2c2142;
-        border-radius: 16px;
-        padding: 18px;
-        margin-bottom: 15px;
-    }
+.transaction {
+    background: #171025;
+    border: 1px solid #2c2142;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 15px;
+}
 
-    .transaction-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 15px;
-    }
+.transaction-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
 
-    .amount {
-        color: #f5b942;
-        font-size: 21px;
-        font-weight: bold;
-    }
+.amount {
+    color: #f5b942;
+    font-size: 21px;
+    font-weight: bold;
+}
 
-    .status {
-        background: #183b2b;
-        color: #65e6a0;
-        padding: 6px 10px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: bold;
-    }
+.status {
+    background: #183b2b;
+    color: #65e6a0;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
 
-    .details {
-        display: grid;
-        gap: 10px;
-    }
+.details {
+    display: grid;
+    gap: 10px;
+}
 
-    .row {
-        display: flex;
-        justify-content: space-between;
-        gap: 15px;
-        border-bottom: 1px solid #251b36;
-        padding-bottom: 8px;
-    }
+.row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    border-bottom: 1px solid #251b36;
+    padding-bottom: 8px;
+}
 
-    .row:last-child {
-        border-bottom: none;
-    }
+.row:last-child {
+    border-bottom: none;
+}
 
-    .label {
-        color: #8f879c;
-        font-size: 13px;
-    }
+.label {
+    color: #8f879c;
+    font-size: 13px;
+}
 
-    .value {
-        color: #e9e3ef;
-        font-size: 13px;
-        text-align: right;
-        word-break: break-all;
-    }
+.value {
+    color: #e9e3ef;
+    font-size: 13px;
+    text-align: right;
+    word-break: break-all;
+}
 
-    .refresh-btn {
-        width: 100%;
-        border: none;
-        border-radius: 10px;
-        padding: 12px;
-        background: #f5b942;
-        color: #171025;
-        font-weight: bold;
-        margin-bottom: 20px;
-        cursor: pointer;
-    }
+.refresh-btn {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    background: #f5b942;
+    color: #171025;
+    font-weight: bold;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
 
-    .refresh-btn:active {
-        transform: scale(0.98);
-    }
+.refresh-btn:active {
+    transform: scale(0.98);
+}
 
-    .bottom-nav {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: #171025;
-        border-top: 1px solid #2c2142;
-        display: flex;
-        justify-content: space-around;
-        padding: 12px 5px;
-        z-index: 1000;
-    }
+.bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #171025;
+    border-top: 1px solid #2c2142;
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 5px;
+    z-index: 1000;
+}
 
-    .bottom-nav a {
-        color: #aaa1b8;
-        text-decoration: none;
-        font-size: 12px;
-        text-align: center;
-    }
+.bottom-nav a {
+    color: #aaa1b8;
+    text-decoration: none;
+    font-size: 12px;
+    text-align: center;
+}
 
-    .bottom-nav a.active {
-        color: #f5b942;
-    }
+.bottom-nav a.active {
+    color: #f5b942;
+}
 
 </style>
 
-</head><body><header><h1>
+</head>
+
+<body>
+
+<header>
+
+<h1>
     💳 PConnect Payment
 </h1>
 
@@ -305,7 +316,13 @@
     Complete your Pi payment securely.
 </p>
 
-</header><div class="container"><!-- ==========================================
+</header>
+
+
+<div class="container">
+
+
+<!-- ==========================================
      APPROVED REQUEST
 =========================================== -->
 
@@ -358,10 +375,6 @@
     </button>
 
 
-    <!-- IMPORTANT:
-         app.js expects piStatus
-    -->
-
     <div
         id="piStatus"
         class="status-box"
@@ -397,7 +410,7 @@
 <div class="summary">
 
     <div class="summary-title">
-        Total Transactions
+        Your Transactions
     </div>
 
     <div
@@ -435,9 +448,16 @@
 
 </div>
 
-</div><!-- ==========================================
+</div>
+
+
+<!-- ==========================================
      BOTTOM NAV
-=========================================== --><nav class="bottom-nav"><a href="index.html">
+=========================================== -->
+
+<nav class="bottom-nav">
+
+<a href="index.html">
     🏠<br>Home
 </a>
 
@@ -460,9 +480,17 @@
     👤<br>Profile
 </a>
 
-</nav><!-- ==========================================
+</nav>
+
+
+<!-- ==========================================
      PConnect PAYMENT APP
-=========================================== --><script src="app.js"></script><script>
+=========================================== -->
+
+<script src="app.js"></script>
+
+
+<script>
 
 // ==========================================
 // PAYMENT PAGE REQUEST ID
@@ -472,6 +500,7 @@ const paymentPageParams =
     new URLSearchParams(
         window.location.search
     );
+
 
 const paymentPageRequestId =
     paymentPageParams.get(
@@ -520,12 +549,14 @@ if (storedPaymentRequestId) {
             "requestIdDisplay"
         );
 
+
     if (requestInfo) {
 
         requestInfo.style.display =
             "block";
 
     }
+
 
     if (requestIdDisplay) {
 
@@ -539,20 +570,20 @@ if (storedPaymentRequestId) {
 
 
 // ==========================================
-// REFRESH BUTTON
+// GET CURRENT PI USERNAME
 // ==========================================
 
-const refreshTransactionsBtn =
-    document.getElementById(
-        "refreshTransactionsBtn"
-    );
+function getCurrentPiUsername() {
 
-if (refreshTransactionsBtn) {
+    const username =
+        sessionStorage.getItem(
+            "pconnect_pi_username"
+        );
 
-    refreshTransactionsBtn.addEventListener(
-        "click",
-        loadTransactions
-    );
+
+    return username
+        ? username.trim()
+        : "";
 
 }
 
@@ -581,10 +612,47 @@ async function loadTransactions() {
     }
 
 
+    const piUsername =
+        getCurrentPiUsername();
+
+
+    // ==========================================
+    // USER LOGIN REQUIRED
+    // ==========================================
+
+    if (!piUsername) {
+
+        total.textContent =
+            "0";
+
+
+        container.innerHTML = `
+
+            <div class="empty">
+
+                <div
+                    style="font-size:40px;"
+                >
+                    🔐
+                </div>
+
+                <br>
+
+                Sign in with Pi to view your transactions.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
     container.innerHTML = `
 
         <div class="loading">
-            Loading transactions...
+            Loading your transactions...
         </div>
 
     `;
@@ -593,21 +661,32 @@ async function loadTransactions() {
     try {
 
         console.log(
-            "Loading PConnect transactions..."
+            "Loading transactions for:",
+            piUsername
         );
 
 
         const response =
             await fetch(
-                "/api/transactions?refresh=" +
+                "/api/transactions?pi_username=" +
+                encodeURIComponent(
+                    piUsername
+                ) +
+                "&refresh=" +
                 Date.now(),
                 {
+
                     method: "GET",
+
                     cache: "no-store",
+
                     headers: {
+
                         "Cache-Control":
                             "no-cache"
+
                     }
+
                 }
             );
 
@@ -710,17 +789,7 @@ async function loadTransactions() {
 
                 const username =
                     transaction.pi_username ||
-                    "Not available";
-
-
-                const txid =
-                    transaction.txid ||
-                    "Not available";
-
-
-                const paymentId =
-                    transaction.payment_id ||
-                    "Not available";
+                    piUsername;
 
 
                 const transactionRequestId =
@@ -802,32 +871,6 @@ async function loadTransactions() {
                         <div class="row">
 
                             <span class="label">
-                                Payment ID
-                            </span>
-
-                            <span class="value">
-                                ${escapeHtml(paymentId)}
-                            </span>
-
-                        </div>
-
-
-                        <div class="row">
-
-                            <span class="label">
-                                TXID
-                            </span>
-
-                            <span class="value">
-                                ${escapeHtml(txid)}
-                            </span>
-
-                        </div>
-
-
-                        <div class="row">
-
-                            <span class="label">
                                 Date
                             </span>
 
@@ -885,6 +928,26 @@ async function loadTransactions() {
 
 
 // ==========================================
+// REFRESH BUTTON
+// ==========================================
+
+const refreshTransactionsBtn =
+    document.getElementById(
+        "refreshTransactionsBtn"
+    );
+
+
+if (refreshTransactionsBtn) {
+
+    refreshTransactionsBtn.addEventListener(
+        "click",
+        loadTransactions
+    );
+
+}
+
+
+// ==========================================
 // HTML ESCAPE
 // ==========================================
 
@@ -926,4 +989,8 @@ function escapeHtml(value) {
 
 loadTransactions();
 
-</script></body></html>
+</script>
+
+</body>
+
+</html>
