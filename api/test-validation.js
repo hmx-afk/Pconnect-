@@ -17,6 +17,7 @@ export default async function handler(req, res) {
 
         const test = String(body.test || "").trim();
 
+
         // ==========================================
         // TEST DETAILS
         // ==========================================
@@ -85,10 +86,49 @@ export default async function handler(req, res) {
         }
 
 
+        // ==========================================
+        // TEST CONTACT
+        // ==========================================
+
+        if (test === "contact") {
+
+            const contact =
+                String(body.contact || "").trim();
+
+            if (!contact) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Contact is required"
+                });
+            }
+
+            if (contact.length > 150) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Contact is too long",
+                    length: contact.length,
+                    limit: 150
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Validation passed",
+                length: contact.length,
+                limit: 150
+            });
+        }
+
+
+        // ==========================================
+        // UNKNOWN TEST
+        // ==========================================
+
         return res.status(400).json({
             success: false,
             error: "Unknown test"
         });
+
 
     } catch (error) {
 
