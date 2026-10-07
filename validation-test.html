@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>PConnect Validation Test</title>
+
+</head><body><h2>PConnect Input Validation Test</h2>
+
+<button id="testBtn">
+    Run 3001 Character Test
+</button>
+
+<pre id="result"></pre>
+
+
+<script>
+
+    document
+        .getElementById("testBtn")
+        .addEventListener("click", async function () {
+
+            const result =
+                document.getElementById("result");
+
+            // ==========================================
+            // CREATE 3001 CHARACTERS
+            // ==========================================
+
+            const details =
+                "A".repeat(3001);
+
+
+            result.textContent =
+                "Testing...";
+
+
+            try {
+
+                // ==========================================
+                // SEND POST REQUEST TO PRODUCTION API
+                // ==========================================
+
+                const response =
+                    await fetch(
+                        "https://pconnect-rho.vercel.app/api/test-validation",
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body:
+                                JSON.stringify({
+                                    details: details
+                                })
+                        }
+                    );
+
+
+                // ==========================================
+                // READ RESPONSE AS TEXT
+                // ==========================================
+
+                const text =
+                    await response.text();
+
+
+                // ==========================================
+                // SHOW RESULT
+                // ==========================================
+
+                result.textContent =
+                    "HTTP Status: " +
+                    response.status +
+                    "\n\n" +
+                    text;
+
+
+            } catch (error) {
+
+                result.textContent =
+                    "Test error: " +
+                    error.message;
+
+            }
+
+        });
+
+</script>
+
+</body></html>
