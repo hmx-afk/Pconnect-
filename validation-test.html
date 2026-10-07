@@ -16,10 +16,10 @@
 
 <body>
 
-    <h2>PConnect Name Validation Test</h2>
+    <h2>PConnect Input Validation Test</h2>
 
-    <button id="nameBtn">
-        Test Name 101 Characters
+    <button id="contactBtn">
+        Test Contact 151 Characters
     </button>
 
     <br><br>
@@ -34,11 +34,11 @@
 
 
         document
-            .getElementById("nameBtn")
+            .getElementById("contactBtn")
             .addEventListener("click", async function () {
 
                 result.textContent =
-                    "TEST 4 — Name 101 Characters\n\nTesting...";
+                    "TEST 5 — Contact 151 Characters\n\nTesting...";
 
                 try {
 
@@ -55,8 +55,8 @@
 
                                 body:
                                     JSON.stringify({
-                                        test: "name",
-                                        name: "A".repeat(101)
+                                        test: "contact",
+                                        contact: "A".repeat(151)
                                     })
                             }
                         );
@@ -67,7 +67,7 @@
 
 
                     result.textContent =
-                        "TEST 4 — Name 101 Characters\n\n" +
+                        "TEST 5 — Contact 151 Characters\n\n" +
                         "HTTP Status: " +
                         response.status +
                         "\n\n" +
