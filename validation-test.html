@@ -85,13 +85,33 @@
     <br><br>
 
 
+    <!-- ==========================================
+         TEST 7
+         ========================================== -->
+
+    <button id="invalidTokenBtn">
+        Test Invalid Pi AccessToken
+    </button>
+
+    <br><br>
+
+
     <pre id="result"></pre>
 
 
     <script>
 
+        // ==========================================
+        // API
+        // ==========================================
+
         const API_URL =
             "https://pconnect-rho.vercel.app/api/test-validation";
+
+
+        // ==========================================
+        // RESULT ELEMENT
+        // ==========================================
 
         const result =
             document.getElementById("result");
@@ -188,7 +208,8 @@
                         "TEST 2 — Exactly 2000 Characters",
                         {
                             test: "details",
-                            details: "A".repeat(2000)
+                            details:
+                                "A".repeat(2000)
                         }
                     );
 
@@ -210,7 +231,8 @@
                         "TEST 3 — 2001 Characters",
                         {
                             test: "details",
-                            details: "A".repeat(2001)
+                            details:
+                                "A".repeat(2001)
                         }
                     );
 
@@ -232,7 +254,8 @@
                         "TEST 4 — Name 101 Characters",
                         {
                             test: "name",
-                            name: "A".repeat(101)
+                            name:
+                                "A".repeat(101)
                         }
                     );
 
@@ -254,7 +277,8 @@
                         "TEST 5 — Contact 151 Characters",
                         {
                             test: "contact",
-                            contact: "A".repeat(151)
+                            contact:
+                                "A".repeat(151)
                         }
                     );
 
@@ -276,6 +300,31 @@
                         "TEST 6 — Missing Pi accessToken",
                         {
                             test: "accessToken"
+                        }
+                    );
+
+                }
+            );
+
+
+        // ==========================================
+        // TEST 7 — INVALID PI ACCESS TOKEN
+        // ==========================================
+
+        document
+            .getElementById("invalidTokenBtn")
+            .addEventListener(
+                "click",
+                function () {
+
+                    runTest(
+                        "TEST 7 — Invalid Pi accessToken",
+                        {
+                            test:
+                                "invalidAccessToken",
+
+                            accessToken:
+                                "FAKE_PI_ACCESS_TOKEN_FOR_TEST"
                         }
                     );
 
