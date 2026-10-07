@@ -1,143 +1,91 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<!DOCTYPE html>
+<html lang="en">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+<head>
 
-<title>PConnect Validation Test Suite</title>
+    <meta charset="UTF-8">
 
-</head><body><h2>PConnect Input Validation Test Suite</h2>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<button id="emptyBtn">
-    Test Empty Details
-</button>
+    <title>PConnect Validation Test</title>
 
-<br><br>
+</head>
 
-<button id="validBtn">
-    Test 2000 Characters
-</button>
+<body>
 
-<br><br>
+    <h2>PConnect Name Validation Test</h2>
 
-<button id="tooLongBtn">
-    Test 2001 Characters
-</button>
+    <button id="nameBtn">
+        Test Name 101 Characters
+    </button>
 
-<br><br>
+    <br><br>
 
-<pre id="result"></pre>
+    <pre id="result"></pre>
 
 
-<script>
+    <script>
 
-    const result =
-        document.getElementById("result");
-
-
-    // ==========================================
-    // RUN VALIDATION TEST
-    // ==========================================
-
-    async function runTest(details, testName) {
-
-        result.textContent =
-            testName + "\n\nTesting...";
-
-        try {
-
-            const response =
-                await fetch(
-                    "https://pconnect-rho.vercel.app/api/test-validation",
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body:
-                            JSON.stringify({
-                                details: details
-                            })
-                    }
-                );
+        const result =
+            document.getElementById("result");
 
 
-            const text =
-                await response.text();
+        document
+            .getElementById("nameBtn")
+            .addEventListener("click", async function () {
+
+                result.textContent =
+                    "TEST 4 — Name 101 Characters\n\nTesting...";
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "https://pconnect-rho.vercel.app/api/test-validation",
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify({
+                                        test: "name",
+                                        name: "A".repeat(101)
+                                    })
+                            }
+                        );
 
 
-            result.textContent =
-                testName +
-                "\n\n" +
-                "HTTP Status: " +
-                response.status +
-                "\n\n" +
-                text;
+                    const text =
+                        await response.text();
 
 
-        } catch (error) {
-
-            result.textContent =
-                testName +
-                "\n\nTest error: " +
-                error.message;
-
-        }
-
-    }
+                    result.textContent =
+                        "TEST 4 — Name 101 Characters\n\n" +
+                        "HTTP Status: " +
+                        response.status +
+                        "\n\n" +
+                        text;
 
 
-    // ==========================================
-    // TEST 1 — EMPTY DETAILS
-    // ==========================================
+                } catch (error) {
 
-    document
-        .getElementById("emptyBtn")
-        .addEventListener("click", function () {
+                    result.textContent =
+                        "Test error: " +
+                        error.message;
 
-            runTest(
-                "",
-                "TEST 1 — Empty Details"
-            );
+                }
 
-        });
+            });
 
+    </script>
 
-    // ==========================================
-    // TEST 2 — EXACTLY 2000 CHARACTERS
-    // ==========================================
+</body>
 
-    document
-        .getElementById("validBtn")
-        .addEventListener("click", function () {
-
-            runTest(
-                "A".repeat(2000),
-                "TEST 2 — Exactly 2000 Characters"
-            );
-
-        });
-
-
-    // ==========================================
-    // TEST 3 — 2001 CHARACTERS
-    // ==========================================
-
-    document
-        .getElementById("tooLongBtn")
-        .addEventListener("click", function () {
-
-            runTest(
-                "A".repeat(2001),
-                "TEST 3 — 2001 Characters"
-            );
-
-        });
-
-</script>
-
-</body></html>
+</html>
