@@ -126,7 +126,7 @@ export default async function handler(req, res) {
 
 
         // ==========================================
-        // TEST 6 — PI ACCESS TOKEN
+        // TEST 6 — MISSING PI ACCESS TOKEN
         // ==========================================
 
         if (test === "accessToken") {
@@ -144,6 +144,48 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 success: true,
                 message: "Access token provided"
+            });
+        }
+
+
+        // ==========================================
+        // TEST 7 — INVALID PI ACCESS TOKEN
+        // ==========================================
+
+        if (test === "invalidAccessToken") {
+
+            const accessToken =
+                String(body.accessToken || "").trim();
+
+            if (!accessToken) {
+                return res.status(401).json({
+                    success: false,
+                    error: "Pi authentication required"
+                });
+            }
+
+            const piResponse =
+                await fetch(
+                    "https://api.minepi.com/v2/me",
+                    {
+                        method: "GET",
+                        headers: {
+                            "Authorization":
+                                `Bearer ${accessToken}`
+                        }
+                    }
+                );
+
+            if (!piResponse.ok) {
+                return res.status(401).json({
+                    success: false,
+                    error: "Invalid Pi authentication"
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Pi authentication valid"
             });
         }
 
