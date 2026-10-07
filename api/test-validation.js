@@ -4,6 +4,10 @@
 
 export default async function handler(req, res) {
 
+    // ==========================================
+    // ONLY POST
+    // ==========================================
+
     if (req.method !== "POST") {
         return res.status(405).json({
             success: false,
@@ -15,11 +19,12 @@ export default async function handler(req, res) {
 
         const body = req.body || {};
 
-        const test = String(body.test || "").trim();
+        const test =
+            String(body.test || "").trim();
 
 
         // ==========================================
-        // TEST DETAILS
+        // TEST 1/2/3 — DETAILS
         // ==========================================
 
         if (test === "details") {
@@ -53,7 +58,7 @@ export default async function handler(req, res) {
 
 
         // ==========================================
-        // TEST NAME
+        // TEST 4 — NAME
         // ==========================================
 
         if (test === "name") {
@@ -87,7 +92,7 @@ export default async function handler(req, res) {
 
 
         // ==========================================
-        // TEST CONTACT
+        // TEST 5 — CONTACT
         // ==========================================
 
         if (test === "contact") {
@@ -121,6 +126,29 @@ export default async function handler(req, res) {
 
 
         // ==========================================
+        // TEST 6 — PI ACCESS TOKEN
+        // ==========================================
+
+        if (test === "accessToken") {
+
+            const accessToken =
+                String(body.accessToken || "").trim();
+
+            if (!accessToken) {
+                return res.status(401).json({
+                    success: false,
+                    error: "Pi authentication required"
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Access token provided"
+            });
+        }
+
+
+        // ==========================================
         // UNKNOWN TEST
         // ==========================================
 
@@ -132,7 +160,10 @@ export default async function handler(req, res) {
 
     } catch (error) {
 
-        console.error("Validation test error:", error);
+        console.error(
+            "Validation test error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
