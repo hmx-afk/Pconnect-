@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>PConnect Header Security Test</title>
+    <title>PConnect Security Headers Test</title>
 </head>
 
 <body>
 
-    <h2>PConnect Cache-Control Test</h2>
+    <h2>PConnect Security Headers Test</h2>
 
     <button id="testBtn">
-        Test API Headers
+        Test Security Headers
     </button>
 
     <pre id="result"></pre>
@@ -36,35 +36,46 @@
                     }
                 );
 
-                const cacheControl =
-                    response.headers.get("cache-control");
+                const headers = {
+                    "Cache-Control":
+                        response.headers.get("cache-control"),
 
-                const contentType =
-                    response.headers.get("content-type");
+                    "X-Content-Type-Options":
+                        response.headers.get("x-content-type-options"),
+
+                    "X-Frame-Options":
+                        response.headers.get("x-frame-options"),
+
+                    "Referrer-Policy":
+                        response.headers.get("referrer-policy"),
+
+                    "Content-Security-Policy":
+                        response.headers.get("content-security-policy")
+                };
 
                 result.textContent =
-                    "HTTP Status: " + response.status + "\n\n" +
+                    "HTTP Status: " +
+                    response.status +
+                    "\n\n" +
 
                     "Cache-Control: " +
-                    (cacheControl || "NOT FOUND") + "\n\n" +
+                    (headers["Cache-Control"] || "NOT FOUND") +
+                    "\n\n" +
 
-                    "Content-Type: " +
-                    (contentType || "NOT FOUND") + "\n\n" +
+                    "X-Content-Type-Options: " +
+                    (headers["X-Content-Type-Options"] || "NOT FOUND") +
+                    "\n\n" +
 
-                    "Result:\n";
+                    "X-Frame-Options: " +
+                    (headers["X-Frame-Options"] || "NOT FOUND") +
+                    "\n\n" +
 
-                if (cacheControl &&
-                    cacheControl.toLowerCase().includes("no-store")) {
+                    "Referrer-Policy: " +
+                    (headers["Referrer-Policy"] || "NOT FOUND") +
+                    "\n\n" +
 
-                    result.textContent +=
-                        "PASS ✅ Cache-Control: no-store";
-
-                } else {
-
-                    result.textContent +=
-                        "FAIL ❌ Cache-Control: no-store not found";
-
-                }
+                    "Content-Security-Policy: " +
+                    (headers["Content-Security-Policy"] || "NOT FOUND");
 
             } catch (error) {
 
