@@ -19,6 +19,15 @@
           "value": "strict-origin-when-cross-origin"
         }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://sdk.minepi.com; connect-src 'self' https://api.minepi.com https://*.supabase.co; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+        }
+      ]
     }
   ]
 }
