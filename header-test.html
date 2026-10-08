@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PConnect Header Security Test</title>
+</head>
+
+<body>
+
+    <h2>PConnect Cache-Control Test</h2>
+
+    <button id="testBtn">
+        Test API Headers
+    </button>
+
+    <pre id="result"></pre>
+
+    <script>
+
+        const result = document.getElementById("result");
+        const testBtn = document.getElementById("testBtn");
+
+        testBtn.addEventListener("click", async function () {
+
+            result.textContent = "Testing...";
+
+            try {
+
+                const response = await fetch(
+                    "https://pconnect-rho.vercel.app/api/requests?pi_username=hamzaomar62",
+                    {
+                        method: "GET",
+                        cache: "no-store"
+                    }
+                );
+
+                const cacheControl =
+                    response.headers.get("cache-control");
+
+                const contentType =
+                    response.headers.get("content-type");
+
+                result.textContent =
+                    "HTTP Status: " + response.status + "\n\n" +
+
+                    "Cache-Control: " +
+                    (cacheControl || "NOT FOUND") + "\n\n" +
+
+                    "Content-Type: " +
+                    (contentType || "NOT FOUND") + "\n\n" +
+
+                    "Result:\n";
+
+                if (cacheControl &&
+                    cacheControl.toLowerCase().includes("no-store")) {
+
+                    result.textContent +=
+                        "PASS ✅ Cache-Control: no-store";
+
+                } else {
+
+                    result.textContent +=
+                        "FAIL ❌ Cache-Control: no-store not found";
+
+                }
+
+            } catch (error) {
+
+                result.textContent =
+                    "TEST ERROR ❌\n\n" +
+                    error.message;
+
+            }
+
+        });
+
+    </script>
+
+</body>
+</html>
