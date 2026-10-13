@@ -1,435 +1,670 @@
-Skip to content
-Pconnect-
-Repository navigation
-Code
-Issues
-Pull requests
-Pconnect-
-/
-index.html
-in
-main
-
-Edit
-
-Preview
- @@ -1,418 +0,0 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PConnect Dashboard</title>
-<style>
-* { box-sizing: border-box; }
-body { margin: 0; font-family: Arial, sans-serif; background: #0f0b18; color: #fff; }
-header { padding: 22px 18px 10px; }
-header h1 { margin: 0; color: #f5b942; }
-header p { margin-top: 8px; color: #bdb7c9; line-height: 1.4; }
-.container { max-width: 900px; margin: auto; padding: 15px; }
-.card { background: #191326; border: 1px solid #2d2440; border-radius: 14px; padding: 18px; margin-bottom: 16px; }
-.card h2 { margin-top: 0; }
-.pi-card { text-align: center; }
-#piStatus { margin: 12px 0; color: #bdb7c9; }
-button, a.button { display: inline-block; border: none; border-radius: 10px; padding: 12px 18px; background: #f5b942; color: #111; font-weight: bold; text-decoration: none; cursor: pointer; }
-button:hover, a.button:hover { opacity: 0.9; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
-.stat { background: #211a30; border-radius: 12px; padding: 15px; text-align: center; }
-.stat strong { display: block; font-size: 28px; color: #f5b942; }
-.stat span { display: block; margin-top: 5px; color: #bdb7c9; font-size: 13px; }
-.actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-.actions a { text-decoration: none; color: white; background: #211a30; border: 1px solid #332848; border-radius: 10px; padding: 14px; text-align: center; }
-.actions a:hover { border-color: #f5b942; }
-.notification-header { display: flex; justify-content: space-between; align-items: center; }
-.badge { background: #f5b942; color: #111; border-radius: 20px; padding: 4px 9px; font-size: 12px; font-weight: bold; }
-.notification { background: #211a30; border-radius: 10px; padding: 12px; margin-top: 10px; }
-.notification strong { color: #f5b942; }
-.notification small { display: block; color: #aaa; margin-top: 5px; }
-.activity { padding: 12px 0; border-bottom: 1px solid #2d2440; }
-.activity:last-child { border-bottom: none; }
-.activity-title { font-weight: bold; }
-.activity-date { color: #999; font-size: 12px; margin-top: 4px; }
-.empty { color: #999; text-align: center; padding: 15px; }
-.test-payment { text-align: center; }
-#payStatus { margin-top: 10px; color: #bdb7c9; }
-.bottom-nav { display: flex; justify-content: space-around; gap: 5px; position: sticky; bottom: 0; background: #0f0b18; border-top: 1px solid #2d2440; padding: 10px; }
-.bottom-nav a { color: #bdb7c9; text-decoration: none; font-size: 12px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>PConnect | Dashboard</title>
+    <meta name="description" content="PConnect service marketplace dashboard for Pi Network users.">
+    <meta name="theme-color" content="#10051f">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: #10051f;
+            --card: #1b1030;
+            --card-light: #24163b;
+            --primary: #f5b942;
+            --text: #ffffff;
+            --muted: #b8accb;
+            --border: rgba(255,255,255,.09);
+            --success: #36d399;
+            --danger: #ff6b81;
+        }
+
+        body {
+            margin: 0;
+            padding: 0 0 85px;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button {
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: auto;
+            padding: 18px 15px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon {
+            width: 43px;
+            height: 43px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 13px;
+            background: var(--primary);
+            color: #24142f;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .brand p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .header-link {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--primary);
+            font-size: 12px;
+        }
+
+        .welcome {
+            margin-bottom: 22px;
+        }
+
+        .welcome h2 {
+            margin: 0 0 8px;
+            font-size: 25px;
+        }
+
+        .welcome p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .section {
+            margin-top: 25px;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 13px;
+        }
+
+        .section-heading h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .section-heading a {
+            color: var(--primary);
+            font-size: 13px;
+        }
+
+        .card {
+            padding: 18px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--card);
+        }
+
+        .account-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .account-icon {
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--card-light);
+            font-size: 23px;
+        }
+
+        .account-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .account-info h3 {
+            margin: 0 0 6px;
+            font-size: 15px;
+        }
+
+        .account-info p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .primary-button {
+            display: inline-block;
+            min-height: 44px;
+            padding: 12px 15px;
+            border: 0;
+            border-radius: 10px;
+            background: var(--primary);
+            color: #24142f;
+            font-weight: bold;
+        }
+
+        .primary-button:disabled {
+            opacity: .65;
+            cursor: not-allowed;
+        }
+
+        .account-button {
+            width: auto;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .small-status {
+            margin: 12px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stat-card {
+            min-height: 105px;
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--card);
+        }
+
+        .stat-label {
+            margin-bottom: 12px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .stat-number {
+            color: var(--primary);
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-card:nth-child(3) .stat-number {
+            color: var(--success);
+        }
+
+        .stat-card:nth-child(4) .stat-number {
+            color: var(--danger);
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .action-card {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            min-height: 82px;
+            padding: 13px;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            background: var(--card);
+        }
+
+        .action-icon {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 11px;
+            background: var(--card-light);
+            font-size: 20px;
+        }
+
+        .action-card h3 {
+            margin: 0 0 5px;
+            font-size: 13px;
+        }
+
+        .action-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 21px;
+            height: 21px;
+            padding: 0 6px;
+            border-radius: 20px;
+            background: var(--primary);
+            color: #24142f;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .notification-item,
+        .activity-item {
+            padding: 13px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .notification-item:first-child,
+        .activity-item:first-child {
+            padding-top: 0;
+        }
+
+        .notification-item:last-child,
+        .activity-item:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .notification-item p,
+        .activity-item p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .notification-item small,
+        .activity-item small {
+            display: block;
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .empty-state {
+            padding: 8px 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .payment-card {
+            border-color: rgba(245,185,66,.3);
+        }
+
+        .payment-card h3 {
+            margin: 0 0 9px;
+            font-size: 17px;
+        }
+
+        .payment-card > p {
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .payment-amount {
+            margin: 15px 0;
+            color: var(--primary);
+            font-size: 27px;
+            font-weight: bold;
+        }
+
+        #payBtn {
+            width: 100%;
+        }
+
+        #payStatus {
+            margin: 12px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            z-index: 100;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 5px calc(10px + env(safe-area-inset-bottom));
+            border-top: 1px solid var(--border);
+            background: #10051f;
+        }
+
+        .nav-item {
+            position: relative;
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        footer {
+            padding: 25px 0 10px;
+            color: var(--muted);
+            text-align: center;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        @media (min-width: 600px) {
+            .container {
+                padding: 25px 22px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            .welcome h2 {
+                font-size: 29px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            header {
+                align-items: flex-start;
+            }
+
+            .brand h1 {
+                font-size: 19px;
+            }
+
+            .account-row {
+                flex-wrap: wrap;
+            }
+
+            .account-button {
+                width: 100%;
+            }
+
+            .action-card {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+    </style>
+
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
+
 <body>
+    <main class="container">
 
-<header>
-  <h1>🔗 PConnect</h1>
-  <p>
-    Welcome to your Dashboard<br>
-    Manage your service requests, payments and Pi ecosystem activity.
-  </p>
-</header>
-
-<div class="container">
-
-  <div class="card pi-card">
-    <h2>👤 Pi Account</h2>
-    <div id="piStatus">Not connected</div>
-    <button id="loginBtn">Sign in with Pi</button>
-  </div>
-
-  <div class="card">
-    <h2>📊 Overview</h2>
-    <div class="stats">
-      <div class="stat"><strong id="totalRequests">0</strong><span>Total Requests</span></div>
-      <div class="stat"><strong id="waitingRequests">0</strong><span>Waiting Review</span></div>
-      <div class="stat"><strong id="approvedRequests">0</strong><span>Approved</span></div>
-      <div class="stat"><strong id="rejectedRequests">0</strong><span>Rejected</span></div>
-      <div class="stat"><strong id="completedPayments">0</strong><span>Completed Payments</span></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>⚡ Quick Actions</h2>
-    <div class="actions">
-      <a href="browse.html">🛍️ Browse Services</a>
-      <a href="requests.html">📋 My Requests</a>
-      <a href="payments.html">💳 Payments</a>
-      <a href="profile.html">👤 Profile</a>
-    </div>
-  </div>
-
-  <div class="card test-payment">
-    <h2>💳 Test Payment</h2>
-    <p>Testnet only — no Mainnet Pi is used.</p>
-    <button id="payBtn">Make Test Payment (0.01 π)</button>
-    <div id="payStatus"></div>
-  </div>
-
-  <div class="card">
-    <div class="notification-header">
-      <h2>🔔 Notifications</h2>
-      <span id="notificationBadge" class="badge" style="display:none;">0</span>
-    </div>
-    <div id="notificationsList">
-      <div class="empty">Sign in with Pi to view notifications.</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>🕘 Recent Activity</h2>
-    <div id="recentActivity">
-      <div class="empty">Sign in with Pi to view your activity.</div>
-    </div>
-  </div>
-
-</div>
-
-<div class="bottom-nav">
-  <a href="index.html">🏠 Home</a>
-  <a href="browse.html">🛍️ Browse</a>
-  <a href="requests.html">📋 Requests</a>
-  <a href="payments.html">💳 Payments</a>
-  <a href="profile.html">👤 Profile</a>
-</div>
-
-<script>
-let dashboardActivities = [];
-
-// ==========================================
-// ESCAPE HTML
-// ==========================================
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-// ==========================================
-// DATE FORMAT
-// ==========================================
-
-function formatActivityDate(dateValue) {
-  if (!dateValue) return "";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleString();
-}
-
-// ==========================================
-// GET PI USERNAME
-// ==========================================
-
-function getPiUsername() {
-  return String(
-    sessionStorage.getItem("pconnect_pi_username") || ""
-  ).trim();
-}
-
-// ==========================================
-// LOAD NOTIFICATIONS
-// ==========================================
-
-async function loadNotifications() {
-  const list = document.getElementById("notificationsList");
-  const badge = document.getElementById("notificationBadge");
-  const piUsername = getPiUsername();
-
-  if (!piUsername) {
-    list.innerHTML = `
-      <div class="empty">Sign in with Pi to view notifications.</div>
-    `;
-    badge.style.display = "none";
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      "/api/notifications?pi_username=" +
-        encodeURIComponent(piUsername) +
-        "&refresh=" + Date.now(),
-      {
-        method: "GET",
-        cache: "no-store",
-        headers: { "Cache-Control": "no-cache" }
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.error || "Failed to load notifications");
-    }
-
-    const notifications = Array.isArray(data.notifications)
-      ? data.notifications
-      : [];
-
-    const unread = notifications.filter(function (notification) {
-      return notification.is_read !== true;
-    }).length;
-
-    if (unread > 0) {
-      badge.textContent = unread;
-      badge.style.display = "inline-block";
-    } else {
-      badge.style.display = "none";
-    }
-
-    if (notifications.length === 0) {
-      list.innerHTML = `<div class="empty">No notifications yet.</div>`;
-      return;
-    }
-
-    list.innerHTML = notifications
-      .slice(0, 5)
-      .map(function (notification) {
-        return `
-          <div class="notification">
-            <strong>${escapeHtml(notification.title)}</strong>
-            <div>${escapeHtml(notification.message)}</div>
-            <small>${escapeHtml(formatActivityDate(notification.created_at))}</small>
-          </div>
-        `;
-      })
-      .join("");
-
-  } catch (error) {
-    console.error("Notifications error:", error);
-    list.innerHTML = `<div class="empty">Unable to load notifications.</div>`;
-    badge.style.display = "none";
-  }
-}
-
-// ==========================================
-// LOAD DASHBOARD
-// ==========================================
-
-async function loadDashboard() {
-  const piUsername = getPiUsername();
-
-  if (!piUsername) {
-    document.getElementById("totalRequests").textContent = "0";
-    document.getElementById("waitingRequests").textContent = "0";
-    document.getElementById("approvedRequests").textContent = "0";
-    document.getElementById("rejectedRequests").textContent = "0";
-    document.getElementById("completedPayments").textContent = "0";
-
-    document.getElementById("recentActivity").innerHTML = `
-      <div class="empty">Sign in with Pi to view your activity.</div>
-    `;
-    return;
-  }
-
-  dashboardActivities = [];
-
-  try {
-    const requestsResponse = await fetch(
-      "/api/requests?pi_username=" +
-        encodeURIComponent(piUsername) +
-        "&refresh=" + Date.now(),
-      {
-        method: "GET",
-        cache: "no-store",
-        headers: { "Cache-Control": "no-cache" }
-      }
-    );
-
-    const requestData = await requestsResponse.json();
-
-    if (!requestsResponse.ok || !requestData.success) {
-      throw new Error(requestData.error || "Failed to load requests");
-    }
-
-    const requests = Array.isArray(requestData.requests)
-      ? requestData.requests
-      : [];
-
-    // ==================================
-    // COUNTS
-    // ==================================
-
-    const total = requests.length;
-
-    const waiting = requests.filter(function (request) {
-      return String(request.review_status || "").toLowerCase() === "waiting";
-    }).length;
-
-    const approved = requests.filter(function (request) {
-      return String(request.review_status || "").toLowerCase() === "approved";
-    }).length;
-
-    const rejected = requests.filter(function (request) {
-      return String(request.review_status || "").toLowerCase() === "rejected";
-    }).length;
-
-    // Paid = Pi payment completed
-    // Completed = service order completed
-    const completedPayments = requests.filter(function (request) {
-      const orderStatus = String(request.order_status || "").toLowerCase();
-      return orderStatus === "paid" || orderStatus === "completed";
-    }).length;
-
-    document.getElementById("totalRequests").textContent = total;
-    document.getElementById("waitingRequests").textContent = waiting;
-    document.getElementById("approvedRequests").textContent = approved;
-    document.getElementById("rejectedRequests").textContent = rejected;
-    document.getElementById("completedPayments").textContent = completedPayments;
-
-    // ==================================
-    // REQUEST ACTIVITY
-    // ==================================
-
-    requests.forEach(function (request) {
-      let title = "Service Request";
-
-      const message =
-        "#" + request.id + " — " + (request.service || "Service");
-
-      const review = String(request.review_status || "").toLowerCase();
-      const order = String(request.order_status || "").toLowerCase();
-
-      if (review === "approved") title = "Request Approved";
-      if (review === "rejected") title = "Request Rejected";
-      if (order === "paid") title = "Payment Completed";
-      if (order === "in progress") title = "Order In Progress";
-      if (order === "completed") title = "Order Completed";
-      if (order === "cancelled") title = "Order Cancelled";
-
-      dashboardActivities.push({
-        title: title,
-        message: message,
-        created_at: request.created_at
-      });
-    });
-
-    dashboardActivities.sort(function (a, b) {
-      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-    });
-
-    const activityBox = document.getElementById("recentActivity");
-
-    if (dashboardActivities.length === 0) {
-      activityBox.innerHTML = `<div class="empty">No activity yet.</div>`;
-      return;
-    }
-
-    activityBox.innerHTML = dashboardActivities
-      .slice(0, 5)
-      .map(function (activity) {
-        return `
-          <div class="activity">
-            <div class="activity-title">${escapeHtml(activity.title)}</div>
-            <div>${escapeHtml(activity.message)}</div>
-            <div class="activity-date">
-              ${escapeHtml(formatActivityDate(activity.created_at))}
+        <header>
+            <div class="brand">
+                <div class="brand-icon">P</div>
+                <div>
+                    <h1>PConnect</h1>
+                    <p>Pi-powered service marketplace</p>
+                </div>
             </div>
-          </div>
-        `;
-      })
-      .join("");
 
-  } catch (error) {
-    console.error("Dashboard error:", error);
+            <a class="header-link" href="browse.html">
+                Browse Services
+            </a>
+        </header>
 
-    document.getElementById("recentActivity").innerHTML = `
-      <div class="empty">Unable to load dashboard data.</div>
-    `;
-  }
-}
+        <section class="welcome">
+            <h2>Welcome to your Dashboard</h2>
+            <p>
+                Manage your service requests, payments and Pi ecosystem activity.
+            </p>
+        </section>
 
-// ==========================================
-// WATCH FOR PI LOGIN
-// ==========================================
+        <section class="section">
+            <div class="section-heading">
+                <h2>👤 Pi Account</h2>
+            </div>
 
-let lastKnownPiUsername = getPiUsername();
+            <div class="card">
+                <div class="account-row">
+                    <div class="account-icon">π</div>
 
-function watchPiLogin() {
-  const currentUsername = getPiUsername();
+                    <div class="account-info">
+                        <h3>Pi Network Account</h3>
+                        <p id="piStatus" aria-live="polite">Not connected</p>
+                    </div>
 
-  if (currentUsername && currentUsername !== lastKnownPiUsername) {
-    lastKnownPiUsername = currentUsername;
-    loadDashboard();
-    loadNotifications();
-  }
-}
+                    <button
+                        type="button"
+                        id="loginBtn"
+                        class="primary-button account-button"
+                    >
+                        Sign in with Pi
+                    </button>
+                </div>
 
-const dashboardWatcher = setInterval(watchPiLogin, 1000);
+                <p id="loginStatus" class="small-status" aria-live="polite"></p>
+            </div>
+        </section>
 
-setTimeout(function () {
-  clearInterval(dashboardWatcher);
-}, 120000);
+        <section class="section">
+            <div class="section-heading">
+                <h2>📊 Overview</h2>
+            </div>
 
-// ==========================================
-// REFRESH WHEN PAGE BECOMES VISIBLE / FOCUSED
-// ==========================================
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Requests</div>
+                    <div class="stat-number" id="totalRequests">0</div>
+                </div>
 
-document.addEventListener("visibilitychange", function () {
-  if (document.visibilityState === "visible" && getPiUsername()) {
-    loadDashboard();
-    loadNotifications();
-  }
-});
+                <div class="stat-card">
+                    <div class="stat-label">Waiting Review</div>
+                    <div class="stat-number" id="waitingRequests">0</div>
+                </div>
 
-window.addEventListener("focus", function () {
-  if (getPiUsername()) {
-    loadDashboard();
-    loadNotifications();
-  }
-});
+                <div class="stat-card">
+                    <div class="stat-label">Approved</div>
+                    <div class="stat-number" id="approvedRequests">0</div>
+                </div>
 
-// ==========================================
-// INITIAL LOAD
-// ==========================================
+                <div class="stat-card">
+                    <div class="stat-label">Rejected</div>
+                    <div class="stat-number" id="rejectedRequests">0</div>
+                </div>
 
-loadDashboard();
-loadNotifications();
-</script>
+                <div class="stat-card">
+                    <div class="stat-label">Completed Payments</div>
+                    <div class="stat-number" id="completedPayments">0</div>
+                </div>
+            </div>
+        </section>
 
-<!-- PI SDK MUST LOAD BEFORE app.js -->
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<script src="app.js"></script>
+        <section class="section">
+            <div class="section-heading">
+                <h2>⚡ Quick Actions</h2>
+            </div>
 
+            <div class="quick-actions">
+                <a class="action-card" href="browse.html">
+                    <div class="action-icon">🛍️</div>
+                    <div>
+                        <h3>Browse Services</h3>
+                        <p>Explore available services</p>
+                    </div>
+                </a>
+
+                <a class="action-card" href="requests.html">
+                    <div class="action-icon">📋</div>
+                    <div>
+                        <h3>My Requests</h3>
+                        <p>View your requests</p>
+                    </div>
+                </a>
+
+                <a class="action-card" href="payments.html">
+                    <div class="action-icon">💳</div>
+                    <div>
+                        <h3>Payments</h3>
+                        <p>View payment activity</p>
+                    </div>
+                </a>
+
+                <a class="action-card" href="profile.html">
+                    <div class="action-icon">👤</div>
+                    <div>
+                        <h3>My Profile</h3>
+                        <p>View your account</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-heading">
+                <h2>💳 Test Payment</h2>
+            </div>
+
+            <div class="card payment-card">
+                <h3>Pi Test Payment</h3>
+                <p>
+                    Testnet development only. Use this to test the existing
+                    PConnect payment flow.
+                </p>
+
+                <div class="payment-amount">0.01 π</div>
+
+                <button type="button" id="payBtn" class="primary-button">
+                    Make Test Payment (0.01 π)
+                </button>
+
+                <p id="payStatus" aria-live="polite">Ready for testing.</p>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-heading">
+                <h2>🔔 Notifications</h2>
+                <span id="notificationBadge" class="badge" style="display:none">0</span>
+            </div>
+
+            <div class="card">
+                <div id="notificationsList" aria-live="polite">
+                    <div class="empty-state">
+                        Sign in with Pi to view notifications.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-heading">
+                <h2>🕒 Recent Activity</h2>
+                <a href="requests.html">View Requests</a>
+            </div>
+
+            <div class="card">
+                <div id="recentActivity" aria-live="polite">
+                    <div class="empty-state">
+                        Sign in with Pi to view your activity.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>PConnect · Pi Network Testnet</p>
+            <p>Development environment — test transactions only.</p>
+        </footer>
+
+    </main>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+        <a class="nav-item active" href="index.html">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </a>
+
+        <a class="nav-item" href="browse.html">
+            <span class="nav-icon">🛍️</span>
+            <span>Browse</span>
+        </a>
+
+        <a class="nav-item" href="requests.html">
+            <span class="nav-icon">📋</span>
+            <span>Requests</span>
+        </a>
+
+        <a class="nav-item" href="payments.html">
+            <span class="nav-icon">💳</span>
+            <span>Payments</span>
+        </a>
+
+        <a class="nav-item" href="profile.html">
+            <span class="nav-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <script src="app.js"></script>
 </body>
 </html>
- 
