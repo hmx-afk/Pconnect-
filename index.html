@@ -1,1156 +1,645 @@
-<!DOCTYPE html>
-<html 
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<!DOCTYPE html><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f0b18"><title>PConnect Dashboard</title>
 
-    <title>PConnect Dashboard</title>
+<style>
+    * {
+        box-sizing: border-box;
+    }
 
-    <style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #0f0b18;
+        color: #ffffff;
+    }
 
-        * {
-            box-sizing: border-box;
-        }
+    header {
+        padding: 22px 18px 10px;
+    }
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0f0b18;
-            color: #ffffff;
-        }
+    header h1 {
+        margin: 0;
+        color: #f5b942;
+    }
 
-        header {
-            padding: 22px 18px 10px;
-        }
+    header p {
+        margin-top: 8px;
+        color: #bdb7c9;
+        line-height: 1.5;
+    }
 
-        header h1 {
-            margin: 0;
-            color: #f5b942;
-        }
+    .container {
+        max-width: 900px;
+        margin: auto;
+        padding: 15px;
+        padding-bottom: 85px;
+    }
 
-        header p {
-            margin-top: 8px;
-            color: #bdb7c9;
-            line-height: 1.4;
-        }
+    .card {
+        background: #191326;
+        border: 1px solid #2d2440;
+        border-radius: 14px;
+        padding: 18px;
+        margin-bottom: 16px;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: auto;
-            padding: 15px;
+    .card h2 {
+        margin-top: 0;
+        font-size: 20px;
+    }
+
+    .pi-card {
+        text-align: center;
+    }
+
+    #piStatus {
+        margin: 12px 0;
+        color: #bdb7c9;
+        overflow-wrap: anywhere;
+    }
+
+    button,
+    a.button {
+        display: inline-block;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 18px;
+        background: #f5b942;
+        color: #111111;
+        font-weight: bold;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    button:hover,
+    a.button:hover {
+        opacity: 0.9;
+    }
+
+    button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+        gap: 12px;
+    }
+
+    .stat {
+        background: #211a30;
+        border-radius: 12px;
+        padding: 15px 10px;
+        text-align: center;
+        overflow-wrap: anywhere;
+    }
+
+    .stat strong {
+        display: block;
+        font-size: 28px;
+        color: #f5b942;
+    }
+
+    .stat span {
+        display: block;
+        margin-top: 5px;
+        color: #bdb7c9;
+        font-size: 13px;
+    }
+
+    .actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+        gap: 10px;
+    }
+
+    .actions a {
+        text-decoration: none;
+        color: white;
+        background: #211a30;
+        border: 1px solid #332848;
+        border-radius: 10px;
+        padding: 14px 10px;
+        text-align: center;
+    }
+
+    .actions a:hover {
+        border-color: #f5b942;
+    }
+
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .notification-header h2 {
+        margin-bottom: 0;
+    }
+
+    .badge {
+        background: #f5b942;
+        color: #111111;
+        border-radius: 20px;
+        padding: 4px 9px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .notification {
+        background: #211a30;
+        border-radius: 10px;
+        padding: 12px;
+        margin-top: 10px;
+        overflow-wrap: anywhere;
+    }
+
+    .notification strong {
+        color: #f5b942;
+    }
+
+    .notification small {
+        display: block;
+        color: #aaaaaa;
+        margin-top: 5px;
+    }
+
+    .activity {
+        padding: 12px 0;
+        border-bottom: 1px solid #2d2440;
+        overflow-wrap: anywhere;
+    }
+
+    .activity:last-child {
+        border-bottom: none;
+    }
+
+    .activity-title {
+        font-weight: bold;
+    }
+
+    .activity-date {
+        color: #999999;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .empty {
+        color: #999999;
+        text-align: center;
+        padding: 15px 5px;
+        line-height: 1.5;
+    }
+
+    .test-payment {
+        text-align: center;
+    }
+
+    #payStatus {
+        margin-top: 10px;
+        color: #bdb7c9;
+        overflow-wrap: anywhere;
+    }
+
+    .bottom-nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        gap: 5px;
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        background: #0f0b18;
+        border-top: 1px solid #2d2440;
+        padding: 12px 5px;
+    }
+
+    .bottom-nav a {
+        color: #bdb7c9;
+        text-decoration: none;
+        font-size: 12px;
+        text-align: center;
+        padding: 5px 3px;
+    }
+
+    .bottom-nav a:hover {
+        color: #f5b942;
+    }
+
+    @media (max-width: 360px) {
+        .bottom-nav a {
+            font-size: 10px;
         }
 
         .card {
-            background: #191326;
-            border: 1px solid #2d2440;
-            border-radius: 14px;
-            padding: 18px;
-            margin-bottom: 16px;
-        }
-
-        .card h2 {
-            margin-top: 0;
-        }
-
-        .pi-card {
-            text-align: center;
-        }
-
-        #piStatus {
-            margin: 12px 0;
-            color: #bdb7c9;
-        }
-
-        button,
-        a.button {
-            display: inline-block;
-            border: none;
-            border-radius: 10px;
-            padding: 12px 18px;
-            background: #f5b942;
-            color: #111;
-            font-weight: bold;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        button:hover,
-        a.button:hover {
-            opacity: 0.9;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(130px, 1fr));
-            gap: 12px;
-        }
-
-        .stat {
-            background: #211a30;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
+            padding: 14px;
         }
 
         .stat strong {
-            display: block;
-            font-size: 28px;
-            color: #f5b942;
+            font-size: 24px;
         }
+    }
+</style>
 
-        .stat span {
-            display: block;
-            margin-top: 5px;
-            color: #bdb7c9;
-            font-size: 13px;
-        }
+</head><body><header>
+    <h1>🔗 PConnect</h1><p>
+    Welcome to your Dashboard<br>
+    Manage your service requests,
+    payments and Pi ecosystem activity.
+</p>
 
-        .actions {
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(130px, 1fr));
-            gap: 10px;
-        }
+</header><main class="container"><!-- PI ACCOUNT -->
 
-        .actions a {
-            text-decoration: none;
-            color: white;
-            background: #211a30;
-            border: 1px solid #332848;
-            border-radius: 10px;
-            padding: 14px;
-            text-align: center;
-        }
+<section class="card pi-card">
+    <h2>👤 Pi Account</h2>
 
-        .actions a:hover {
-            border-color: #f5b942;
-        }
+    <div id="piStatus" aria-live="polite">
+        Not connected
+    </div>
 
-        .notification-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    <button id="loginBtn" type="button">
+        Sign in with Pi
+    </button>
+</section>
 
-        .badge {
-            background: #f5b942;
-            color: #111;
-            border-radius: 20px;
-            padding: 4px 9px;
-            font-size: 12px;
-            font-weight: bold;
-        }
+<!-- OVERVIEW -->
 
-        .notification {
-            background: #211a30;
-            border-radius: 10px;
-            padding: 12px;
-            margin-top: 10px;
-        }
+<section class="card">
+    <h2>📊 Overview</h2>
 
-        .notification strong {
-            color: #f5b942;
-        }
+    <div class="stats">
 
-        .notification small {
-            display: block;
-            color: #aaa;
-            margin-top: 5px;
-        }
+        <div class="stat">
+            <strong id="totalRequests">0</strong>
+            <span>Total Requests</span>
+        </div>
 
-        .activity {
-            padding: 12px 0;
-            border-bottom: 1px solid #2d2440;
-        }
+        <div class="stat">
+            <strong id="waitingRequests">0</strong>
+            <span>Waiting Review</span>
+        </div>
 
-        .activity:last-child {
-            border-bottom: none;
-        }
+        <div class="stat">
+            <strong id="approvedRequests">0</strong>
+            <span>Approved</span>
+        </div>
 
-        .activity-title {
-            font-weight: bold;
-        }
+        <div class="stat">
+            <strong id="rejectedRequests">0</strong>
+            <span>Rejected</span>
+        </div>
 
-        .activity-date {
-            color: #999;
-            font-size: 12px;
-            margin-top: 4px;
-        }
+        <div class="stat">
+            <strong id="completedPayments">0</strong>
+            <span>Completed Payments</span>
+        </div>
 
-        .empty {
-            color: #999;
-            text-align: center;
-            padding: 15px;
-        }
+    </div>
+</section>
 
-        .test-payment {
-            text-align: center;
-        }
+<!-- QUICK ACTIONS -->
 
-        #payStatus {
-            margin-top: 10px;
-            color: #bdb7c9;
-        }
+<section class="card">
+    <h2>⚡ Quick Actions</h2>
 
-        .bottom-nav {
-            display: flex;
-            justify-content: space-around;
-            gap: 5px;
-            position: sticky;
-            bottom: 0;
-            background: #0f0b18;
-            border-top: 1px solid #2d2440;
-            padding: 10px;
-        }
+    <div class="actions">
 
-        .bottom-nav a {
-            color: #bdb7c9;
-            text-decoration: none;
-            font-size: 12px;
-        }
+        <a href="browse.html">
+            🛍️ Browse Services
+        </a>
 
-    </style>
+        <a href="requests.html">
+            📋 My Requests
+        </a>
 
-</head>
+        <a href="payments.html">
+            💳 Payments
+        </a>
 
+        <a href="profile.html">
+            👤 Profile
+        </a>
 
-<body>
+    </div>
+</section>
 
+<!-- TEST PAYMENT -->
 
-<header>
-
-    <h1>🔗 PConnect</h1>
+<section class="card test-payment">
+    <h2>💳 Test Payment</h2>
 
     <p>
-        Welcome to your Dashboard<br>
-        Manage your service requests,
-        payments and Pi ecosystem activity.
+        Testnet only — no Mainnet Pi is used.
     </p>
 
-</header>
+    <button id="payBtn" type="button">
+        Make Test Payment (0.01 π)
+    </button>
 
+    <div id="payStatus" aria-live="polite"></div>
+</section>
 
-<div class="container">
+<!-- NOTIFICATIONS -->
 
+<section class="card">
+    <div class="notification-header">
+        <h2>🔔 Notifications</h2>
 
-    <!-- ============================= -->
-    <!-- PI ACCOUNT -->
-    <!-- ============================= -->
-
-    <div class="card pi-card">
-
-        <h2>👤 Pi Account</h2>
-
-        <div id="piStatus">
-            Not connected
-        </div>
-
-        <button id="loginBtn">
-            Sign in with Pi
-        </button>
-
+        <span
+            id="notificationBadge"
+            class="badge"
+            style="display: none;"
+        >0</span>
     </div>
 
-
-    <!-- ============================= -->
-    <!-- OVERVIEW -->
-    <!-- ============================= -->
-
-    <div class="card">
-
-        <h2>📊 Overview</h2>
-
-        <div class="stats">
-
-            <div class="stat">
-                <strong id="totalRequests">0</strong>
-                <span>Total Requests</span>
-            </div>
-
-            <div class="stat">
-                <strong id="waitingRequests">0</strong>
-                <span>Waiting Review</span>
-            </div>
-
-            <div class="stat">
-                <strong id="approvedRequests">0</strong>
-                <span>Approved</span>
-            </div>
-
-            <div class="stat">
-                <strong id="rejectedRequests">0</strong>
-                <span>Rejected</span>
-            </div>
-
-            <div class="stat">
-                <strong id="completedPayments">0</strong>
-                <span>Completed Payments</span>
-            </div>
-
+    <div id="notificationsList">
+        <div class="empty">
+            Sign in with Pi to view notifications.
         </div>
-
     </div>
+</section>
 
+<!-- RECENT ACTIVITY -->
 
-    <!-- ============================= -->
-    <!-- QUICK ACTIONS -->
-    <!-- ============================= -->
+<section class="card">
+    <h2>🕘 Recent Activity</h2>
 
-    <div class="card">
-
-        <h2>⚡ Quick Actions</h2>
-
-        <div class="actions">
-
-            <a href="browse.html">
-                🛍️ Browse Services
-            </a>
-
-            <a href="requests.html">
-                📋 My Requests
-            </a>
-
-            <a href="payments.html">
-                💳 Payments
-            </a>
-
-            <a href="profile.html">
-                👤 Profile
-            </a>
-
+    <div id="recentActivity">
+        <div class="empty">
+            Sign in with Pi to view your activity.
         </div>
-
     </div>
+</section>
 
+</main><!-- BOTTOM NAVIGATION --><nav class="bottom-nav" aria-label="Main navigation"><a href="index.html">🏠 Home</a>
 
-    <!-- ============================= -->
-    <!-- TEST PAYMENT -->
-    <!-- ============================= -->
+<a href="browse.html">🛍️ Browse</a>
 
-    <div class="card test-payment">
+<a href="requests.html">📋 Requests</a>
 
-        <h2>💳 Test Payment</h2>
+<a href="payments.html">💳 Payments</a>
 
-        <p>
-            Testnet only — no Mainnet Pi is used.
-        </p>
+<a href="profile.html">👤 Profile</a>
 
-        <button id="payBtn">
-            Make Test Payment (0.01 π)
-        </button>
-
-        <div id="payStatus"></div>
-
-    </div>
-
-
-    <!-- ============================= -->
-    <!-- NOTIFICATIONS -->
-    <!-- ============================= -->
-
-    <div class="card">
-
-        <div class="notification-header">
-
-            <h2>🔔 Notifications</h2>
-
-            <span
-                id="notificationBadge"
-                class="badge"
-                style="display:none;"
-            >
-                0
-            </span>
-
-        </div>
-
-        <div id="notificationsList">
-
-            <div class="empty">
-                Sign in with Pi to view notifications.
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- ============================= -->
-    <!-- RECENT ACTIVITY -->
-    <!-- ============================= -->
-
-    <div class="card">
-
-        <h2>🕘 Recent Activity</h2>
-
-        <div id="recentActivity">
-
-            <div class="empty">
-                Sign in with Pi to view your activity.
-            </div>
-
-        </div>
-
-    </div>
-
-
-</div>
-
-
-<!-- ============================= -->
-<!-- BOTTOM NAV -->
-<!-- ============================= -->
-
-<div class="bottom-nav">
-
-    <a href="index.html">
-        🏠 Home
-    </a>
-
-    <a href="browse.html">
-        🛍️ Browse
-    </a>
-
-    <a href="requests.html">
-        📋 Requests
-    </a>
-
-    <a href="payments.html">
-        💳 Payments
-    </a>
-
-    <a href="profile.html">
-        👤 Profile
-    </a>
-
-</div>
-
-
-<!-- ============================= -->
-<!-- DASHBOARD JAVASCRIPT -->
-<!-- ============================= -->
-
-<script>
+</nav><!-- PI SDK: LOAD BEFORE app.js --><script src="https://sdk.minepi.com/pi-sdk.js"></script><!-- EXISTING APPLICATION LOGIC --><script src="app.js"></script><!-- DASHBOARD DISPLAY LOGIC --><script>
+"use strict";
 
 let dashboardActivities = [];
 
-
-// ==========================================
-// ESCAPE HTML
-// ==========================================
-
 function escapeHtml(value) {
-
     return String(value ?? "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-
 }
 
+function formatActivityDate(value) {
+    if (!value) return "";
 
-// ==========================================
-// DATE FORMAT
-// ==========================================
-
-function formatActivityDate(dateValue) {
-
-    if (!dateValue) {
-        return "";
-    }
-
-    const date = new Date(dateValue);
+    const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
         return "";
     }
 
     return date.toLocaleString();
-
 }
-
-
-// ==========================================
-// GET PI USERNAME
-// ==========================================
 
 function getPiUsername() {
-
     return String(
-        sessionStorage.getItem(
-            "pconnect_pi_username"
-        ) || ""
+        sessionStorage.getItem("pconnect_pi_username") || ""
     ).trim();
-
 }
 
+async function fetchJson(url) {
+    const response = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+        headers: {
+            "Cache-Control": "no-cache"
+        }
+    });
 
-// ==========================================
-// LOAD NOTIFICATIONS
-// ==========================================
+    const data = await response.json();
+
+    if (!response.ok || data.success !== true) {
+        throw new Error(
+            data.error || "Unable to load data."
+        );
+    }
+
+    return data;
+}
 
 async function loadNotifications() {
+    const list = document.getElementById("notificationsList");
+    const badge = document.getElementById("notificationBadge");
+    const username = getPiUsername();
 
-    const list =
-        document.getElementById(
-            "notificationsList"
-        );
-
-    const badge =
-        document.getElementById(
-            "notificationBadge"
-        );
-
-    const piUsername =
-        getPiUsername();
-
-
-    if (!piUsername) {
-
-        list.innerHTML = `
-            <div class="empty">
-                Sign in with Pi to view notifications.
-            </div>
-        `;
+    if (!username) {
+        list.innerHTML =
+            '<div class="empty">Sign in with Pi to view notifications.</div>';
 
         badge.style.display = "none";
-
         return;
     }
 
-
     try {
+        const data = await fetchJson(
+            "/api/notifications?pi_username=" +
+            encodeURIComponent(username) +
+            "&refresh=" + Date.now()
+        );
 
-        const response =
-            await fetch(
-                "/api/notifications?pi_username=" +
-                encodeURIComponent(piUsername) +
-                "&refresh=" +
-                Date.now(),
-                {
-                    method: "GET",
-                    cache: "no-store",
-                    headers: {
-                        "Cache-Control":
-                            "no-cache"
-                    }
-                }
-            );
+        const notifications = Array.isArray(data.notifications)
+            ? data.notifications
+            : [];
 
+        const unread = notifications.filter(
+            item => item.is_read !== true
+        ).length;
 
-        const data =
-            await response.json();
-
-
-        if (
-            !response.ok ||
-            !data.success
-        ) {
-
-            throw new Error(
-                data.error ||
-                "Failed to load notifications"
-            );
-
-        }
-
-
-        const notifications =
-            Array.isArray(
-                data.notifications
-            )
-                ? data.notifications
-                : [];
-
-
-        const unread =
-            notifications.filter(
-                notification =>
-                    notification.is_read !== true
-            ).length;
-
-
-        if (unread > 0) {
-
-            badge.textContent = unread;
-
-            badge.style.display =
-                "inline-block";
-
-        } else {
-
-            badge.style.display =
-                "none";
-
-        }
-
+        badge.textContent = String(unread);
+        badge.style.display = unread > 0 ? "inline-block" : "none";
 
         if (notifications.length === 0) {
-
-            list.innerHTML = `
-                <div class="empty">
-                    No notifications yet.
-                </div>
-            `;
-
+            list.innerHTML =
+                '<div class="empty">No notifications yet.</div>';
             return;
         }
 
-
-        list.innerHTML =
-            notifications
-                .slice(0, 5)
-                .map(notification => {
-
-                    return `
-                        <div class="notification">
-
-                            <strong>
-                                ${escapeHtml(
-                                    notification.title
-                                )}
-                            </strong>
-
-                            <div>
-                                ${escapeHtml(
-                                    notification.message
-                                )}
-                            </div>
-
-                            <small>
-                                ${escapeHtml(
-                                    formatActivityDate(
-                                        notification.created_at
-                                    )
-                                )}
-                            </small>
-
-                        </div>
-                    `;
-
-                })
-                .join("");
-
+        list.innerHTML = notifications.slice(0, 5).map(item => `
+            <div class="notification">
+                <strong>${escapeHtml(item.title)}</strong>
+                <div>${escapeHtml(item.message)}</div>
+                <small>${escapeHtml(formatActivityDate(item.created_at))}</small>
+            </div>
+        `).join("");
 
     } catch (error) {
+        console.error("Notifications error:", error);
 
-        console.error(
-            "Notifications error:",
-            error
-        );
-
-        list.innerHTML = `
-            <div class="empty">
-                Unable to load notifications.
-            </div>
-        `;
+        list.innerHTML =
+            '<div class="empty">Unable to load notifications.</div>';
 
         badge.style.display = "none";
-
     }
-
 }
 
-
-// ==========================================
-// LOAD DASHBOARD
-// ==========================================
-
 async function loadDashboard() {
+    const username = getPiUsername();
+    const activityBox = document.getElementById("recentActivity");
 
-    const piUsername =
-        getPiUsername();
+    const counters = [
+        "totalRequests",
+        "waitingRequests",
+        "approvedRequests",
+        "rejectedRequests",
+        "completedPayments"
+    ];
 
+    if (!username) {
+        counters.forEach(id => {
+            document.getElementById(id).textContent = "0";
+        });
 
-    if (!piUsername) {
-
-        document.getElementById(
-            "totalRequests"
-        ).textContent = "0";
-
-        document.getElementById(
-            "waitingRequests"
-        ).textContent = "0";
-
-        document.getElementById(
-            "approvedRequests"
-        ).textContent = "0";
-
-        document.getElementById(
-            "rejectedRequests"
-        ).textContent = "0";
-
-        document.getElementById(
-            "completedPayments"
-        ).textContent = "0";
-
-
-        document.getElementById(
-            "recentActivity"
-        ).innerHTML = `
-            <div class="empty">
-                Sign in with Pi to view
-                your activity.
-            </div>
-        `;
+        activityBox.innerHTML =
+            '<div class="empty">Sign in with Pi to view your activity.</div>';
 
         return;
     }
 
-
-    dashboardActivities = [];
-
-
     try {
-
-        // ==================================
-        // USER REQUESTS
-        // ==================================
-
-        const requestsResponse =
-            await fetch(
-                "/api/requests?pi_username=" +
-                encodeURIComponent(piUsername) +
-                "&refresh=" +
-                Date.now(),
-                {
-                    method: "GET",
-                    cache: "no-store",
-                    headers: {
-                        "Cache-Control":
-                            "no-cache"
-                    }
-                }
-            );
-
-
-        const requestData =
-            await requestsResponse.json();
-
-
-        if (
-            !requestsResponse.ok ||
-            !requestData.success
-        ) {
-
-            throw new Error(
-                requestData.error ||
-                "Failed to load requests"
-            );
-
-        }
-
-
-        const requests =
-            Array.isArray(
-                requestData.requests
-            )
-                ? requestData.requests
-                : [];
-
-
-        // ==================================
-        // COUNTS
-        // ==================================
-
-        const total =
-            requests.length;
-
-
-        const waiting =
-            requests.filter(
-                request =>
-                    String(
-                        request.review_status || ""
-                    ).toLowerCase()
-                    === "waiting"
-            ).length;
-
-
-        const approved =
-            requests.filter(
-                request =>
-                    String(
-                        request.review_status || ""
-                    ).toLowerCase()
-                    === "approved"
-            ).length;
-
-
-        const rejected =
-            requests.filter(
-                request =>
-                    String(
-                        request.review_status || ""
-                    ).toLowerCase()
-                    === "rejected"
-            ).length;
-
-
-        // ==================================
-        // COMPLETED PAYMENTS
-        //
-        // Paid = Pi payment completed
-        // Completed = service order completed
-        // ==================================
-
-        const completedPayments =
-            requests.filter(
-                request => {
-
-                    const orderStatus =
-                        String(
-                            request.order_status || ""
-                        ).toLowerCase();
-
-                    return (
-                        orderStatus === "paid" ||
-                        orderStatus === "completed"
-                    );
-
-                }
-            ).length;
-
-
-        document.getElementById(
-            "totalRequests"
-        ).textContent = total;
-
-
-        document.getElementById(
-            "waitingRequests"
-        ).textContent = waiting;
-
-
-        document.getElementById(
-            "approvedRequests"
-        ).textContent = approved;
-
-
-        document.getElementById(
-            "rejectedRequests"
-        ).textContent = rejected;
-
-
-        document.getElementById(
-            "completedPayments"
-        ).textContent =
-            completedPayments;
-
-
-        // ==================================
-        // REQUEST ACTIVITY
-        // ==================================
-
-        requests.forEach(request => {
-
-            let title =
-                "Service Request";
-
-
-            let message =
-                "#" +
-                request.id +
-                " — " +
-                (
-                    request.service ||
-                    "Service"
-                );
-
-
-            const review =
-                String(
-                    request.review_status || ""
-                ).toLowerCase();
-
-
-            const order =
-                String(
-                    request.order_status || ""
-                ).toLowerCase();
-
-
-            if (review === "approved") {
-
-                title =
-                    "Request Approved";
-
-            }
-
-
-            if (review === "rejected") {
-
-                title =
-                    "Request Rejected";
-
-            }
-
-
-            if (order === "paid") {
-
-                title =
-                    "Payment Completed";
-
-            }
-
-
-            if (order === "in progress") {
-
-                title =
-                    "Order In Progress";
-
-            }
-
-
-            if (order === "completed") {
-
-                title =
-                    "Order Completed";
-
-            }
-
-
-            if (order === "cancelled") {
-
-                title =
-                    "Order Cancelled";
-
-            }
-
-
-            dashboardActivities.push({
-
-                title: title,
-
-                message: message,
-
-                created_at:
-                    request.created_at
-
-            });
-
-        });
-
-
-        // ==================================
-        // SORT ACTIVITY
-        // ==================================
-
-        dashboardActivities.sort(
-            (a, b) => {
-
-                return new Date(
-                    b.created_at || 0
-                ) -
-                new Date(
-                    a.created_at || 0
-                );
-
-            }
+        const data = await fetchJson(
+            "/api/requests?pi_username=" +
+            encodeURIComponent(username) +
+            "&refresh=" + Date.now()
         );
 
+        const requests = Array.isArray(data.requests)
+            ? data.requests
+            : [];
 
-        // ==================================
-        // DISPLAY ACTIVITY
-        // ==================================
+        const waiting = requests.filter(
+            item => String(item.review_status || "").toLowerCase() === "waiting"
+        ).length;
 
-        const activityBox =
-            document.getElementById(
-                "recentActivity"
-            );
+        const approved = requests.filter(
+            item => String(item.review_status || "").toLowerCase() === "approved"
+        ).length;
 
+        const rejected = requests.filter(
+            item => String(item.review_status || "").toLowerCase() === "rejected"
+        ).length;
 
-        if (
-            dashboardActivities.length === 0
-        ) {
+        const completedPayments = requests.filter(item => {
+            const status = String(item.order_status || "").toLowerCase();
+            return status === "paid" || status === "completed";
+        }).length;
 
-            activityBox.innerHTML = `
-                <div class="empty">
-                    No activity yet.
-                </div>
-            `;
+        document.getElementById("totalRequests").textContent =
+            String(requests.length);
 
+        document.getElementById("waitingRequests").textContent =
+            String(waiting);
+
+        document.getElementById("approvedRequests").textContent =
+            String(approved);
+
+        document.getElementById("rejectedRequests").textContent =
+            String(rejected);
+
+        document.getElementById("completedPayments").textContent =
+            String(completedPayments);
+
+        dashboardActivities = requests.map(item => {
+            const review = String(item.review_status || "").toLowerCase();
+            const order = String(item.order_status || "").toLowerCase();
+
+            let title = "Service Request";
+
+            if (review === "approved") title = "Request Approved";
+            if (review === "rejected") title = "Request Rejected";
+            if (order === "paid") title = "Payment Completed";
+            if (order === "in progress") title = "Order In Progress";
+            if (order === "completed") title = "Order Completed";
+            if (order === "cancelled") title = "Order Cancelled";
+
+            return {
+                title,
+                message: "#" + item.id + " — " + (item.service || "Service"),
+                created_at: item.created_at
+            };
+        });
+
+        dashboardActivities.sort(
+            (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+        );
+
+        if (dashboardActivities.length === 0) {
+            activityBox.innerHTML =
+                '<div class="empty">No activity yet.</div>';
             return;
         }
 
-
-        activityBox.innerHTML =
-            dashboardActivities
-                .slice(0, 5)
-                .map(activity => {
-
-                    return `
-                        <div class="activity">
-
-                            <div class="activity-title">
-                                ${escapeHtml(
-                                    activity.title
-                                )}
-                            </div>
-
-                            <div>
-                                ${escapeHtml(
-                                    activity.message
-                                )}
-                            </div>
-
-                            <div class="activity-date">
-                                ${escapeHtml(
-                                    formatActivityDate(
-                                        activity.created_at
-                                    )
-                                )}
-                            </div>
-
-                        </div>
-                    `;
-
-                })
-                .join("");
-
+        activityBox.innerHTML = dashboardActivities.slice(0, 5).map(item => `
+            <div class="activity">
+                <div class="activity-title">${escapeHtml(item.title)}</div>
+                <div>${escapeHtml(item.message)}</div>
+                <div class="activity-date">
+                    ${escapeHtml(formatActivityDate(item.created_at))}
+                </div>
+            </div>
+        `).join("");
 
     } catch (error) {
+        console.error("Dashboard error:", error);
 
-        console.error(
-            "Dashboard error:",
-            error
-        );
-
-
-        document.getElementById(
-            "recentActivity"
-        ).innerHTML = `
-            <div class="empty">
-                Unable to load dashboard data.
-            </div>
-        `;
-
+        activityBox.innerHTML =
+            '<div class="empty">Unable to load dashboard data. Please refresh later.</div>';
     }
-
 }
 
+let lastKnownPiUsername = getPiUsername();
 
-// ==========================================
-// WATCH FOR PI LOGIN
-// ==========================================
+function checkPiLogin() {
+    const currentUsername = getPiUsername();
 
-let lastKnownPiUsername =
-    getPiUsername();
-
-
-function watchPiLogin() {
-
-    const currentUsername =
-        getPiUsername();
-
-
-    if (
-        currentUsername &&
-        currentUsername !==
-            lastKnownPiUsername
-    ) {
-
-        lastKnownPiUsername =
-            currentUsername;
-
-
+    if (currentUsername !== lastKnownPiUsername) {
+        lastKnownPiUsername = currentUsername;
         loadDashboard();
-
         loadNotifications();
-
     }
-
 }
 
+const dashboardWatcher = setInterval(checkPiLogin, 1500);
 
-const dashboardWatcher =
-    setInterval(
-        watchPiLogin,
-        1000
-    );
+setTimeout(() => {
+    clearInterval(dashboardWatcher);
+}, 120000);
 
-
-setTimeout(
-    () => {
-
-        clearInterval(
-            dashboardWatcher
-        );
-
-    },
-    120000
-);
-
-
-// ==========================================
-// REFRESH WHEN PAGE BECOMES VISIBLE
-// ==========================================
-
-document.addEventListener(
-    "visibilitychange",
-    () => {
-
-        if (
-            document.visibilityState ===
-            "visible"
-        ) {
-
-            if (getPiUsername()) {
-
-                loadDashboard();
-
-                loadNotifications();
-
-            }
-
-        }
-
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && getPiUsername()) {
+        loadDashboard();
+        loadNotifications();
     }
-);
+});
 
-
-// ==========================================
-// REFRESH WHEN WINDOW GETS FOCUS
-// ==========================================
-
-window.addEventListener(
-    "focus",
-    () => {
-
-        if (getPiUsername()) {
-
-            loadDashboard();
-
-            loadNotifications();
-
-        }
-
+window.addEventListener("focus", () => {
+    if (getPiUsername()) {
+        loadDashboard();
+        loadNotifications();
     }
-);
-
-
-// ==========================================
-// INITIAL LOAD
-// ==========================================
+});
 
 loadDashboard();
-
 loadNotifications();
-
-</script>
-
-
-<!-- ========================================== -->
-<!-- PI SDK MUST LOAD BEFORE app.js -->
-<!-- ========================================== -->
-
-<script src="https://sdk.minepi.com/pi-sdk.js"></script>
-
-<script src="app.js"></script>
-
-
-</body>
+</script></body>
 </html>
