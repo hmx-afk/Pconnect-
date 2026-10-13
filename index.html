@@ -1,645 +1,709 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f0b18"><title>PConnect Dashboard</title>
 
-<style>
-    * {
-        box-sizing: border-box;
-    }
+    <title>My Requests - PConnect</title>
 
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #0f0b18;
-        color: #ffffff;
-    }
-
-    header {
-        padding: 22px 18px 10px;
-    }
-
-    header h1 {
-        margin: 0;
-        color: #f5b942;
-    }
-
-    header p {
-        margin-top: 8px;
-        color: #bdb7c9;
-        line-height: 1.5;
-    }
-
-    .container {
-        max-width: 900px;
-        margin: auto;
-        padding: 15px;
-        padding-bottom: 85px;
-    }
-
-    .card {
-        background: #191326;
-        border: 1px solid #2d2440;
-        border-radius: 14px;
-        padding: 18px;
-        margin-bottom: 16px;
-    }
-
-    .card h2 {
-        margin-top: 0;
-        font-size: 20px;
-    }
-
-    .pi-card {
-        text-align: center;
-    }
-
-    #piStatus {
-        margin: 12px 0;
-        color: #bdb7c9;
-        overflow-wrap: anywhere;
-    }
-
-    button,
-    a.button {
-        display: inline-block;
-        border: none;
-        border-radius: 10px;
-        padding: 12px 18px;
-        background: #f5b942;
-        color: #111111;
-        font-weight: bold;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    button:hover,
-    a.button:hover {
-        opacity: 0.9;
-    }
-
-    button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    .stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
-        gap: 12px;
-    }
-
-    .stat {
-        background: #211a30;
-        border-radius: 12px;
-        padding: 15px 10px;
-        text-align: center;
-        overflow-wrap: anywhere;
-    }
-
-    .stat strong {
-        display: block;
-        font-size: 28px;
-        color: #f5b942;
-    }
-
-    .stat span {
-        display: block;
-        margin-top: 5px;
-        color: #bdb7c9;
-        font-size: 13px;
-    }
-
-    .actions {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
-        gap: 10px;
-    }
-
-    .actions a {
-        text-decoration: none;
-        color: white;
-        background: #211a30;
-        border: 1px solid #332848;
-        border-radius: 10px;
-        padding: 14px 10px;
-        text-align: center;
-    }
-
-    .actions a:hover {
-        border-color: #f5b942;
-    }
-
-    .notification-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .notification-header h2 {
-        margin-bottom: 0;
-    }
-
-    .badge {
-        background: #f5b942;
-        color: #111111;
-        border-radius: 20px;
-        padding: 4px 9px;
-        font-size: 12px;
-        font-weight: bold;
-    }
-
-    .notification {
-        background: #211a30;
-        border-radius: 10px;
-        padding: 12px;
-        margin-top: 10px;
-        overflow-wrap: anywhere;
-    }
-
-    .notification strong {
-        color: #f5b942;
-    }
-
-    .notification small {
-        display: block;
-        color: #aaaaaa;
-        margin-top: 5px;
-    }
-
-    .activity {
-        padding: 12px 0;
-        border-bottom: 1px solid #2d2440;
-        overflow-wrap: anywhere;
-    }
-
-    .activity:last-child {
-        border-bottom: none;
-    }
-
-    .activity-title {
-        font-weight: bold;
-    }
-
-    .activity-date {
-        color: #999999;
-        font-size: 12px;
-        margin-top: 4px;
-    }
-
-    .empty {
-        color: #999999;
-        text-align: center;
-        padding: 15px 5px;
-        line-height: 1.5;
-    }
-
-    .test-payment {
-        text-align: center;
-    }
-
-    #payStatus {
-        margin-top: 10px;
-        color: #bdb7c9;
-        overflow-wrap: anywhere;
-    }
-
-    .bottom-nav {
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        gap: 5px;
-        position: sticky;
-        bottom: 0;
-        z-index: 10;
-        background: #0f0b18;
-        border-top: 1px solid #2d2440;
-        padding: 12px 5px;
-    }
-
-    .bottom-nav a {
-        color: #bdb7c9;
-        text-decoration: none;
-        font-size: 12px;
-        text-align: center;
-        padding: 5px 3px;
-    }
-
-    .bottom-nav a:hover {
-        color: #f5b942;
-    }
-
-    @media (max-width: 360px) {
-        .bottom-nav a {
-            font-size: 10px;
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        .card {
-            padding: 14px;
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f0b1a;
+            color: #ffffff;
+            min-height: 100vh;
+            padding-bottom: 80px;
         }
 
-        .stat strong {
-            font-size: 24px;
+        a {
+            color: inherit;
+            text-decoration: none;
         }
-    }
-</style>
 
-</head><body><header>
-    <h1>🔗 PConnect</h1><p>
-    Welcome to your Dashboard<br>
-    Manage your service requests,
-    payments and Pi ecosystem activity.
-</p>
+        .container {
+            width: 92%;
+            max-width: 900px;
+            margin: auto;
+        }
 
-</header><main class="container"><!-- PI ACCOUNT -->
+        header {
+            padding: 20px 0;
+        }
 
-<section class="card pi-card">
-    <h2>👤 Pi Account</h2>
+        .back-link {
+            color: #c7a7ff;
+            font-size: 14px;
+        }
 
-    <div id="piStatus" aria-live="polite">
-        Not connected
-    </div>
+        h1 {
+            margin-top: 18px;
+            font-size: 28px;
+        }
 
-    <button id="loginBtn" type="button">
-        Sign in with Pi
-    </button>
-</section>
+        .subtitle {
+            color: #aaa;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
 
-<!-- OVERVIEW -->
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 25px 0;
+        }
 
-<section class="card">
-    <h2>📊 Overview</h2>
+        .stat-card {
+            background: #1a1427;
+            border: 1px solid #302447;
+            border-radius: 14px;
+            padding: 18px 10px;
+            text-align: center;
+        }
 
-    <div class="stats">
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+        }
 
-        <div class="stat">
-            <strong id="totalRequests">0</strong>
-            <span>Total Requests</span>
+        .stat-label {
+            color: #aaa;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .refresh-btn {
+            width: 100%;
+            border: 1px solid #49346d;
+            background: #191224;
+            color: #ffffff;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-bottom: 25px;
+        }
+
+        .refresh-btn:hover {
+            background: #241936;
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .request-card {
+            background: #181222;
+            border: 1px solid #302447;
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 15px;
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .request-title {
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .service {
+            color: #c7a7ff;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .status {
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .approved {
+            background: #173d29;
+            color: #6ff0a4;
+        }
+
+        .waiting {
+            background: #3d3217;
+            color: #ffd76a;
+        }
+
+        .paid-status {
+            margin-top: 12px;
+            background: #173d29;
+            color: #6ff0a4;
+            border: 1px solid #286443;
+            border-radius: 10px;
+            padding: 11px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .info {
+            border-top: 1px solid #2b2239;
+            padding-top: 13px;
+        }
+
+        .info-row {
+            margin-bottom: 12px;
+        }
+
+        .label {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .value {
+            color: #eee;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .submitted {
+            color: #888;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+
+        .pay-btn {
+            display: block;
+            width: 100%;
+            margin-top: 16px;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            background: #f5b642;
+            color: #17110a;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .pay-btn:hover {
+            background: #ffc95f;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px 15px;
+            color: #999;
+            background: #181222;
+            border: 1px solid #302447;
+            border-radius: 16px;
+        }
+
+        .error {
+            text-align: center;
+            padding: 25px;
+            color: #ff8c8c;
+            background: #29171c;
+            border: 1px solid #55252d;
+            border-radius: 14px;
+        }
+
+        nav {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #120d1d;
+            border-top: 1px solid #302447;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 5px;
+            z-index: 1000;
+        }
+
+        nav a {
+            color: #aaa;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        nav a.active {
+            color: #ffffff;
+        }
+
+        @media (max-width: 600px) {
+            .stats {
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 15px 5px;
+            }
+
+            .stat-number {
+                font-size: 23px;
+            }
+
+            .request-header {
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <a href="/browse.html" class="back-link">← Back to Browse</a>
+
+        <h1>📋 My Requests</h1>
+
+        <p class="subtitle">
+            Track your service requests and review their current status.
+        </p>
+    </header>
+
+    <section class="stats">
+
+        <div class="stat-card">
+            <div class="stat-number" id="totalRequests">0</div>
+            <div class="stat-label">TOTAL REQUESTS</div>
         </div>
 
-        <div class="stat">
-            <strong id="waitingRequests">0</strong>
-            <span>Waiting Review</span>
+        <div class="stat-card">
+            <div class="stat-number" id="waitingRequests">0</div>
+            <div class="stat-label">WAITING REVIEW</div>
         </div>
 
-        <div class="stat">
-            <strong id="approvedRequests">0</strong>
-            <span>Approved</span>
+        <div class="stat-card">
+            <div class="stat-number" id="approvedRequests">0</div>
+            <div class="stat-label">APPROVED</div>
         </div>
 
-        <div class="stat">
-            <strong id="rejectedRequests">0</strong>
-            <span>Rejected</span>
-        </div>
+    </section>
 
-        <div class="stat">
-            <strong id="completedPayments">0</strong>
-            <span>Completed Payments</span>
-        </div>
-
-    </div>
-</section>
-
-<!-- QUICK ACTIONS -->
-
-<section class="card">
-    <h2>⚡ Quick Actions</h2>
-
-    <div class="actions">
-
-        <a href="browse.html">
-            🛍️ Browse Services
-        </a>
-
-        <a href="requests.html">
-            📋 My Requests
-        </a>
-
-        <a href="payments.html">
-            💳 Payments
-        </a>
-
-        <a href="profile.html">
-            👤 Profile
-        </a>
-
-    </div>
-</section>
-
-<!-- TEST PAYMENT -->
-
-<section class="card test-payment">
-    <h2>💳 Test Payment</h2>
-
-    <p>
-        Testnet only — no Mainnet Pi is used.
-    </p>
-
-    <button id="payBtn" type="button">
-        Make Test Payment (0.01 π)
+    <button id="refreshBtn" class="refresh-btn">
+        🔄 Refresh Requests
     </button>
 
-    <div id="payStatus" aria-live="polite"></div>
-</section>
+    <h2 class="section-title">Recent Requests</h2>
 
-<!-- NOTIFICATIONS -->
-
-<section class="card">
-    <div class="notification-header">
-        <h2>🔔 Notifications</h2>
-
-        <span
-            id="notificationBadge"
-            class="badge"
-            style="display: none;"
-        >0</span>
-    </div>
-
-    <div id="notificationsList">
+    <div id="requestsList">
         <div class="empty">
-            Sign in with Pi to view notifications.
+            Loading requests...
         </div>
     </div>
-</section>
 
-<!-- RECENT ACTIVITY -->
+</div>
 
-<section class="card">
-    <h2>🕘 Recent Activity</h2>
+<nav>
+    <a href="/index.html">
+        🏠<br>Home
+    </a>
 
-    <div id="recentActivity">
-        <div class="empty">
-            Sign in with Pi to view your activity.
-        </div>
-    </div>
-</section>
+    <a href="/browse.html">
+        🔎<br>Browse
+    </a>
 
-</main><!-- BOTTOM NAVIGATION --><nav class="bottom-nav" aria-label="Main navigation"><a href="index.html">🏠 Home</a>
+    <a href="/requests.html" class="active">
+        📋<br>Requests
+    </a>
 
-<a href="browse.html">🛍️ Browse</a>
+    <a href="/payments.html">
+        💳<br>Payments
+    </a>
 
-<a href="requests.html">📋 Requests</a>
+    <a href="/profile.html">
+        👤<br>Profile
+    </a>
+</nav>
 
-<a href="payments.html">💳 Payments</a>
+<script>
+    const requestsList = document.getElementById("requestsList");
+    const totalRequests = document.getElementById("totalRequests");
+    const waitingRequests = document.getElementById("waitingRequests");
+    const approvedRequests = document.getElementById("approvedRequests");
+    const refreshBtn = document.getElementById("refreshBtn");
 
-<a href="profile.html">👤 Profile</a>
+    // ==========================================
+    // LOAD REQUESTS + TRANSACTIONS
+    // ==========================================
 
-</nav><!-- PI SDK: LOAD BEFORE app.js --><script src="https://sdk.minepi.com/pi-sdk.js"></script><!-- EXISTING APPLICATION LOGIC --><script src="app.js"></script><!-- DASHBOARD DISPLAY LOGIC --><script>
-"use strict";
+    async function loadRequests() {
 
-let dashboardActivities = [];
-
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function formatActivityDate(value) {
-    if (!value) return "";
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-        return "";
-    }
-
-    return date.toLocaleString();
-}
-
-function getPiUsername() {
-    return String(
-        sessionStorage.getItem("pconnect_pi_username") || ""
-    ).trim();
-}
-
-async function fetchJson(url) {
-    const response = await fetch(url, {
-        method: "GET",
-        cache: "no-store",
-        headers: {
-            "Cache-Control": "no-cache"
-        }
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || data.success !== true) {
-        throw new Error(
-            data.error || "Unable to load data."
-        );
-    }
-
-    return data;
-}
-
-async function loadNotifications() {
-    const list = document.getElementById("notificationsList");
-    const badge = document.getElementById("notificationBadge");
-    const username = getPiUsername();
-
-    if (!username) {
-        list.innerHTML =
-            '<div class="empty">Sign in with Pi to view notifications.</div>';
-
-        badge.style.display = "none";
-        return;
-    }
-
-    try {
-        const data = await fetchJson(
-            "/api/notifications?pi_username=" +
-            encodeURIComponent(username) +
-            "&refresh=" + Date.now()
-        );
-
-        const notifications = Array.isArray(data.notifications)
-            ? data.notifications
-            : [];
-
-        const unread = notifications.filter(
-            item => item.is_read !== true
-        ).length;
-
-        badge.textContent = String(unread);
-        badge.style.display = unread > 0 ? "inline-block" : "none";
-
-        if (notifications.length === 0) {
-            list.innerHTML =
-                '<div class="empty">No notifications yet.</div>';
-            return;
-        }
-
-        list.innerHTML = notifications.slice(0, 5).map(item => `
-            <div class="notification">
-                <strong>${escapeHtml(item.title)}</strong>
-                <div>${escapeHtml(item.message)}</div>
-                <small>${escapeHtml(formatActivityDate(item.created_at))}</small>
+        requestsList.innerHTML = `
+            <div class="empty">
+                Loading requests...
             </div>
-        `).join("");
+        `;
 
-    } catch (error) {
-        console.error("Notifications error:", error);
+        try {
 
-        list.innerHTML =
-            '<div class="empty">Unable to load notifications.</div>';
+            const [requestsResponse, transactionsResponse] =
+                await Promise.all([
+                    fetch("/api/requests", {
+                        method: "GET",
+                        cache: "no-store"
+                    }),
+                    fetch("/api/transactions", {
+                        method: "GET",
+                        cache: "no-store"
+                    })
+                ]);
 
-        badge.style.display = "none";
-    }
-}
+            const requestsResult = await requestsResponse.json();
+            const transactionsResult = await transactionsResponse.json();
 
-async function loadDashboard() {
-    const username = getPiUsername();
-    const activityBox = document.getElementById("recentActivity");
+            if (
+                !requestsResponse.ok ||
+                !requestsResult.success
+            ) {
+                throw new Error(
+                    requestsResult.error ||
+                    "Failed to load requests"
+                );
+            }
 
-    const counters = [
-        "totalRequests",
-        "waitingRequests",
-        "approvedRequests",
-        "rejectedRequests",
-        "completedPayments"
-    ];
+            if (
+                !transactionsResponse.ok ||
+                !transactionsResult.success
+            ) {
+                throw new Error(
+                    transactionsResult.error ||
+                    "Failed to load transactions"
+                );
+            }
 
-    if (!username) {
-        counters.forEach(id => {
-            document.getElementById(id).textContent = "0";
-        });
+            const requests = Array.isArray(
+                requestsResult.requests
+            )
+                ? requestsResult.requests
+                : [];
 
-        activityBox.innerHTML =
-            '<div class="empty">Sign in with Pi to view your activity.</div>';
+            const transactions = Array.isArray(
+                transactionsResult.transactions
+            )
+                ? transactionsResult.transactions
+                : [];
 
-        return;
-    }
+            updateStats(requests);
 
-    try {
-        const data = await fetchJson(
-            "/api/requests?pi_username=" +
-            encodeURIComponent(username) +
-            "&refresh=" + Date.now()
-        );
+            renderRequests(
+                requests,
+                transactions
+            );
 
-        const requests = Array.isArray(data.requests)
-            ? data.requests
-            : [];
+        } catch (error) {
 
-        const waiting = requests.filter(
-            item => String(item.review_status || "").toLowerCase() === "waiting"
-        ).length;
+            console.error(
+                "Requests loading error:",
+                error
+            );
 
-        const approved = requests.filter(
-            item => String(item.review_status || "").toLowerCase() === "approved"
-        ).length;
-
-        const rejected = requests.filter(
-            item => String(item.review_status || "").toLowerCase() === "rejected"
-        ).length;
-
-        const completedPayments = requests.filter(item => {
-            const status = String(item.order_status || "").toLowerCase();
-            return status === "paid" || status === "completed";
-        }).length;
-
-        document.getElementById("totalRequests").textContent =
-            String(requests.length);
-
-        document.getElementById("waitingRequests").textContent =
-            String(waiting);
-
-        document.getElementById("approvedRequests").textContent =
-            String(approved);
-
-        document.getElementById("rejectedRequests").textContent =
-            String(rejected);
-
-        document.getElementById("completedPayments").textContent =
-            String(completedPayments);
-
-        dashboardActivities = requests.map(item => {
-            const review = String(item.review_status || "").toLowerCase();
-            const order = String(item.order_status || "").toLowerCase();
-
-            let title = "Service Request";
-
-            if (review === "approved") title = "Request Approved";
-            if (review === "rejected") title = "Request Rejected";
-            if (order === "paid") title = "Payment Completed";
-            if (order === "in progress") title = "Order In Progress";
-            if (order === "completed") title = "Order Completed";
-            if (order === "cancelled") title = "Order Cancelled";
-
-            return {
-                title,
-                message: "#" + item.id + " — " + (item.service || "Service"),
-                created_at: item.created_at
-            };
-        });
-
-        dashboardActivities.sort(
-            (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
-        );
-
-        if (dashboardActivities.length === 0) {
-            activityBox.innerHTML =
-                '<div class="empty">No activity yet.</div>';
-            return;
-        }
-
-        activityBox.innerHTML = dashboardActivities.slice(0, 5).map(item => `
-            <div class="activity">
-                <div class="activity-title">${escapeHtml(item.title)}</div>
-                <div>${escapeHtml(item.message)}</div>
-                <div class="activity-date">
-                    ${escapeHtml(formatActivityDate(item.created_at))}
+            requestsList.innerHTML = `
+                <div class="error">
+                    ❌ Failed to load requests.<br><br>
+                    ${escapeHtml(error.message)}
                 </div>
-            </div>
-        `).join("");
-
-    } catch (error) {
-        console.error("Dashboard error:", error);
-
-        activityBox.innerHTML =
-            '<div class="empty">Unable to load dashboard data. Please refresh later.</div>';
+            `;
+        }
     }
-}
 
-let lastKnownPiUsername = getPiUsername();
+    // ==========================================
+    // UPDATE STATS
+    // ==========================================
 
-function checkPiLogin() {
-    const currentUsername = getPiUsername();
+    function updateStats(requests) {
 
-    if (currentUsername !== lastKnownPiUsername) {
-        lastKnownPiUsername = currentUsername;
-        loadDashboard();
-        loadNotifications();
+        const waiting = requests.filter(request =>
+            String(
+                request.review_status || ""
+            ).toLowerCase() ===
+            "waiting for review"
+        );
+
+        const approved = requests.filter(request =>
+            String(
+                request.review_status || ""
+            ).toLowerCase() ===
+            "approved"
+        );
+
+        totalRequests.textContent =
+            requests.length;
+
+        waitingRequests.textContent =
+            waiting.length;
+
+        approvedRequests.textContent =
+            approved.length;
     }
-}
 
-const dashboardWatcher = setInterval(checkPiLogin, 1500);
+    // ==========================================
+    // CHECK IF REQUEST IS PAID
+    // ==========================================
 
-setTimeout(() => {
-    clearInterval(dashboardWatcher);
-}, 120000);
+    function isRequestPaid(
+        requestId,
+        transactions
+    ) {
 
-document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && getPiUsername()) {
-        loadDashboard();
-        loadNotifications();
+        return transactions.some(transaction => {
+
+            const transactionRequestId =
+                Number(transaction.request_id);
+
+            const status =
+                String(
+                    transaction.status || ""
+                ).toLowerCase();
+
+            return (
+                transactionRequestId ===
+                Number(requestId) &&
+                status === "completed"
+            );
+        });
     }
-});
 
-window.addEventListener("focus", () => {
-    if (getPiUsername()) {
-        loadDashboard();
-        loadNotifications();
+    // ==========================================
+    // RENDER REQUESTS
+    // ==========================================
+
+    function renderRequests(
+        requests,
+        transactions
+    ) {
+
+        if (!requests.length) {
+
+            requestsList.innerHTML = `
+                <div class="empty">
+                    No service requests found.
+                </div>
+            `;
+
+            return;
+        }
+
+        requestsList.innerHTML =
+            requests.map(request => {
+
+                const id = Number(request.id);
+
+                const service =
+                    request.service ||
+                    "Web Development";
+
+                const name =
+                    request.name ||
+                    "N/A";
+
+                const contact =
+                    request.contact ||
+                    "N/A";
+
+                const details =
+                    request.details ||
+                    "No project details";
+
+                const reviewStatus =
+                    request.review_status ||
+                    "Waiting for review";
+
+                const createdAt =
+                    request.created_at
+                        ? new Date(
+                            request.created_at
+                        ).toLocaleString()
+                        : "Unknown";
+
+                const isApproved =
+                    String(
+                        reviewStatus
+                    ).toLowerCase() ===
+                    "approved";
+
+                const paid =
+                    isRequestPaid(
+                        id,
+                        transactions
+                    );
+
+                const statusClass =
+                    isApproved
+                        ? "approved"
+                        : "waiting";
+
+                let paymentAction = "";
+
+                if (paid) {
+
+                    paymentAction = `
+                        <div class="paid-status">
+                            💳 Paid ✅
+                        </div>
+                    `;
+
+                } else if (
+                    isApproved &&
+                    Number.isInteger(id) &&
+                    id > 0
+                ) {
+
+                    paymentAction = `
+                        <a
+                            href="/payments.html?request_id=${encodeURIComponent(id)}"
+                            class="pay-btn"
+                        >
+                            💳 Pay for Request #${id}
+                        </a>
+                    `;
+                }
+
+                return `
+                    <article class="request-card">
+
+                        <div class="request-header">
+
+                            <div>
+
+                                <div class="request-title">
+                                    📋 Request #${escapeHtml(
+                                        String(id)
+                                    )}
+                                </div>
+
+                                <div class="service">
+                                    ${escapeHtml(
+                                        service
+                                    )}
+                                </div>
+
+                            </div>
+
+                            <div class="status ${statusClass}">
+                                ${escapeHtml(
+                                    reviewStatus
+                                )}
+                            </div>
+
+                        </div>
+
+                        <div class="info">
+
+                            <div class="info-row">
+                                <div class="label">
+                                    Name
+                                </div>
+
+                                <div class="value">
+                                    ${escapeHtml(
+                                        name
+                                    )}
+                                </div>
+                            </div>
+
+                            <div class="info-row">
+                                <div class="label">
+                                    Contact
+                                </div>
+
+                                <div class="value">
+                                    ${escapeHtml(
+                                        contact
+                                    )}
+                                </div>
+                            </div>
+
+                            <div class="info-row">
+                                <div class="label">
+                                    Project Details
+                                </div>
+
+                                <div class="value">
+                                    ${escapeHtml(
+                                        details
+                                    )}
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="submitted">
+                            🕒 Submitted:
+                            ${escapeHtml(
+                                createdAt
+                            )}
+                        </div>
+
+                        ${paymentAction}
+
+                    </article>
+                `;
+
+            }).join("");
     }
-});
 
-loadDashboard();
-loadNotifications();
-</script></body>
+    // ==========================================
+    // HTML ESCAPE
+    // ==========================================
+
+    function escapeHtml(value) {
+
+        return String(value)
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+    }
+
+    // ==========================================
+    // REFRESH
+    // ==========================================
+
+    refreshBtn.addEventListener(
+        "click",
+        loadRequests
+    );
+
+    // ==========================================
+    // INITIAL LOAD
+    // ==========================================
+
+    loadRequests();
+</script>
+
+</body>
 </html>
