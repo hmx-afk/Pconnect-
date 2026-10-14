@@ -1,13 +1,59 @@
 // ==========================================
 // PConnect - Secure Transaction History API
+// Server-Side Pi Identity Verification
 // ==========================================
+
+async function verifyPiToken(accessToken) {
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+
+    try {
+
+        const response = await fetch(
+            "https://api.minepi.com/v2/me",
+            {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                },
+                signal: controller.signal
+            }
+        );
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const me = await response.json();
+
+        if (!me || !me.username) {
+            return null;
+        }
+
+        return String(me.username).trim();
+
+    } catch (error) {
+
+        console.error(
+            "Pi token verification error:",
+            error.message
+        );
+
+        return null;
+
+    } finally {
+
+        clearTimeout(timer);
+
+    }
+
+}
+
 
 export default async function handler(req, res) {
 
-    res.setHeader(
-        "Cache-Control",
-        "no-store"
-    );
+    res.setHeader("Cache-Control", "no-store");
 
 
     // ==========================================
@@ -30,21 +76,12 @@ export default async function handler(req, res) {
         // SUPABASE CONFIG
         // ==========================================
 
-        const supabaseUrl =
-            process.env.SUPABASE_URL;
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
 
-        const supabaseSecretKey =
-            process.env.SUPABASE_SECRET_KEY;
+        if (!supabaseUrl || !supabaseSecretKey) {
 
-
-        if (
-            !supabaseUrl ||
-            !supabaseSecretKey
-        ) {
-
-            console.error(
-                "Missing Supabase environment variables"
-            );
+            console.error("Missing Supabase environment variables");
 
             return res.status(500).json({
                 success: false,
@@ -55,50 +92,57 @@ export default async function handler(req, res) {
 
 
         // ==========================================
-        // PI USERNAME
+        // REQUIRE PI ACCESS TOKEN
         // ==========================================
 
-        const piUsername =
-            String(
-                req.query?.pi_username || ""
-            ).trim();
+        const authorization = String(req.headers.authorization || "");
 
+        const match = authorization.match(/^Bearer\s+(.+)$/i);
 
-        if (!piUsername) {
+        const accessToken = match ? match[1].trim() : "";
+
+        if (!accessToken) {
 
             return res.status(401).json({
                 success: false,
-                error: "Pi username is required"
+                error: "Pi authentication required"
             });
 
         }
 
 
         // ==========================================
-        // FETCH ONLY CURRENT USER TRANSACTIONS
+        // VERIFY IDENTITY WITH PI SERVER
+        // The username from the URL is never trusted.
         // ==========================================
 
-        const encodedUsername =
-            encodeURIComponent(piUsername);
+        const verifiedUsername = await verifyPiToken(accessToken);
+
+        if (!verifiedUsername) {
+
+            return res.status(401).json({
+                success: false,
+                error: "Invalid Pi authentication"
+            });
+
+        }
 
 
-        const response =
-            await fetch(
-                `${supabaseUrl}/rest/v1/transactions?select=request_id,amount,currency,status,service,pi_username,created_at&pi_username=eq.${encodedUsername}&order=created_at.desc&limit=100`,
-                {
+        // ==========================================
+        // FETCH ONLY THIS VERIFIED USER'S TRANSACTIONS
+        // ==========================================
 
-                    headers: {
+        const encodedUsername = encodeURIComponent(verifiedUsername);
 
-                        apikey:
-                            supabaseSecretKey,
-
-                        Authorization:
-                            `Bearer ${supabaseSecretKey}`
-
-                    }
-
+        const response = await fetch(
+            `${supabaseUrl}/rest/v1/transactions?select=request_id,amount,currency,status,service,pi_username,created_at&pi_username=eq.${encodedUsername}&order=created_at.desc&limit=100`,
+            {
+                headers: {
+                    apikey: supabaseSecretKey,
+                    Authorization: `Bearer ${supabaseSecretKey}`
                 }
-            );
+            }
+        );
 
 
         // ==========================================
@@ -107,8 +151,7 @@ export default async function handler(req, res) {
 
         if (!response.ok) {
 
-            const errorText =
-                await response.text();
+            const errorText = await response.text();
 
             console.error(
                 "Supabase transaction fetch error:",
@@ -127,28 +170,21 @@ export default async function handler(req, res) {
         // RESPONSE
         // ==========================================
 
-        const transactions =
-            await response.json();
-
+        const transactions = await response.json();
 
         return res.status(200).json({
-
             success: true,
-
-            transactions:
-                Array.isArray(transactions)
-                    ? transactions
-                    : []
-
+            user: {
+                username: verifiedUsername
+            },
+            transactions: Array.isArray(transactions)
+                ? transactions
+                : []
         });
-
 
     } catch (error) {
 
-        console.error(
-            "Transaction API error:",
-            error
-        );
+        console.error("Transaction API error:", error);
 
         return res.status(500).json({
             success: false,
