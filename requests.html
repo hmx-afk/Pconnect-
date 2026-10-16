@@ -78,7 +78,7 @@ let piUsername = "";
 let isLoading = false;
 let piInitialized = false;
 
-const AUTH_TIMEOUT_MS = 15000;
+const AUTH_TIMEOUT_MS = 60000;
 
 const container = document.getElementById("requestsContainer");
 const refreshButton = document.getElementById("refreshButton");
@@ -155,11 +155,11 @@ async function authenticatePi() {
   }
 
   const auth = await withTimeout(
-    Pi.authenticate(["username"], function () {
+    Pi.authenticate(["username", "payments"], function () {
       console.warn("Incomplete Pi payment reported by SDK.");
     }),
     AUTH_TIMEOUT_MS,
-    "Pi sign-in timed out. Please open PConnect in Pi Browser and tap Refresh."
+    "Pi sign-in timed out. Please tap Refresh and accept the Pi permission prompt."
   );
 
   if (!auth || !auth.accessToken || !auth.user || !auth.user.username) {
