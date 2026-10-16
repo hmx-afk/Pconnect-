@@ -1,8 +1,41 @@
 // ==========================================
-// PConnect - Approve Pi Payment (checked)
+// PConnect - Approve Pi Payment (checked + identity verified)
 // ==========================================
 
 const EXPECTED_AMOUNT = 0.01;
+
+async function verifyPiToken(accessToken) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch("https://api.minepi.com/v2/me", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const me = await response.json();
+
+    if (!me || !me.uid || !me.username) {
+      return null;
+    }
+
+    return {
+      uid: String(me.uid).trim(),
+      username: String(me.username).trim()
+    };
+  } catch (error) {
+    console.error("Pi token verification error:", error.message);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
@@ -26,6 +59,21 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Server configuration error" });
     }
 
+    // ---------- 0. VERIFY WHO IS CALLING ----------
+    const authorization = String(req.headers.authorization || "");
+    const match = authorization.match(/^Bearer\s+(.+)$/i);
+    const accessToken = match ? match[1].trim() : "";
+
+    if (!accessToken) {
+      return res.status(401).json({ error: "Pi authentication required" });
+    }
+
+    const caller = await verifyPiToken(accessToken);
+
+    if (!caller) {
+      return res.status(401).json({ error: "Invalid Pi authentication" });
+    }
+
     const piHeaders = { Authorization: `Key ${piApiKey}` };
     const sbHeaders = {
       "Content-Type": "application/json",
@@ -45,6 +93,11 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Payment not found" });
     }
 
+    // The payer must be the verified caller
+    if (String(payment.user_uid || "").trim() !== caller.uid) {
+      return res.status(403).json({ error: "Payment does not belong to this user" });
+    }
+
     const requestId = Number(payment?.metadata?.request_id);
     if (!Number.isInteger(requestId) || requestId <= 0) {
       return res.status(400).json({ error: "Payment has no valid request" });
@@ -54,9 +107,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Invalid payment amount" });
     }
 
-    // ---------- 2. REQUEST MUST BE APPROVED AND UNPAID ----------
+    // ---------- 2. REQUEST MUST BE APPROVED, UNPAID AND OWNED BY PAYER ----------
     const reqRes = await fetch(
-      `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(requestId)}&select=id,review_status,order_status`,
+      `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(requestId)}&select=id,review_status,order_status,pi_username`,
       { method: "GET", headers: sbHeaders }
     );
     const reqData = await reqRes.json();
@@ -70,6 +123,10 @@ export default async function handler(req, res) {
     }
 
     const request = reqData[0];
+
+    if (String(request.pi_username || "").trim() !== caller.username) {
+      return res.status(403).json({ error: "This request does not belong to you" });
+    }
 
     if (request.review_status !== "Approved") {
       return res.status(403).json({ error: "This request has not been approved" });
