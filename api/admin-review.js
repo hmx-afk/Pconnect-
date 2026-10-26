@@ -13,7 +13,19 @@ export default async function handler(req, res) {
         // ONLY POST
         // ==========================================
 
+        res.setHeader(
+            "Cache-Control",
+            "no-store, no-cache, must-revalidate"
+        );
+
+        res.setHeader(
+            "X-Content-Type-Options",
+            "nosniff"
+        );
+
         if (req.method !== "POST") {
+
+            res.setHeader("Allow", "POST");
 
             return res.status(405).json({
                 success: false,
@@ -28,26 +40,19 @@ export default async function handler(req, res) {
         // ==========================================
 
         const adminKey =
-            String(
-                req.headers["x-admin-key"] || ""
-            );
+            String(req.headers["x-admin-key"] || "");
 
         const correctAdminKey =
-            String(
-                process.env.ADMIN_REVIEW_KEY || ""
-            );
+            String(process.env.ADMIN_REVIEW_KEY || "");
 
 
         if (!correctAdminKey) {
 
-            console.error(
-                "Missing ADMIN_REVIEW_KEY"
-            );
+            console.error("Missing ADMIN_REVIEW_KEY");
 
             return res.status(500).json({
                 success: false,
-                error:
-                    "Admin authentication is not configured"
+                error: "Admin authentication is not configured"
             });
 
         }
@@ -59,42 +64,23 @@ export default async function handler(req, res) {
 
         let adminKeyValid = false;
 
-        try {
+        const providedKeyBuffer =
+            Buffer.from(adminKey, "utf8");
 
-            const providedKeyBuffer =
-                Buffer.from(
-                    adminKey,
-                    "utf8"
+        const correctKeyBuffer =
+            Buffer.from(correctAdminKey, "utf8");
+
+
+        if (
+            providedKeyBuffer.length ===
+            correctKeyBuffer.length
+        ) {
+
+            adminKeyValid =
+                crypto.timingSafeEqual(
+                    providedKeyBuffer,
+                    correctKeyBuffer
                 );
-
-            const correctKeyBuffer =
-                Buffer.from(
-                    correctAdminKey,
-                    "utf8"
-                );
-
-
-            if (
-                providedKeyBuffer.length ===
-                correctKeyBuffer.length
-            ) {
-
-                adminKeyValid =
-                    crypto.timingSafeEqual(
-                        providedKeyBuffer,
-                        correctKeyBuffer
-                    );
-
-            }
-
-        } catch (authError) {
-
-            console.error(
-                "Admin authentication comparison error:",
-                authError
-            );
-
-            adminKeyValid = false;
 
         }
 
@@ -123,8 +109,7 @@ export default async function handler(req, res) {
         // VALIDATE REQUEST ID
         // ==========================================
 
-        const parsedId =
-            Number(id);
+        const parsedId = Number(id);
 
 
         if (
@@ -185,8 +170,7 @@ export default async function handler(req, res) {
 
             return res.status(500).json({
                 success: false,
-                error:
-                    "Server configuration error"
+                error: "Server configuration error"
             });
 
         }
@@ -194,11 +178,9 @@ export default async function handler(req, res) {
 
         const headers = {
 
-            "Content-Type":
-                "application/json",
+            "Content-Type": "application/json",
 
-            "apikey":
-                supabaseSecretKey,
+            "apikey": supabaseSecretKey,
 
             "Authorization":
                 `Bearer ${supabaseSecretKey}`
@@ -207,11 +189,40 @@ export default async function handler(req, res) {
 
 
         // ==========================================
+        // FETCH HELPER WITH TIMEOUT
+        // ==========================================
+
+        async function fetchWithTimeout(url, options = {}) {
+
+            const controller = new AbortController();
+
+            const timeout = setTimeout(
+                () => controller.abort(),
+                10000
+            );
+
+            try {
+
+                return await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+
+            } finally {
+
+                clearTimeout(timeout);
+
+            }
+
+        }
+
+
+        // ==========================================
         // GET CURRENT REQUEST
         // ==========================================
 
         const requestResponse =
-            await fetch(
+            await fetchWithTimeout(
 
                 `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedId)}&select=*`,
 
@@ -230,35 +241,32 @@ export default async function handler(req, res) {
         if (!requestResponse.ok) {
 
             console.error(
-                "Request fetch error:",
-                requestData
+                "Request fetch failed:",
+                requestResponse.status
             );
 
             return res.status(500).json({
                 success: false,
-                error:
-                    "Failed to load request"
+                error: "Failed to load request"
             });
 
         }
 
 
         if (
-            !requestData ||
+            !Array.isArray(requestData) ||
             requestData.length === 0
         ) {
 
             return res.status(404).json({
                 success: false,
-                error:
-                    "Request not found"
+                error: "Request not found"
             });
 
         }
 
 
-        const request =
-            requestData[0];
+        const request = requestData[0];
 
 
         // ==========================================
@@ -272,14 +280,8 @@ export default async function handler(req, res) {
         ) {
 
             const piUsername =
-                String(
-                    request.pi_username || ""
-                ).trim();
+                String(request.pi_username || "").trim();
 
-
-            // ------------------------------------------
-            // No Pi username
-            // ------------------------------------------
 
             if (!piUsername) {
 
@@ -293,14 +295,13 @@ export default async function handler(req, res) {
 
 
             // ------------------------------------------
-            // CHECK FOR EXISTING NOTIFICATION
-            // Prevent duplicate notifications
+            // CHECK EXISTING NOTIFICATION
             // ------------------------------------------
 
             try {
 
                 const existingResponse =
-                    await fetch(
+                    await fetchWithTimeout(
 
                         `${supabaseUrl}/rest/v1/notifications?request_id=eq.${encodeURIComponent(parsedId)}&type=eq.${encodeURIComponent(type)}&select=id&limit=1`,
 
@@ -312,42 +313,40 @@ export default async function handler(req, res) {
                     );
 
 
-                const existingData =
-                    await existingResponse.json();
+                if (existingResponse.ok) {
+
+                    const existingData =
+                        await existingResponse.json();
 
 
-                if (
-                    existingResponse.ok &&
-                    Array.isArray(existingData) &&
-                    existingData.length > 0
-                ) {
+                    if (
+                        Array.isArray(existingData) &&
+                        existingData.length > 0
+                    ) {
 
-                    console.log(
-                        `Notification already exists for request #${parsedId}: ${type}`
-                    );
+                        return existingData[0];
 
-                    return existingData[0];
+                    }
 
                 }
 
             } catch (checkError) {
 
                 console.error(
-                    "Notification duplicate check error:",
-                    checkError
+                    "Notification duplicate check failed."
                 );
 
             }
 
 
             // ------------------------------------------
-            // CREATE NEW NOTIFICATION
+            // CREATE NOTIFICATION
             // ------------------------------------------
 
             try {
 
                 const notificationResponse =
-                    await fetch(
+                    await fetchWithTimeout(
 
                         `${supabaseUrl}/rest/v1/notifications`,
 
@@ -356,18 +355,14 @@ export default async function handler(req, res) {
 
                             headers: {
                                 ...headers,
-
-                                "Prefer":
-                                    "return=representation"
+                                "Prefer": "return=representation"
                             },
 
                             body: JSON.stringify({
 
-                                request_id:
-                                    parsedId,
+                                request_id: parsedId,
 
-                                pi_username:
-                                    piUsername,
+                                pi_username: piUsername,
 
                                 type,
 
@@ -375,8 +370,7 @@ export default async function handler(req, res) {
 
                                 message,
 
-                                is_read:
-                                    false
+                                is_read: false
 
                             })
 
@@ -385,15 +379,11 @@ export default async function handler(req, res) {
                     );
 
 
-                const notificationData =
-                    await notificationResponse.json();
-
-
                 if (!notificationResponse.ok) {
 
                     console.error(
-                        "Notification creation error:",
-                        notificationData
+                        "Notification creation failed:",
+                        notificationResponse.status
                     );
 
                     return null;
@@ -401,16 +391,16 @@ export default async function handler(req, res) {
                 }
 
 
-                return (
-                    notificationData?.[0] ||
-                    notificationData
-                );
+                const notificationData =
+                    await notificationResponse.json();
+
+
+                return notificationData?.[0] || null;
 
             } catch (notificationError) {
 
                 console.error(
-                    "Notification request error:",
-                    notificationError
+                    "Notification request failed."
                 );
 
                 return null;
@@ -426,8 +416,20 @@ export default async function handler(req, res) {
 
         if (action === "approve") {
 
+            if (
+                request.review_status === "Rejected"
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error: "Rejected requests cannot be approved directly"
+                });
+
+            }
+
+
             const response =
-                await fetch(
+                await fetchWithTimeout(
 
                     `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedId)}`,
 
@@ -436,16 +438,11 @@ export default async function handler(req, res) {
 
                         headers: {
                             ...headers,
-
-                            "Prefer":
-                                "return=representation"
+                            "Prefer": "return=representation"
                         },
 
                         body: JSON.stringify({
-
-                            review_status:
-                                "Approved"
-
+                            review_status: "Approved"
                         })
 
                     }
@@ -453,26 +450,26 @@ export default async function handler(req, res) {
                 );
 
 
-            const data =
-                await response.json();
+            const data = await response.json();
 
 
             if (!response.ok) {
 
-                console.error(
-                    "Approve error:",
-                    data
-                );
+                console.error("Approve failed:", response.status);
 
-                return res.status(
-                    response.status
-                ).json({
-
+                return res.status(500).json({
                     success: false,
+                    error: "Failed to approve request"
+                });
 
-                    error:
-                        "Failed to approve request"
+            }
 
+
+            if (!data?.length) {
+
+                return res.status(409).json({
+                    success: false,
+                    error: "Request was not updated"
                 });
 
             }
@@ -486,15 +483,9 @@ export default async function handler(req, res) {
 
 
             return res.status(200).json({
-
                 success: true,
-
-                message:
-                    "Request approved successfully",
-
-                request:
-                    data[0]
-
+                message: "Request approved successfully",
+                request: data[0]
             });
 
         }
@@ -506,8 +497,20 @@ export default async function handler(req, res) {
 
         if (action === "reject") {
 
+            if (
+                request.review_status === "Approved"
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error: "Approved requests cannot be rejected directly"
+                });
+
+            }
+
+
             const response =
-                await fetch(
+                await fetchWithTimeout(
 
                     `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedId)}`,
 
@@ -516,16 +519,11 @@ export default async function handler(req, res) {
 
                         headers: {
                             ...headers,
-
-                            "Prefer":
-                                "return=representation"
+                            "Prefer": "return=representation"
                         },
 
                         body: JSON.stringify({
-
-                            review_status:
-                                "Rejected"
-
+                            review_status: "Rejected"
                         })
 
                     }
@@ -533,26 +531,26 @@ export default async function handler(req, res) {
                 );
 
 
-            const data =
-                await response.json();
+            const data = await response.json();
 
 
             if (!response.ok) {
 
-                console.error(
-                    "Reject error:",
-                    data
-                );
+                console.error("Reject failed:", response.status);
 
-                return res.status(
-                    response.status
-                ).json({
-
+                return res.status(500).json({
                     success: false,
+                    error: "Failed to reject request"
+                });
 
-                    error:
-                        "Failed to reject request"
+            }
 
+
+            if (!data?.length) {
+
+                return res.status(409).json({
+                    success: false,
+                    error: "Request was not updated"
                 });
 
             }
@@ -566,27 +564,20 @@ export default async function handler(req, res) {
 
 
             return res.status(200).json({
-
                 success: true,
-
-                message:
-                    "Request rejected successfully",
-
-                request:
-                    data[0]
-
+                message: "Request rejected successfully",
+                request: data[0]
             });
 
         }
 
 
         // ==========================================
-        // ORDER STATUS ACTIONS
+        // CURRENT ORDER STATUS
         // ==========================================
 
         const currentOrderStatus =
-            request.order_status ||
-            "Pending";
+            request.order_status || "Pending";
 
 
         let newOrderStatus = null;
@@ -598,24 +589,16 @@ export default async function handler(req, res) {
 
         if (action === "in_progress") {
 
-            if (
-                currentOrderStatus !==
-                "Paid"
-            ) {
+            if (currentOrderStatus !== "Paid") {
 
                 return res.status(400).json({
-
                     success: false,
-
-                    error:
-                        "Request must be Paid before it can be marked In Progress"
-
+                    error: "Request must be Paid before it can be marked In Progress"
                 });
 
             }
 
-            newOrderStatus =
-                "In Progress";
+            newOrderStatus = "In Progress";
 
         }
 
@@ -626,52 +609,37 @@ export default async function handler(req, res) {
 
         if (action === "complete") {
 
-            if (
-                currentOrderStatus !==
-                "In Progress"
-            ) {
+            if (currentOrderStatus !== "In Progress") {
 
                 return res.status(400).json({
-
                     success: false,
-
-                    error:
-                        "Request must be In Progress before it can be Completed"
-
+                    error: "Request must be In Progress before it can be Completed"
                 });
 
             }
 
-            newOrderStatus =
-                "Completed";
+            newOrderStatus = "Completed";
 
         }
 
 
         // ==========================================
-        // CANCEL
+        // CANCEL — SECURITY PATCH
+        // Only Pending orders can be cancelled
         // ==========================================
 
         if (action === "cancel") {
 
-            if (
-                currentOrderStatus ===
-                "Completed"
-            ) {
+            if (currentOrderStatus !== "Pending") {
 
                 return res.status(400).json({
-
                     success: false,
-
-                    error:
-                        "Completed requests cannot be cancelled"
-
+                    error: "Only Pending orders can be cancelled. Paid, In Progress, Completed, and already Cancelled orders cannot be cancelled."
                 });
 
             }
 
-            newOrderStatus =
-                "Cancelled";
+            newOrderStatus = "Cancelled";
 
         }
 
@@ -680,31 +648,57 @@ export default async function handler(req, res) {
         // UPDATE ORDER STATUS
         // ==========================================
 
-        const statusResponse =
-            await fetch(
+        let statusResponse;
 
-                `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedId)}`,
+        if (action === "cancel") {
 
-                {
-                    method: "PATCH",
+            // Conditional update prevents cancellation
+            // if the order status changed after the GET.
+            statusResponse =
+                await fetchWithTimeout(
 
-                    headers: {
-                        ...headers,
+                    `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedId)}&order_status=eq.Pending`,
 
-                        "Prefer":
-                            "return=representation"
-                    },
+                    {
+                        method: "PATCH",
 
-                    body: JSON.stringify({
+                        headers: {
+                            ...headers,
+                            "Prefer": "return=representation"
+                        },
 
-                        order_status:
-                            newOrderStatus
+                        body: JSON.stringify({
+                            order_status: "Cancelled"
+                        })
 
-                    })
+                    }
 
-                }
+                );
 
-            );
+        } else {
+
+            statusResponse =
+                await fetchWithTimeout(
+
+                    `${supabaseUrl}/rest/v1/requests?id=eq.${encodeURIComponent(parsedId)}`,
+
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            ...headers,
+                            "Prefer": "return=representation"
+                        },
+
+                        body: JSON.stringify({
+                            order_status: newOrderStatus
+                        })
+
+                    }
+
+                );
+
+        }
 
 
         const statusData =
@@ -714,19 +708,23 @@ export default async function handler(req, res) {
         if (!statusResponse.ok) {
 
             console.error(
-                "Order status update error:",
-                statusData
+                "Order status update failed:",
+                statusResponse.status
             );
 
-            return res.status(
-                statusResponse.status
-            ).json({
-
+            return res.status(500).json({
                 success: false,
+                error: "Failed to update order status"
+            });
 
-                error:
-                    "Failed to update order status"
+        }
 
+
+        if (!Array.isArray(statusData) || statusData.length === 0) {
+
+            return res.status(409).json({
+                success: false,
+                error: "Order status changed or request was not updated. Reload and try again."
             });
 
         }
@@ -798,13 +796,10 @@ export default async function handler(req, res) {
 
         console.error(
             "Admin review API error:",
-            error
+            error?.name === "AbortError"
+                ? "Supabase request timed out"
+                : "Unexpected error"
         );
-
-        // ==========================================
-        // SECURITY PATCH:
-        // Do NOT expose server error details
-        // ==========================================
 
         return res.status(500).json({
 
