@@ -49,7 +49,10 @@ export default async function handler(req, res) {
 
         const authenticated =
             providedBuffer.length === correctBuffer.length &&
-            crypto.timingSafeEqual(providedBuffer, correctBuffer);
+            crypto.timingSafeEqual(
+                providedBuffer,
+                correctBuffer
+            );
 
         if (!authenticated) {
             return res.status(401).json({
@@ -186,10 +189,7 @@ export default async function handler(req, res) {
         // CONDITIONAL UPDATE HELPER
         // ==========================================
 
-        async function conditionalUpdate(
-            filters,
-            changes
-        ) {
+        async function conditionalUpdate(filters, changes) {
             const query = new URLSearchParams({
                 id: `eq.${parsedId}`,
                 ...filters
@@ -324,33 +324,42 @@ export default async function handler(req, res) {
 
         // ==========================================
         // APPROVE
+        // Only Waiting for review + Pending allowed
         // ==========================================
 
         if (action === "approve") {
+            if (currentOrderStatus !== "Pending") {
+                return res.status(409).json({
+                    success: false,
+                    error: "Only Pending requests can be approved."
+                });
+            }
+
             if (currentReviewStatus === "Rejected") {
                 return res.status(400).json({
                     success: false,
-                    error: "Rejected requests cannot be approved directly"
+                    error: "Rejected requests cannot be approved directly."
                 });
             }
 
             if (currentReviewStatus === "Approved") {
                 return res.status(409).json({
                     success: false,
-                    error: "Request is already approved"
+                    error: "Request is already approved."
                 });
             }
 
             if (currentReviewStatus !== "Waiting for review") {
                 return res.status(409).json({
                     success: false,
-                    error: "Request review status is invalid"
+                    error: "Request review status is invalid."
                 });
             }
 
             const result = await conditionalUpdate(
                 {
-                    review_status: "eq.Waiting for review"
+                    review_status: "eq.Waiting for review",
+                    order_status: "eq.Pending"
                 },
                 {
                     review_status: "Approved"
@@ -360,14 +369,14 @@ export default async function handler(req, res) {
             if (result.error) {
                 return res.status(500).json({
                     success: false,
-                    error: "Failed to approve request"
+                    error: "Failed to approve request."
                 });
             }
 
             if (!result.data?.length) {
                 return res.status(409).json({
                     success: false,
-                    error: "Request changed. Reload and try again."
+                    error: "Request status changed. Reload and try again."
                 });
             }
 
@@ -386,33 +395,42 @@ export default async function handler(req, res) {
 
         // ==========================================
         // REJECT
+        // Only Waiting for review + Pending allowed
         // ==========================================
 
         if (action === "reject") {
+            if (currentOrderStatus !== "Pending") {
+                return res.status(409).json({
+                    success: false,
+                    error: "Only Pending requests can be rejected."
+                });
+            }
+
             if (currentReviewStatus === "Approved") {
                 return res.status(400).json({
                     success: false,
-                    error: "Approved requests cannot be rejected directly"
+                    error: "Approved requests cannot be rejected directly."
                 });
             }
 
             if (currentReviewStatus === "Rejected") {
                 return res.status(409).json({
                     success: false,
-                    error: "Request is already rejected"
+                    error: "Request is already rejected."
                 });
             }
 
             if (currentReviewStatus !== "Waiting for review") {
                 return res.status(409).json({
                     success: false,
-                    error: "Request review status is invalid"
+                    error: "Request review status is invalid."
                 });
             }
 
             const result = await conditionalUpdate(
                 {
-                    review_status: "eq.Waiting for review"
+                    review_status: "eq.Waiting for review",
+                    order_status: "eq.Pending"
                 },
                 {
                     review_status: "Rejected"
@@ -422,14 +440,14 @@ export default async function handler(req, res) {
             if (result.error) {
                 return res.status(500).json({
                     success: false,
-                    error: "Failed to reject request"
+                    error: "Failed to reject request."
                 });
             }
 
             if (!result.data?.length) {
                 return res.status(409).json({
                     success: false,
-                    error: "Request changed. Reload and try again."
+                    error: "Request status changed. Reload and try again."
                 });
             }
 
@@ -463,6 +481,7 @@ export default async function handler(req, res) {
             notificationTitle = "Order In Progress";
             notificationMessage =
                 `Your order for request #${parsedId} is now in progress.`;
+
         } else if (action === "complete") {
             expectedStatus = "In Progress";
             newStatus = "Completed";
@@ -470,6 +489,7 @@ export default async function handler(req, res) {
             notificationTitle = "Order Completed";
             notificationMessage =
                 `Your order for request #${parsedId} has been completed.`;
+
         } else {
             expectedStatus = "Pending";
             newStatus = "Cancelled";
@@ -489,9 +509,11 @@ export default async function handler(req, res) {
             if (action === "cancel") {
                 errorMessage =
                     "Only Pending orders can be cancelled.";
+
             } else if (action === "in_progress") {
                 errorMessage =
                     "Request must be Paid before it can be marked In Progress.";
+
             } else {
                 errorMessage =
                     "Request must be In Progress before it can be Completed.";
@@ -504,7 +526,10 @@ export default async function handler(req, res) {
         }
 
         if (
-            (action === "in_progress" || action === "complete") &&
+            (
+                action === "in_progress" ||
+                action === "complete"
+            ) &&
             currentReviewStatus !== "Approved"
         ) {
             return res.status(400).json({
@@ -514,7 +539,7 @@ export default async function handler(req, res) {
         }
 
         // ==========================================
-        // ATOMIC CONDITIONAL ORDER UPDATE
+        // CONDITIONAL ORDER UPDATE
         // ==========================================
 
         const result = await conditionalUpdate(
@@ -522,7 +547,9 @@ export default async function handler(req, res) {
                 order_status: `eq.${expectedStatus}`,
                 ...(action === "in_progress" ||
                 action === "complete"
-                    ? { review_status: "eq.Approved" }
+                    ? {
+                        review_status: "eq.Approved"
+                    }
                     : {})
             },
             {
