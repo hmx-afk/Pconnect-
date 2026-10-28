@@ -225,7 +225,6 @@
 
     </div>
 
-
     <!-- LOGIN -->
 
     <div
@@ -257,7 +256,6 @@
 
     </div>
 
-
     <!-- ADMIN CONTENT -->
 
     <div
@@ -275,9 +273,7 @@
             <span
                 class="count"
                 id="totalCount"
-            >
-                0
-            </span>
+            >0</span>
 
         </div>
 
@@ -287,54 +283,38 @@
 
 </div>
 
-
 <script>
+
+"use strict";
 
 let adminKey =
     sessionStorage.getItem(
         "pconnect_admin_key"
     ) || "";
 
-
 const loginBox =
-    document.getElementById(
-        "loginBox"
-    );
+    document.getElementById("loginBox");
 
 const adminContent =
-    document.getElementById(
-        "adminContent"
-    );
+    document.getElementById("adminContent");
 
 const loginBtn =
-    document.getElementById(
-        "loginBtn"
-    );
+    document.getElementById("loginBtn");
 
 const logoutBtn =
-    document.getElementById(
-        "logoutBtn"
-    );
+    document.getElementById("logoutBtn");
 
 const adminKeyInput =
-    document.getElementById(
-        "adminKey"
-    );
+    document.getElementById("adminKey");
 
 const loginMessage =
-    document.getElementById(
-        "loginMessage"
-    );
+    document.getElementById("loginMessage");
 
 const requestsContainer =
-    document.getElementById(
-        "requestsContainer"
-    );
+    document.getElementById("requestsContainer");
 
 const totalCount =
-    document.getElementById(
-        "totalCount"
-    );
+    document.getElementById("totalCount");
 
 
 /* ==========================================
@@ -384,17 +364,11 @@ function getOrderStatusClass(status) {
 
 function showAdmin() {
 
-    loginBox.classList.add(
-        "hidden"
-    );
+    loginBox.classList.add("hidden");
 
-    adminContent.classList.remove(
-        "hidden"
-    );
+    adminContent.classList.remove("hidden");
 
-    logoutBtn.classList.remove(
-        "hidden"
-    );
+    logoutBtn.classList.remove("hidden");
 
     loadRequests();
 }
@@ -406,17 +380,11 @@ function showAdmin() {
 
 function showLogin() {
 
-    loginBox.classList.remove(
-        "hidden"
-    );
+    loginBox.classList.remove("hidden");
 
-    adminContent.classList.add(
-        "hidden"
-    );
+    adminContent.classList.add("hidden");
 
-    logoutBtn.classList.add(
-        "hidden"
-    );
+    logoutBtn.classList.add("hidden");
 }
 
 
@@ -429,7 +397,6 @@ async function login() {
     const key =
         adminKeyInput.value.trim();
 
-
     if (!key) {
 
         loginMessage.innerHTML =
@@ -438,62 +405,48 @@ async function login() {
         return;
     }
 
-
     loginBtn.disabled = true;
-
 
     loginMessage.innerHTML =
         '<div class="message">Checking admin key...</div>';
 
-
     try {
 
-        const response =
-            await fetch(
-                "/api/admin-requests",
-                {
-                    method: "GET",
-
-                    headers: {
-                        "x-admin-key": key
-                    }
+        const response = await fetch(
+            "/api/admin-requests",
+            {
+                method: "GET",
+                headers: {
+                    "x-admin-key": key
                 }
-            );
+            }
+        );
 
-
-        const data =
-            await response.json();
-
+        const data = await response.json();
 
         if (!response.ok) {
 
             loginMessage.innerHTML =
                 `<div class="error">
                     ${escapeHtml(
-                        data.error ||
-                        "Invalid admin key."
+                        data.error || "Invalid admin key."
                     )}
                 </div>`;
 
             return;
         }
 
-
         adminKey = key;
-
 
         sessionStorage.setItem(
             "pconnect_admin_key",
             adminKey
         );
 
-
         loginMessage.innerHTML =
             '<div class="success">Admin access granted.</div>';
 
-
         showAdmin();
-
 
     } catch (error) {
 
@@ -518,25 +471,19 @@ async function loadRequests() {
     requestsContainer.innerHTML =
         '<div class="empty">Loading requests...</div>';
 
-
     try {
 
-        const response =
-            await fetch(
-                "/api/admin-requests",
-                {
-                    method: "GET",
-
-                    headers: {
-                        "x-admin-key": adminKey
-                    }
+        const response = await fetch(
+            "/api/admin-requests",
+            {
+                method: "GET",
+                headers: {
+                    "x-admin-key": adminKey
                 }
-            );
+            }
+        );
 
-
-        const data =
-            await response.json();
-
+        const data = await response.json();
 
         if (response.status === 401) {
 
@@ -554,23 +501,16 @@ async function loadRequests() {
             return;
         }
 
-
         if (!response.ok) {
 
             throw new Error(
-                data.error ||
-                "Failed to load requests"
+                data.error || "Failed to load requests"
             );
         }
 
+        const requests = data.requests || [];
 
-        const requests =
-            data.requests || [];
-
-
-        totalCount.textContent =
-            requests.length;
-
+        totalCount.textContent = requests.length;
 
         if (requests.length === 0) {
 
@@ -580,210 +520,158 @@ async function loadRequests() {
             return;
         }
 
+        requestsContainer.innerHTML = requests.map(
+            request => {
 
-        requestsContainer.innerHTML =
-            requests.map(
-                request => {
+                const reviewStatus =
+                    request.review_status ||
+                    "Waiting for review";
 
-                    const reviewStatus =
-                        request.review_status ||
-                        "Waiting for review";
+                const orderStatus =
+                    request.order_status ||
+                    "Pending";
 
+                let reviewClass = "";
 
-                    const orderStatus =
-                        request.order_status ||
-                        "Pending";
+                if (reviewStatus === "Approved") {
+                    reviewClass = "approved";
+                }
 
+                if (reviewStatus === "Rejected") {
+                    reviewClass = "rejected";
+                }
 
-                    let reviewClass = "";
+                const orderClass =
+                    getOrderStatusClass(orderStatus);
 
+                const canStart =
+                    orderStatus === "Paid" &&
+                    reviewStatus === "Approved";
 
-                    if (
-                        reviewStatus ===
-                        "Approved"
-                    ) {
+                const canComplete =
+                    orderStatus === "In Progress" &&
+                    reviewStatus === "Approved";
 
-                        reviewClass =
-                            "approved";
-                    }
+                /*
+                 * SECURITY / WORKFLOW RULE:
+                 * Cancel is available only for Pending orders.
+                 * Paid and In Progress orders must not be
+                 * cancelled through this button.
+                 */
 
+                const canCancel =
+                    orderStatus === "Pending";
 
-                    if (
-                        reviewStatus ===
-                        "Rejected"
-                    ) {
+                const canApprove =
+                    reviewStatus === "Waiting for review";
 
-                        reviewClass =
-                            "rejected";
-                    }
+                const canReject =
+                    reviewStatus === "Waiting for review";
 
+                return `
 
-                    const orderClass =
-                        getOrderStatusClass(
-                            orderStatus
-                        );
+                    <div class="request-card">
 
+                        <h3>
+                            ${escapeHtml(request.name)}
+                        </h3>
 
-                    const canStart =
-                        orderStatus ===
-                        "Paid";
+                        <div class="info">
 
+                            <strong>Request ID:</strong>
+                            #${escapeHtml(request.id)}
 
-                    const canComplete =
-                        orderStatus ===
-                        "In Progress";
+                            <br>
 
+                            <strong>Service:</strong>
+                            ${escapeHtml(request.service)}
 
-                    const canCancel =
-                        orderStatus !==
-                            "Completed" &&
-                        orderStatus !==
-                            "Cancelled";
+                            <br>
 
+                            <strong>Contact:</strong>
+                            ${escapeHtml(request.contact)}
 
-                    return `
+                            <br>
 
-                        <div class="request-card">
-
-                            <h3>
-                                ${escapeHtml(
-                                    request.name
-                                )}
-                            </h3>
-
-
-                            <div class="info">
-
-                                <strong>Request ID:</strong>
-                                #${escapeHtml(
-                                    request.id
-                                )}
-
-                                <br>
-
-                                <strong>Service:</strong>
-                                ${escapeHtml(
-                                    request.service
-                                )}
-
-                                <br>
-
-                                <strong>Contact:</strong>
-                                ${escapeHtml(
-                                    request.contact
-                                )}
-
-                                <br>
-
-                                <strong>Details:</strong>
-                                ${escapeHtml(
-                                    request.details
-                                )}
-
-                            </div>
-
-
-                            <div class="section-title">
-                                Review Status
-                            </div>
-
-
-                            <div
-                                class="status ${reviewClass}"
-                            >
-                                ${escapeHtml(
-                                    reviewStatus
-                                )}
-                            </div>
-
-
-                            <div class="section-title">
-                                Order Status
-                            </div>
-
-
-                            <div
-                                class="status ${orderClass}"
-                            >
-                                ${escapeHtml(
-                                    orderStatus
-                                )}
-                            </div>
-
-
-                            <!-- REVIEW ACTIONS -->
-
-                            <div class="action-box">
-
-                                <button
-                                    class="approve"
-                                    onclick="reviewRequest('${request.id}', 'approve')"
-                                    ${reviewStatus === "Approved"
-                                        ? "disabled"
-                                        : ""}
-                                >
-                                    ✅ Approve
-                                </button>
-
-
-                                <button
-                                    class="reject"
-                                    onclick="reviewRequest('${request.id}', 'reject')"
-                                    ${reviewStatus === "Rejected"
-                                        ? "disabled"
-                                        : ""}
-                                >
-                                    ❌ Reject
-                                </button>
-
-                            </div>
-
-
-                            <!-- ORDER ACTIONS -->
-
-                            <div class="action-box">
-
-                                <button
-                                    class="progress"
-                                    onclick="reviewRequest('${request.id}', 'in_progress')"
-                                    ${canStart
-                                        ? ""
-                                        : "disabled"}
-                                >
-                                    🔵 Start / In Progress
-                                </button>
-
-
-                                <button
-                                    class="complete"
-                                    onclick="reviewRequest('${request.id}', 'complete')"
-                                    ${canComplete
-                                        ? ""
-                                        : "disabled"}
-                                >
-                                    🟢 Complete
-                                </button>
-
-
-                                <button
-                                    class="cancel"
-                                    onclick="reviewRequest('${request.id}', 'cancel')"
-                                    ${canCancel
-                                        ? ""
-                                        : "disabled"}
-                                >
-                                    ❌ Cancel
-                                </button>
-
-                            </div>
+                            <strong>Details:</strong>
+                            ${escapeHtml(request.details)}
 
                         </div>
 
-                    `;
+                        <div class="section-title">
+                            Review Status
+                        </div>
 
-                }
-            ).join("");
+                        <div class="status ${reviewClass}">
+                            ${escapeHtml(reviewStatus)}
+                        </div>
 
+                        <div class="section-title">
+                            Order Status
+                        </div>
+
+                        <div class="status ${orderClass}">
+                            ${escapeHtml(orderStatus)}
+                        </div>
+
+                        <!-- REVIEW ACTIONS -->
+
+                        <div class="action-box">
+
+                            <button
+                                class="approve"
+                                onclick="reviewRequest('${escapeHtml(request.id)}', 'approve')"
+                                ${canApprove ? "" : "disabled"}
+                            >
+                                ✅ Approve
+                            </button>
+
+                            <button
+                                class="reject"
+                                onclick="reviewRequest('${escapeHtml(request.id)}', 'reject')"
+                                ${canReject ? "" : "disabled"}
+                            >
+                                ❌ Reject
+                            </button>
+
+                        </div>
+
+                        <!-- ORDER ACTIONS -->
+
+                        <div class="action-box">
+
+                            <button
+                                class="progress"
+                                onclick="reviewRequest('${escapeHtml(request.id)}', 'in_progress')"
+                                ${canStart ? "" : "disabled"}
+                            >
+                                🔵 Start / In Progress
+                            </button>
+
+                            <button
+                                class="complete"
+                                onclick="reviewRequest('${escapeHtml(request.id)}', 'complete')"
+                                ${canComplete ? "" : "disabled"}
+                            >
+                                🟢 Complete
+                            </button>
+
+                            <button
+                                class="cancel"
+                                onclick="reviewRequest('${escapeHtml(request.id)}', 'cancel')"
+                                ${canCancel ? "" : "disabled"}
+                            >
+                                ❌ Cancel
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                `;
+
+            }
+        ).join("");
 
     } catch (error) {
 
@@ -793,9 +681,7 @@ async function loadRequests() {
             `<div class="empty">
                 Failed to load requests.
                 <br>
-                ${escapeHtml(
-                    error.message
-                )}
+                ${escapeHtml(error.message)}
             </div>`;
     }
 }
@@ -805,91 +691,58 @@ async function loadRequests() {
    REVIEW / ORDER ACTION
 ========================================== */
 
-async function reviewRequest(
-    id,
-    action
-) {
+async function reviewRequest(id, action) {
 
     let confirmText =
         "Continue with this action?";
 
-
     if (action === "approve") {
-
-        confirmText =
-            "Approve this request?";
+        confirmText = "Approve this request?";
     }
-
 
     if (action === "reject") {
-
-        confirmText =
-            "Reject this request?";
+        confirmText = "Reject this request?";
     }
-
 
     if (action === "in_progress") {
-
-        confirmText =
-            "Start this service request?";
+        confirmText = "Start this service request?";
     }
-
 
     if (action === "complete") {
-
-        confirmText =
-            "Mark this request as Completed?";
+        confirmText = "Mark this request as Completed?";
     }
-
 
     if (action === "cancel") {
-
         confirmText =
-            "Cancel this request?";
+            "Cancel this Pending request? This action cannot be undone here.";
     }
 
-
     if (!confirm(confirmText)) {
-
         return;
     }
 
-
     try {
 
-        const response =
-            await fetch(
-                "/api/admin-review",
-                {
-                    method: "POST",
+        const response = await fetch(
+            "/api/admin-review",
+            {
+                method: "POST",
 
-                    headers: {
-                        "Content-Type":
-                            "application/json",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-admin-key": adminKey
+                },
 
-                        "x-admin-key":
-                            adminKey
-                    },
+                body: JSON.stringify({
+                    id: id,
+                    action: action
+                })
+            }
+        );
 
-                    body: JSON.stringify({
+        const data = await response.json();
 
-                        id: id,
-
-                        action: action
-
-                    })
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (
-            response.status ===
-            401
-        ) {
+        if (response.status === 401) {
 
             sessionStorage.removeItem(
                 "pconnect_admin_key"
@@ -905,74 +758,44 @@ async function reviewRequest(
             return;
         }
 
-
         if (!response.ok) {
 
             alert(
-                data.error ||
-                "Failed to update request."
+                data.error || "Failed to update request."
             );
 
             return;
         }
 
-
         if (action === "approve") {
 
-            alert(
-                "Request approved successfully."
-            );
+            alert("Request approved successfully.");
+
+        } else if (action === "reject") {
+
+            alert("Request rejected successfully.");
+
+        } else if (action === "in_progress") {
+
+            alert("Request is now In Progress.");
+
+        } else if (action === "complete") {
+
+            alert("Request marked as Completed.");
+
+        } else if (action === "cancel") {
+
+            alert("Request cancelled successfully.");
+
         }
-
-
-        else if (action === "reject") {
-
-            alert(
-                "Request rejected successfully."
-            );
-        }
-
-
-        else if (
-            action === "in_progress"
-        ) {
-
-            alert(
-                "Request is now In Progress."
-            );
-        }
-
-
-        else if (
-            action === "complete"
-        ) {
-
-            alert(
-                "Request marked as Completed."
-            );
-        }
-
-
-        else if (
-            action === "cancel"
-        ) {
-
-            alert(
-                "Request cancelled successfully."
-            );
-        }
-
 
         await loadRequests();
-
 
     } catch (error) {
 
         console.error(error);
 
-        alert(
-            "Connection error. Please try again."
-        );
+        alert("Connection error. Please try again.");
     }
 }
 
@@ -1006,19 +829,16 @@ loginBtn.addEventListener(
     login
 );
 
-
 logoutBtn.addEventListener(
     "click",
     logout
 );
-
 
 adminKeyInput.addEventListener(
     "keydown",
     function(event) {
 
         if (event.key === "Enter") {
-
             login();
         }
 
@@ -1039,26 +859,20 @@ async function restoreAdminSession() {
         return;
     }
 
-
     loginMessage.innerHTML =
         '<div class="message">Checking admin session...</div>';
 
-
     try {
 
-        const response =
-            await fetch(
-                "/api/admin-requests",
-                {
-                    method: "GET",
-
-                    headers: {
-                        "x-admin-key":
-                            adminKey
-                    }
+        const response = await fetch(
+            "/api/admin-requests",
+            {
+                method: "GET",
+                headers: {
+                    "x-admin-key": adminKey
                 }
-            );
-
+            }
+        );
 
         if (response.ok) {
 
@@ -1067,23 +881,18 @@ async function restoreAdminSession() {
             return;
         }
 
-
     } catch (error) {
 
         console.error(error);
     }
 
-
     sessionStorage.removeItem(
         "pconnect_admin_key"
     );
 
-
     adminKey = "";
 
-
     showLogin();
-
 
     loginMessage.innerHTML =
         '<div class="error">Please login again.</div>';
