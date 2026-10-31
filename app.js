@@ -74,6 +74,12 @@ let pendingIncompletePayment = null;
 let processingIncompletePayment = false;
 
 // ==========================================
+// LOGIN CONTROL
+// ==========================================
+
+let loginInProgress = false;
+
+// ==========================================
 // REQUEST ID
 // ==========================================
 
@@ -125,6 +131,16 @@ function setPaymentEnabled(enabled) {
     if (payBtn) {
         payBtn.disabled = !enabled;
     }
+}
+
+function updatePaymentButton() {
+    const canPay =
+        Boolean(currentPiUsername) &&
+        Boolean(currentPiAccessToken) &&
+        !pendingIncompletePayment &&
+        !processingIncompletePayment;
+
+    setPaymentEnabled(canPay);
 }
 
 // ==========================================
@@ -207,6 +223,46 @@ async function fetchPiApi(endpoint, options = {}) {
 }
 
 // ==========================================
+// PAYMENT API HELPER
+// ==========================================
+
+async function sendPaymentApi(endpoint, body) {
+    if (!currentPiAccessToken) {
+        throw new Error(
+            "Pi authentication is required."
+        );
+    }
+
+    const response = await fetch(endpoint, {
+        method: "POST",
+
+        headers: piJsonHeaders(),
+
+        body: JSON.stringify(body),
+
+        cache: "no-store"
+    });
+
+    let data;
+
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error(
+            "The payment server returned an invalid response."
+        );
+    }
+
+    if (!response.ok || data.success !== true) {
+        throw new Error(
+            data.error || "Payment operation failed."
+        );
+    }
+
+    return data;
+}
+
+// ==========================================
 // SAFE DOM HELPERS
 // ==========================================
 
@@ -279,7 +335,6 @@ window.loadTransactions = async function () {
         completedCount
     );
 
-    // Find an existing transaction container.
     const container =
         getElement("transactionsList") ||
         getElement("transactionList") ||
@@ -418,7 +473,8 @@ window.loadDashboard = async function () {
     setElementText("approvedRequests", approved);
     setElementText("rejectedRequests", rejected);
 
-    // Load transactions if they have not been loaded.
+    // Load transactions if necessary.
+
     try {
         if (!transactionsLoaded) {
             await window.loadTransactions();
@@ -596,9 +652,7 @@ window.loadNotifications = async function () {
         }
     ).length;
 
-    // ======================================
     // NOTIFICATION BADGE
-    // ======================================
 
     const badge = getElement(
         "notificationBadge"
@@ -609,9 +663,7 @@ window.loadNotifications = async function () {
         badge.hidden = unreadCount === 0;
     }
 
-    // ======================================
     // NOTIFICATION LIST
-    // ======================================
 
     const container = getElement(
         "notificationsList"
@@ -657,7 +709,6 @@ window.loadNotifications = async function () {
                         )
                     );
 
-                    // Add a read button for unread notifications.
                     if (unread) {
                         const readButton =
                             createTextElement(
@@ -787,6 +838,7 @@ function onIncompletePaymentFound(payment) {
         console.warn(
             "[PConnect] Incomplete payment has no identifier."
         );
+
         return;
     }
 
@@ -861,36 +913,13 @@ async function processIncompletePayment(payment) {
     );
 
     try {
-        const response = await fetch(
+        const data = await sendPaymentApi(
             "/api/complete",
             {
-                method: "POST",
-
-                headers: piJsonHeaders(),
-
-                body: JSON.stringify({
-                    paymentId: payment.identifier,
-                    txid: txid
-                })
+                paymentId: payment.identifier,
+                txid: txid
             }
         );
-
-        let data;
-
-        try {
-            data = await response.json();
-        } catch {
-            throw new Error(
-                "The payment server returned an invalid response."
-            );
-        }
-
-        if (!response.ok) {
-            throw new Error(
-                data.error ||
-                "Could not complete the incomplete payment."
-            );
-        }
 
         pendingIncompletePayment = null;
 
@@ -917,11 +946,7 @@ async function processIncompletePayment(payment) {
     } finally {
         processingIncompletePayment = false;
 
-        setPaymentEnabled(
-            !pendingIncompletePayment &&
-            Boolean(currentPiUsername) &&
-            Boolean(currentPiAccessToken)
-        );
+        updatePaymentButton();
     }
 }
 
@@ -933,9 +958,11 @@ if (loginBtn) {
     loginBtn.addEventListener(
         "click",
         async function () {
-            if (loginBtn.disabled) {
+            if (loginBtn.disabled || loginInProgress) {
                 return;
             }
+
+            loginInProgress = true;
 
             setPiStatus("Connecting to Pi...");
 
@@ -944,6 +971,7 @@ if (loginBtn) {
             );
 
             loginBtn.disabled = true;
+
             setPaymentEnabled(false);
 
             let loginTimeout = null;
@@ -1039,6 +1067,7 @@ if (loginBtn) {
                 );
 
                 // Recover incomplete payment first.
+
                 if (pendingIncompletePayment) {
                     await processIncompletePayment(
                         pendingIncompletePayment
@@ -1053,7 +1082,7 @@ if (loginBtn) {
                     );
 
                 } else {
-                    setPaymentEnabled(true);
+                    updatePaymentButton();
 
                     setPayStatus(
                         "Pi connected successfully. You can use the 0.01 π Test-Pi payment if your request is approved."
@@ -1061,6 +1090,7 @@ if (loginBtn) {
                 }
 
                 // Load dashboard and user data.
+
                 await refreshPaymentPageData();
 
             } catch (error) {
@@ -1096,6 +1126,7 @@ if (loginBtn) {
                 );
 
             } finally {
+                loginInProgress = false;
                 loginBtn.disabled = false;
             }
         }
@@ -1116,6 +1147,7 @@ if (payBtn) {
                 setPayStatus(
                     "Pi SDK is unavailable. Reload PConnect in Pi Browser."
                 );
+
                 return;
             }
 
@@ -1126,6 +1158,7 @@ if (payBtn) {
                 setPayStatus(
                     "Please sign in with Pi first."
                 );
+
                 return;
             }
 
@@ -1135,6 +1168,7 @@ if (payBtn) {
                 setPayStatus(
                     "A previous Pi payment is still pending. Resolve it before starting another payment."
                 );
+
                 return;
             }
 
@@ -1142,6 +1176,7 @@ if (payBtn) {
                 setPayStatus(
                     "No approved request found. Open Payments from My Requests."
                 );
+
                 return;
             }
 
@@ -1151,6 +1186,7 @@ if (payBtn) {
                 setPayStatus(
                     "Pi payment service is unavailable."
                 );
+
                 return;
             }
 
@@ -1180,31 +1216,16 @@ if (payBtn) {
 
                     {
                         // SERVER APPROVAL
+
                         onReadyForServerApproval:
                             async function (paymentId) {
                                 try {
-                                    const response = await fetch(
+                                    await sendPaymentApi(
                                         "/api/approve",
                                         {
-                                            method: "POST",
-
-                                            headers: piJsonHeaders(),
-
-                                            body: JSON.stringify({
-                                                paymentId: paymentId
-                                            })
+                                            paymentId: paymentId
                                         }
                                     );
-
-                                    const data =
-                                        await response.json();
-
-                                    if (!response.ok) {
-                                        throw new Error(
-                                            data.error ||
-                                            "Payment approval failed."
-                                        );
-                                    }
 
                                     setPayStatus(
                                         "Payment approved. Waiting for the Pi transaction..."
@@ -1218,18 +1239,19 @@ if (payBtn) {
 
                                     setPayStatus(
                                         "Payment approval failed: " +
-                                        getErrorMessage(error)
+                                        getErrorMessage(error) +
+                                        ". Check the payment status before retrying."
                                     );
 
-                                    payBtn.disabled = false;
+                                    // Do not automatically start
+                                    // another payment.
 
-                                    if (loginBtn) {
-                                        loginBtn.disabled = false;
-                                    }
+                                    setPaymentEnabled(false);
                                 }
                             },
 
                         // SERVER COMPLETION
+
                         onReadyForServerCompletion:
                             async function (paymentId, txid) {
                                 setPayStatus(
@@ -1237,44 +1259,22 @@ if (payBtn) {
                                 );
 
                                 try {
-                                    const response = await fetch(
+                                    await sendPaymentApi(
                                         "/api/complete",
                                         {
-                                            method: "POST",
-
-                                            headers: piJsonHeaders(),
-
-                                            body: JSON.stringify({
-                                                paymentId: paymentId,
-                                                txid: txid,
-                                                pi_username: currentPiUsername,
-                                                service: currentService,
-                                                request_id: currentRequestId
-                                            })
+                                            paymentId: paymentId,
+                                            txid: txid,
+                                            pi_username: currentPiUsername,
+                                            service: currentService,
+                                            request_id: currentRequestId
                                         }
                                     );
-
-                                    const data =
-                                        await response.json();
-
-                                    if (!response.ok) {
-                                        throw new Error(
-                                            data.error ||
-                                            "Payment completion failed."
-                                        );
-                                    }
 
                                     setPayStatus(
                                         "✔️ Payment complete! Request #" +
                                         currentRequestId +
                                         " has been linked to this transaction."
                                     );
-
-                                    payBtn.disabled = false;
-
-                                    if (loginBtn) {
-                                        loginBtn.disabled = false;
-                                    }
 
                                     await refreshPaymentPageData();
 
@@ -1286,18 +1286,19 @@ if (payBtn) {
 
                                     setPayStatus(
                                         "Payment completion failed: " +
-                                        getErrorMessage(error)
+                                        getErrorMessage(error) +
+                                        ". Do not create another payment until this one is checked."
                                     );
 
-                                    payBtn.disabled = false;
+                                    // Keep payment disabled
+                                    // until the payment is checked.
 
-                                    if (loginBtn) {
-                                        loginBtn.disabled = false;
-                                    }
+                                    setPaymentEnabled(false);
                                 }
                             },
 
                         // USER CANCELLED
+
                         onCancel: function (paymentId) {
                             console.log(
                                 "[PConnect] Payment cancelled:",
@@ -1308,14 +1309,11 @@ if (payBtn) {
                                 "Payment cancelled."
                             );
 
-                            payBtn.disabled = false;
-
-                            if (loginBtn) {
-                                loginBtn.disabled = false;
-                            }
+                            updatePaymentButton();
                         },
 
                         // PAYMENT ERROR
+
                         onError: function (error, payment) {
                             console.error(
                                 "[PConnect] Payment error:",
@@ -1328,11 +1326,7 @@ if (payBtn) {
                                 getErrorMessage(error)
                             );
 
-                            payBtn.disabled = false;
-
-                            if (loginBtn) {
-                                loginBtn.disabled = false;
-                            }
+                            updatePaymentButton();
                         }
                     }
                 );
@@ -1348,7 +1342,7 @@ if (payBtn) {
                     getErrorMessage(error)
                 );
 
-                payBtn.disabled = false;
+                updatePaymentButton();
 
                 if (loginBtn) {
                     loginBtn.disabled = false;
