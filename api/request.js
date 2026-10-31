@@ -1,6 +1,59 @@
 // ==========================================
-// PConnect - Create Service Request API
-// Secure Pi Identity Verification
+// PConnect - Secure Service Request API
+// Pi Identity Verification | Supabase
+// Testnet
+// ==========================================
+
+const REQUEST_TIMEOUT = 12000;
+
+const ALLOWED_SERVICES = [
+    "Web Development",
+    "Graphic Design",
+    "Content Writing",
+    "Digital Marketing",
+    "Tech Support"
+];
+
+
+// ==========================================
+// RESPONSE HELPER
+// ==========================================
+
+function send(res, status, data) {
+    return res.status(status).json(data);
+}
+
+
+// ==========================================
+// FETCH WITH TIMEOUT
+// ==========================================
+
+async function fetchWithTimeout(url, options = {}) {
+
+    const controller = new AbortController();
+
+    const timer = setTimeout(
+        () => controller.abort(),
+        REQUEST_TIMEOUT
+    );
+
+    try {
+
+        return await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+
+    } finally {
+
+        clearTimeout(timer);
+
+    }
+}
+
+
+// ==========================================
+// MAIN HANDLER
 // ==========================================
 
 export default async function handler(req, res) {
@@ -10,73 +63,152 @@ export default async function handler(req, res) {
     // ==========================================
 
     if (req.method !== "POST") {
-        return res.status(405).json({
+
+        res.setHeader("Allow", "POST");
+
+        return send(res, 405, {
             success: false,
             error: "Method not allowed"
         });
+
     }
+
 
     try {
 
         // ==========================================
-        // ENVIRONMENT CHECK
+        // ENVIRONMENT VARIABLES
         // ==========================================
 
         const supabaseUrl =
-            process.env.SUPABASE_URL;
+            String(process.env.SUPABASE_URL || "")
+                .trim()
+                .replace(/\/+$/, "");
 
         const supabaseSecretKey =
-            process.env.SUPABASE_SECRET_KEY;
+            String(process.env.SUPABASE_SECRET_KEY || "")
+                .trim();
+
 
         if (
             !supabaseUrl ||
             !supabaseSecretKey
         ) {
+
             console.error(
-                "Missing Supabase environment variables"
+                "Missing Supabase configuration"
             );
 
-            return res.status(500).json({
+            return send(res, 500, {
                 success: false,
                 error: "Server configuration error"
             });
+
         }
 
 
         // ==========================================
-        // READ BODY
+        // VALIDATE SUPABASE URL
         // ==========================================
 
-        const body =
-            req.body || {};
+        let parsedSupabaseUrl;
 
-        const name =
-            String(
-                body.name || ""
-            ).trim();
+        try {
 
-        const contact =
-            String(
-                body.contact || ""
-            ).trim();
+            parsedSupabaseUrl =
+                new URL(supabaseUrl);
 
-        const details =
-            String(
-                body.details || ""
-            ).trim();
+        } catch {
 
-        const accessToken =
-            String(
-                body.accessToken || ""
-            ).trim();
+            return send(res, 500, {
+                success: false,
+                error: "Server configuration error"
+            });
+
+        }
+
+
+        if (
+            parsedSupabaseUrl.protocol !== "https:" ||
+            !parsedSupabaseUrl.hostname.endsWith(
+                ".supabase.co"
+            )
+        ) {
+
+            return send(res, 500, {
+                success: false,
+                error: "Server configuration error"
+            });
+
+        }
 
 
         // ==========================================
-        // SERVICE
+        // READ REQUEST BODY
+        // ==========================================
+
+        let body = req.body || {};
+
+        if (typeof body === "string") {
+
+            try {
+
+                body = JSON.parse(body);
+
+            } catch {
+
+                return send(res, 400, {
+                    success: false,
+                    error: "Invalid request body"
+                });
+
+            }
+
+        }
+
+
+        if (
+            !body ||
+            typeof body !== "object" ||
+            Array.isArray(body)
+        ) {
+
+            return send(res, 400, {
+                success: false,
+                error: "Invalid request body"
+            });
+
+        }
+
+
+        // ==========================================
+        // READ INPUTS
         // ==========================================
 
         const service =
-            "Web Development";
+            typeof body.service === "string"
+                ? body.service.trim()
+                : "";
+
+        const name =
+            typeof body.name === "string"
+                ? body.name.trim()
+                : "";
+
+        const contact =
+            typeof body.contact === "string"
+                ? body.contact.trim()
+                : "";
+
+        const details =
+            typeof body.details === "string"
+                ? body.details.trim()
+                : "";
+
+        const accessToken =
+            typeof body.accessToken === "string"
+                ? body.accessToken.trim()
+                : "";
 
 
         // ==========================================
@@ -84,15 +216,34 @@ export default async function handler(req, res) {
         // ==========================================
 
         if (
+            !service ||
             !name ||
             !contact ||
             !details ||
             !accessToken
         ) {
-            return res.status(400).json({
+
+            return send(res, 400, {
                 success: false,
-                error: "Missing required fields"
+                error: "Please complete all required fields"
             });
+
+        }
+
+
+        // ==========================================
+        // SERVICE VALIDATION
+        // ==========================================
+
+        if (
+            !ALLOWED_SERVICES.includes(service)
+        ) {
+
+            return send(res, 400, {
+                success: false,
+                error: "Selected service is not available"
+            });
+
         }
 
 
@@ -100,202 +251,248 @@ export default async function handler(req, res) {
         // INPUT LENGTH VALIDATION
         // ==========================================
 
-        if (name.length > 100) {
-            return res.status(400).json({
+        if (
+            name.length < 2 ||
+            name.length > 100
+        ) {
+
+            return send(res, 400, {
                 success: false,
-                error: "Name is too long"
+                error: "Name must be between 2 and 100 characters"
             });
+
         }
 
 
-        if (contact.length > 150) {
-            return res.status(400).json({
+        if (
+            contact.length < 3 ||
+            contact.length > 150
+        ) {
+
+            return send(res, 400, {
                 success: false,
-                error: "Contact is too long"
+                error: "Contact must be between 3 and 150 characters"
             });
+
         }
 
 
-        if (details.length > 2000) {
-            return res.status(400).json({
+        if (
+            details.length < 10 ||
+            details.length > 2000
+        ) {
+
+            return send(res, 400, {
                 success: false,
-                error: "Project details are too long"
+                error: "Project details must be between 10 and 2000 characters"
             });
+
         }
 
 
         // ==========================================
-        // BASIC ACCESS TOKEN CHECK
+        // ACCESS TOKEN VALIDATION
         // ==========================================
 
-        if (accessToken.length < 20) {
-            return res.status(401).json({
+        if (
+            accessToken.length < 20 ||
+            accessToken.length > 4096
+        ) {
+
+            return send(res, 401, {
                 success: false,
                 error: "Invalid Pi authentication"
             });
+
         }
 
 
         // ==========================================
-        // VERIFY TOKEN WITH PI
+        // VERIFY IDENTITY WITH PI SERVER
         // ==========================================
 
-        const piResponse =
-            await fetch(
-                "https://api.minepi.com/v2/me",
-                {
-                    method: "GET",
+        let piResponse;
 
-                    headers: {
-                        "Authorization":
-                            `Bearer ${accessToken}`
+        try {
+
+            piResponse =
+                await fetchWithTimeout(
+                    "https://api.minepi.com/v2/me",
+                    {
+                        method: "GET",
+                        headers: {
+                            "Authorization":
+                                `Bearer ${accessToken}`
+                        }
                     }
-                }
+                );
+
+        } catch (error) {
+
+            console.error(
+                "Pi verification request failed:",
+                error.name
             );
 
+            return send(res, 503, {
+                success: false,
+                error: "Pi verification is temporarily unavailable. Please try again."
+            });
 
-        // ==========================================
-        // PI AUTHENTICATION FAILED
-        // ==========================================
+        }
+
 
         if (!piResponse.ok) {
 
             console.error(
-                "Pi identity verification failed:",
+                "Pi verification rejected:",
                 piResponse.status
             );
 
-            return res.status(401).json({
+            return send(res, 401, {
                 success: false,
-                error: "Invalid Pi authentication"
+                error: "Pi authentication failed. Please sign in again."
             });
+
         }
 
 
         // ==========================================
-        // READ VERIFIED PI USER
+        // READ VERIFIED PI IDENTITY
         // ==========================================
 
-        const piUser =
-            await piResponse.json();
-
-        const piUid =
-            String(
-                piUser.uid || ""
-            ).trim();
-
-        const piUsername =
-            String(
-                piUser.username || ""
-            ).trim();
-
-
-        // ==========================================
-        // VERIFY PI IDENTITY DATA
-        // ==========================================
-
-        if (
-            !piUid ||
-            !piUsername
-        ) {
-
-            console.error(
-                "Pi verification returned incomplete identity"
-            );
-
-            return res.status(401).json({
-                success: false,
-                error: "Invalid Pi identity"
-            });
-        }
-
-
-        // ==========================================
-        // VERIFY USERNAME FORMAT
-        // ==========================================
-
-        if (
-            piUsername.length > 50 ||
-            !/^[a-zA-Z0-9._-]+$/.test(
-                piUsername
-            )
-        ) {
-
-            return res.status(401).json({
-                success: false,
-                error: "Invalid Pi identity"
-            });
-        }
-
-
-        // ==========================================
-        // SAVE REQUEST
-        // ==========================================
-
-        const response =
-            await fetch(
-                `${supabaseUrl}/rest/v1/requests`,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-
-                        "apikey":
-                            supabaseSecretKey,
-
-                        "Authorization":
-                            `Bearer ${supabaseSecretKey}`,
-
-                        "Prefer":
-                            "return=representation"
-                    },
-
-                    body: JSON.stringify({
-
-                        service,
-
-                        name,
-
-                        contact,
-
-                        details,
-
-                        // IMPORTANT:
-                        // Username comes from Pi verification.
-                        // We do NOT trust browser pi_username.
-
-                        pi_username:
-                            piUsername,
-
-                        payment:
-                            "Pi Network",
-
-                        status:
-                            "Submitted",
-
-                        review_status:
-                            "Waiting for review"
-                    })
-                }
-            );
-
-
-        // ==========================================
-        // READ SUPABASE RESPONSE SAFELY
-        // ==========================================
-
-        let data = null;
+        let piUser;
 
         try {
 
-            data =
-                await response.json();
+            piUser = await piResponse.json();
 
         } catch {
 
-            data = null;
+            return send(res, 502, {
+                success: false,
+                error: "Invalid response from Pi Network"
+            });
+
+        }
+
+
+        const piUid =
+            String(piUser.uid || "").trim();
+
+        const piUsername =
+            String(piUser.username || "").trim();
+
+
+        if (
+            !piUid ||
+            !piUsername ||
+            piUsername.length > 50 ||
+            !/^[a-zA-Z0-9._-]+$/.test(piUsername)
+        ) {
+
+            console.error(
+                "Invalid verified Pi identity"
+            );
+
+            return send(res, 401, {
+                success: false,
+                error: "Unable to verify Pi identity"
+            });
+
+        }
+
+
+        // ==========================================
+        // CREATE REQUEST IN SUPABASE
+        // ==========================================
+
+        let supabaseResponse;
+
+        try {
+
+            const insertUrl =
+                `${supabaseUrl}/rest/v1/requests` +
+                "?select=id,service,status,review_status,order_status,created_at";
+
+            supabaseResponse =
+                await fetchWithTimeout(
+                    insertUrl,
+                    {
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json",
+
+                            "apikey":
+                                supabaseSecretKey,
+
+                            "Authorization":
+                                `Bearer ${supabaseSecretKey}`,
+
+                            "Prefer":
+                                "return=representation"
+
+                        },
+
+                        body: JSON.stringify({
+
+                            service: service,
+
+                            name: name,
+
+                            contact: contact,
+
+                            details: details,
+
+                            // Verified by Pi Server.
+                            pi_username: piUsername,
+
+                            payment: "Pi Network",
+
+                            status: "Submitted",
+
+                            review_status: "Waiting for review",
+
+                            order_status: "Pending"
+
+                        })
+
+                    }
+                );
+
+        } catch (error) {
+
+            console.error(
+                "Supabase request timed out or failed:",
+                error.name
+            );
+
+            return send(res, 503, {
+                success: false,
+                error: "Request service is temporarily unavailable. Please try again."
+            });
+
+        }
+
+
+        // ==========================================
+        // READ SUPABASE RESPONSE
+        // ==========================================
+
+        let savedRequest = null;
+
+        try {
+
+            savedRequest =
+                await supabaseResponse.json();
+
+        } catch {
+
+            savedRequest = null;
+
         }
 
 
@@ -303,17 +500,23 @@ export default async function handler(req, res) {
         // SUPABASE ERROR
         // ==========================================
 
-        if (!response.ok) {
+        if (
+            !supabaseResponse.ok ||
+            !Array.isArray(savedRequest) ||
+            !savedRequest[0]
+        ) {
 
             console.error(
                 "Supabase request creation failed:",
-                data
+                supabaseResponse.status,
+                savedRequest
             );
 
-            return res.status(500).json({
+            return send(res, 500, {
                 success: false,
-                error: "Failed to save request"
+                error: "Unable to save your request. Please try again."
             });
+
         }
 
 
@@ -321,7 +524,7 @@ export default async function handler(req, res) {
         // SUCCESS
         // ==========================================
 
-        return res.status(200).json({
+        return send(res, 201, {
 
             success: true,
 
@@ -329,26 +532,23 @@ export default async function handler(req, res) {
                 "Request submitted successfully",
 
             request:
-                Array.isArray(data)
-                    ? data[0]
-                    : null
+                savedRequest[0]
+
         });
 
 
     } catch (error) {
-
-        // ==========================================
-        // SERVER ERROR
-        // ==========================================
 
         console.error(
             "Request API error:",
             error
         );
 
-        return res.status(500).json({
+        return send(res, 500, {
             success: false,
             error: "Internal server error"
         });
+
     }
+
 }
