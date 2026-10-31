@@ -1,6 +1,7 @@
 // ==========================================
 // PConnect - Pi SDK Testnet
-// Authentication Diagnostics + Payments
+// Authentication + Payments
+// Dashboard + Notifications + Transactions
 // Incomplete Payment Recovery
 // ==========================================
 
@@ -56,6 +57,16 @@ let currentPiUsername = null;
 let currentPiAccessToken = "";
 
 // ==========================================
+// DATA CACHE
+// ==========================================
+
+let cachedRequests = [];
+let cachedTransactions = [];
+let cachedNotifications = [];
+
+let transactionsLoaded = false;
+
+// ==========================================
 // INCOMPLETE PAYMENT RECOVERY
 // ==========================================
 
@@ -93,31 +104,6 @@ console.log(
     "[PConnect] Request ID:",
     currentRequestId
 );
-
-console.log(
-    "[PConnect] Service:",
-    currentService
-);
-
-// ==========================================
-// REQUIRED ELEMENTS
-// ==========================================
-
-if (!loginBtn) {
-    console.warn("[PConnect] loginBtn not found.");
-}
-
-if (!status) {
-    console.warn("[PConnect] piStatus not found.");
-}
-
-if (!payBtn) {
-    console.warn("[PConnect] payBtn not found.");
-}
-
-if (!payStatus) {
-    console.warn("[PConnect] payStatus not found.");
-}
 
 // ==========================================
 // SAFE STATUS HELPERS
@@ -176,47 +162,613 @@ function getErrorMessage(error) {
         return error.message;
     }
 
+    return String(error);
+}
+
+// ==========================================
+// API RESPONSE HELPER
+// ==========================================
+
+async function fetchPiApi(endpoint, options = {}) {
+    if (!currentPiAccessToken) {
+        throw new Error(
+            "Please sign in with Pi first."
+        );
+    }
+
+    const response = await fetch(endpoint, {
+        ...options,
+
+        headers: {
+            ...piJsonHeaders(),
+            ...(options.headers || {})
+        },
+
+        cache: "no-store"
+    });
+
+    let data;
+
     try {
-        return JSON.stringify(error);
+        data = await response.json();
     } catch {
-        return String(error);
+        throw new Error(
+            "The server returned an invalid response."
+        );
+    }
+
+    if (!response.ok || data.success !== true) {
+        throw new Error(
+            data.error || "Unable to load data."
+        );
+    }
+
+    return data;
+}
+
+// ==========================================
+// SAFE DOM HELPERS
+// ==========================================
+
+function getElement(id) {
+    return document.getElementById(id);
+}
+
+function setElementText(id, value) {
+    const element = getElement(id);
+
+    if (element) {
+        element.textContent = String(value);
     }
 }
+
+function createTextElement(tag, value, className) {
+    const element = document.createElement(tag);
+
+    element.textContent = String(value ?? "");
+
+    if (className) {
+        element.className = className;
+    }
+
+    return element;
+}
+
+function formatDate(value) {
+    if (!value) {
+        return "Date unavailable";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "Date unavailable";
+    }
+
+    return date.toLocaleString();
+}
+
+// ==========================================
+// LOAD TRANSACTIONS
+// ==========================================
+
+window.loadTransactions = async function () {
+    const data = await fetchPiApi(
+        "/api/transactions"
+    );
+
+    if (!Array.isArray(data.transactions)) {
+        throw new Error(
+            "Invalid transactions response."
+        );
+    }
+
+    cachedTransactions = data.transactions;
+    transactionsLoaded = true;
+
+    const completedCount = cachedTransactions.filter(
+        function (transaction) {
+            return String(
+                transaction.status || ""
+            ).trim().toLowerCase() === "completed";
+        }
+    ).length;
+
+    setElementText(
+        "completedPayments",
+        completedCount
+    );
+
+    // Find an existing transaction container.
+    const container =
+        getElement("transactionsList") ||
+        getElement("transactionList") ||
+        getElement("transactionsContainer") ||
+        getElement("transactionHistory");
+
+    if (container) {
+        container.replaceChildren();
+
+        if (cachedTransactions.length === 0) {
+            container.appendChild(
+                createTextElement(
+                    "p",
+                    "No transactions found."
+                )
+            );
+
+        } else {
+            cachedTransactions.forEach(
+                function (transaction) {
+                    const item = document.createElement("div");
+
+                    item.className = "transaction-item";
+
+                    item.append(
+                        createTextElement(
+                            "strong",
+                            transaction.service || "PConnect Service"
+                        ),
+
+                        createTextElement(
+                            "p",
+                            transaction.request_id
+                                ? "Request #" + transaction.request_id
+                                : "Request ID not linked"
+                        ),
+
+                        createTextElement(
+                            "p",
+                            String(transaction.amount ?? "0") +
+                            " " +
+                            String(transaction.currency || "Pi")
+                        ),
+
+                        createTextElement(
+                            "p",
+                            "Status: " +
+                            String(transaction.status || "Unknown")
+                        ),
+
+                        createTextElement(
+                            "small",
+                            formatDate(transaction.created_at)
+                        )
+                    );
+
+                    container.appendChild(item);
+                }
+            );
+        }
+    }
+
+    console.log(
+        "[PConnect] Transactions loaded:",
+        cachedTransactions.length
+    );
+
+    return cachedTransactions;
+};
+
+// ==========================================
+// LOAD DASHBOARD
+// ==========================================
+
+window.loadDashboard = async function () {
+    const hasDashboard = [
+        "totalRequests",
+        "waitingRequests",
+        "approvedRequests",
+        "rejectedRequests",
+        "completedPayments",
+        "recentActivity"
+    ].some(function (id) {
+        return Boolean(getElement(id));
+    });
+
+    if (!hasDashboard) {
+        return;
+    }
+
+    const data = await fetchPiApi(
+        "/api/my-requests"
+    );
+
+    if (!Array.isArray(data.requests)) {
+        throw new Error(
+            "Invalid requests response."
+        );
+    }
+
+    cachedRequests = data.requests;
+
+    const total = cachedRequests.length;
+
+    const waiting = cachedRequests.filter(
+        function (request) {
+            const value = String(
+                request.review_status || ""
+            ).trim().toLowerCase();
+
+            return (
+                value === "waiting for review" ||
+                value === "waiting"
+            );
+        }
+    ).length;
+
+    const approved = cachedRequests.filter(
+        function (request) {
+            return String(
+                request.review_status || ""
+            ).trim().toLowerCase() === "approved";
+        }
+    ).length;
+
+    const rejected = cachedRequests.filter(
+        function (request) {
+            return String(
+                request.review_status || ""
+            ).trim().toLowerCase() === "rejected";
+        }
+    ).length;
+
+    setElementText("totalRequests", total);
+    setElementText("waitingRequests", waiting);
+    setElementText("approvedRequests", approved);
+    setElementText("rejectedRequests", rejected);
+
+    // Load transactions if they have not been loaded.
+    try {
+        if (!transactionsLoaded) {
+            await window.loadTransactions();
+        }
+
+        const completedPayments =
+            cachedTransactions.filter(
+                function (transaction) {
+                    return String(
+                        transaction.status || ""
+                    ).trim().toLowerCase() === "completed";
+                }
+            ).length;
+
+        setElementText(
+            "completedPayments",
+            completedPayments
+        );
+
+    } catch (error) {
+        console.error(
+            "[PConnect] Completed payments count failed:",
+            error
+        );
+
+        setElementText(
+            "completedPayments",
+            "—"
+        );
+    }
+
+    // ======================================
+    // RECENT ACTIVITY
+    // ======================================
+
+    const activityContainer = getElement(
+        "recentActivity"
+    );
+
+    if (activityContainer) {
+        activityContainer.replaceChildren();
+
+        const recentRequests = [...cachedRequests]
+            .sort(function (a, b) {
+                return (
+                    new Date(b.created_at || 0) -
+                    new Date(a.created_at || 0)
+                );
+            })
+            .slice(0, 5);
+
+        if (recentRequests.length === 0) {
+            activityContainer.appendChild(
+                createTextElement(
+                    "p",
+                    "No recent activity found."
+                )
+            );
+
+        } else {
+            recentRequests.forEach(
+                function (request) {
+                    const item = document.createElement("div");
+
+                    item.className = "activity-item";
+
+                    item.append(
+                        createTextElement(
+                            "strong",
+                            request.service || "Service Request"
+                        ),
+
+                        createTextElement(
+                            "p",
+                            "Request #" + String(request.id)
+                        ),
+
+                        createTextElement(
+                            "p",
+                            "Review: " +
+                            String(
+                                request.review_status || "Unknown"
+                            )
+                        ),
+
+                        createTextElement(
+                            "p",
+                            "Order: " +
+                            String(
+                                request.order_status || "Unknown"
+                            )
+                        ),
+
+                        createTextElement(
+                            "small",
+                            formatDate(request.created_at)
+                        )
+                    );
+
+                    activityContainer.appendChild(item);
+                }
+            );
+        }
+    }
+
+    console.log(
+        "[PConnect] Dashboard loaded:",
+        {
+            total,
+            waiting,
+            approved,
+            rejected
+        }
+    );
+
+    return cachedRequests;
+};
+
+// ==========================================
+// MARK NOTIFICATION AS READ
+// ==========================================
+
+async function markNotificationAsRead(id) {
+    const notificationId = Number(id);
+
+    if (
+        !Number.isSafeInteger(notificationId) ||
+        notificationId <= 0
+    ) {
+        throw new Error(
+            "Invalid notification ID."
+        );
+    }
+
+    const data = await fetchPiApi(
+        "/api/notifications",
+        {
+            method: "PATCH",
+
+            body: JSON.stringify({
+                id: notificationId
+            })
+        }
+    );
+
+    if (!data.notification) {
+        throw new Error(
+            "Notification update was not confirmed."
+        );
+    }
+
+    return data.notification;
+}
+
+// ==========================================
+// LOAD NOTIFICATIONS
+// ==========================================
+
+window.loadNotifications = async function () {
+    const data = await fetchPiApi(
+        "/api/notifications"
+    );
+
+    if (!Array.isArray(data.notifications)) {
+        throw new Error(
+            "Invalid notifications response."
+        );
+    }
+
+    cachedNotifications = data.notifications;
+
+    const unreadCount = cachedNotifications.filter(
+        function (notification) {
+            return notification.is_read === false;
+        }
+    ).length;
+
+    // ======================================
+    // NOTIFICATION BADGE
+    // ======================================
+
+    const badge = getElement(
+        "notificationBadge"
+    );
+
+    if (badge) {
+        badge.textContent = String(unreadCount);
+        badge.hidden = unreadCount === 0;
+    }
+
+    // ======================================
+    // NOTIFICATION LIST
+    // ======================================
+
+    const container = getElement(
+        "notificationsList"
+    );
+
+    if (container) {
+        container.replaceChildren();
+
+        if (cachedNotifications.length === 0) {
+            container.appendChild(
+                createTextElement(
+                    "p",
+                    "No notifications found."
+                )
+            );
+
+        } else {
+            cachedNotifications.forEach(
+                function (notification) {
+                    const item = document.createElement("div");
+
+                    const unread =
+                        notification.is_read === false;
+
+                    item.className = unread
+                        ? "notification-item unread"
+                        : "notification-item";
+
+                    item.append(
+                        createTextElement(
+                            "strong",
+                            notification.title || "Notification"
+                        ),
+
+                        createTextElement(
+                            "p",
+                            notification.message || ""
+                        ),
+
+                        createTextElement(
+                            "small",
+                            formatDate(notification.created_at)
+                        )
+                    );
+
+                    // Add a read button for unread notifications.
+                    if (unread) {
+                        const readButton =
+                            createTextElement(
+                                "button",
+                                "Mark as read"
+                            );
+
+                        readButton.type = "button";
+
+                        readButton.addEventListener(
+                            "click",
+                            async function () {
+                                readButton.disabled = true;
+
+                                try {
+                                    await markNotificationAsRead(
+                                        notification.id
+                                    );
+
+                                    notification.is_read = true;
+
+                                    await window.loadNotifications();
+
+                                } catch (error) {
+                                    console.error(
+                                        "[PConnect] Mark notification read failed:",
+                                        error
+                                    );
+
+                                    readButton.disabled = false;
+
+                                    alert(
+                                        "Unable to mark notification as read: " +
+                                        getErrorMessage(error)
+                                    );
+                                }
+                            }
+                        );
+
+                        item.appendChild(readButton);
+                    }
+
+                    container.appendChild(item);
+                }
+            );
+        }
+    }
+
+    console.log(
+        "[PConnect] Notifications loaded:",
+        cachedNotifications.length,
+        "Unread:",
+        unreadCount
+    );
+
+    return cachedNotifications;
+};
 
 // ==========================================
 // REFRESH PAGE DATA
 // ==========================================
 
 async function refreshPaymentPageData() {
-    if (typeof window.loadTransactions === "function") {
-        try {
-            await window.loadTransactions();
-        } catch (error) {
-            console.error(
-                "[PConnect] Transaction refresh failed:",
-                error
-            );
-        }
+    transactionsLoaded = false;
+
+    try {
+        await window.loadTransactions();
+
+    } catch (error) {
+        console.error(
+            "[PConnect] Transaction refresh failed:",
+            error
+        );
     }
 
-    if (typeof window.loadDashboard === "function") {
-        try {
-            await window.loadDashboard();
-        } catch (error) {
-            console.error(
-                "[PConnect] Dashboard refresh failed:",
-                error
-            );
-        }
+    try {
+        await window.loadDashboard();
+
+    } catch (error) {
+        console.error(
+            "[PConnect] Dashboard refresh failed:",
+            error
+        );
+
+        setElementText("totalRequests", "—");
+        setElementText("waitingRequests", "—");
+        setElementText("approvedRequests", "—");
+        setElementText("rejectedRequests", "—");
     }
 
-    if (typeof window.loadNotifications === "function") {
-        try {
-            await window.loadNotifications();
-        } catch (error) {
-            console.error(
-                "[PConnect] Notification refresh failed:",
-                error
+    try {
+        await window.loadNotifications();
+
+    } catch (error) {
+        console.error(
+            "[PConnect] Notification refresh failed:",
+            error
+        );
+
+        const container = getElement(
+            "notificationsList"
+        );
+
+        if (container) {
+            container.replaceChildren();
+
+            container.appendChild(
+                createTextElement(
+                    "p",
+                    "Unable to load notifications. Please refresh."
+                )
             );
         }
     }
@@ -224,8 +776,6 @@ async function refreshPaymentPageData() {
 
 // ==========================================
 // INCOMPLETE PAYMENT CALLBACK
-// Pi can invoke this before authentication
-// returns an access token.
 // ==========================================
 
 function onIncompletePaymentFound(payment) {
@@ -240,7 +790,6 @@ function onIncompletePaymentFound(payment) {
         return;
     }
 
-    // Do not replace a different pending payment silently.
     if (
         pendingIncompletePayment &&
         pendingIncompletePayment.identifier !== payment.identifier
@@ -258,7 +807,6 @@ function onIncompletePaymentFound(payment) {
         return;
     }
 
-    // Keep the original Pi payment object for recovery.
     pendingIncompletePayment = payment;
 
     setPaymentEnabled(false);
@@ -268,14 +816,9 @@ function onIncompletePaymentFound(payment) {
             "An incomplete payment was found. Waiting for Pi login to finish..."
         );
 
-        console.log(
-            "[PConnect] Incomplete payment queued until login finishes."
-        );
-
         return;
     }
 
-    // Login has already completed; try recovery.
     processIncompletePayment(payment);
 }
 
@@ -306,10 +849,6 @@ async function processIncompletePayment(payment) {
             "The previous payment has no transaction ID yet. Do not start another payment."
         );
 
-        console.warn(
-            "[PConnect] Incomplete payment has no valid txid."
-        );
-
         return;
     }
 
@@ -322,17 +861,19 @@ async function processIncompletePayment(payment) {
     );
 
     try {
-        const response = await fetch("/api/complete", {
-            method: "POST",
+        const response = await fetch(
+            "/api/complete",
+            {
+                method: "POST",
 
-            headers: piJsonHeaders(),
+                headers: piJsonHeaders(),
 
-            // The backend reads request_id from Pi metadata.
-            body: JSON.stringify({
-                paymentId: payment.identifier,
-                txid: txid
-            })
-        });
+                body: JSON.stringify({
+                    paymentId: payment.identifier,
+                    txid: txid
+                })
+            }
+        );
 
         let data;
 
@@ -351,11 +892,6 @@ async function processIncompletePayment(payment) {
             );
         }
 
-        console.log(
-            "[PConnect] Incomplete payment recovered:",
-            data
-        );
-
         pendingIncompletePayment = null;
 
         setPayStatus(
@@ -370,7 +906,6 @@ async function processIncompletePayment(payment) {
             error
         );
 
-        // Retain the payment for another recovery attempt.
         pendingIncompletePayment = payment;
 
         setPayStatus(
@@ -395,184 +930,176 @@ async function processIncompletePayment(payment) {
 // ==========================================
 
 if (loginBtn) {
-    loginBtn.addEventListener("click", async function () {
-        if (loginBtn.disabled) {
-            return;
-        }
-
-        setPiStatus("Connecting to Pi...");
-
-        setPayStatus(
-            "Waiting for Pi authentication..."
-        );
-
-        loginBtn.disabled = true;
-        setPaymentEnabled(false);
-
-        let loginTimeout = null;
-        let timedOut = false;
-
-        try {
-            if (!piSdkReady) {
-                throw piInitError || new Error(
-                    "Pi SDK did not initialize. Open PConnect in Pi Browser."
-                );
+    loginBtn.addEventListener(
+        "click",
+        async function () {
+            if (loginBtn.disabled) {
+                return;
             }
 
-            if (
-                !window.Pi ||
-                typeof window.Pi.authenticate !== "function"
-            ) {
-                throw new Error(
-                    "Pi.authenticate is unavailable."
-                );
-            }
-
-            console.log(
-                "[PConnect] Starting Pi authentication."
-            );
-
-            const scopes = [
-                "username",
-                "payments"
-            ];
-
-            const timeoutPromise = new Promise(
-                function (_, reject) {
-                    loginTimeout = setTimeout(
-                        function () {
-                            timedOut = true;
-
-                            reject(new Error(
-                                "Pi authentication timed out after 15 seconds. Please retry in Pi Browser."
-                            ));
-                        },
-                        15000
-                    );
-                }
-            );
-
-            const authPromise = window.Pi.authenticate(
-                scopes,
-                onIncompletePaymentFound
-            );
-
-            const authResult = await Promise.race([
-                authPromise,
-                timeoutPromise
-            ]);
-
-            if (loginTimeout) {
-                clearTimeout(loginTimeout);
-                loginTimeout = null;
-            }
-
-            console.log(
-                "[PConnect] Authentication response received."
-            );
-
-            if (
-                !authResult ||
-                !authResult.user ||
-                !authResult.user.username
-            ) {
-                throw new Error(
-                    "Pi authentication returned no username."
-                );
-            }
-
-            if (!authResult.accessToken) {
-                throw new Error(
-                    "Pi returned no access token."
-                );
-            }
-
-            // Keep token in memory only.
-            currentPiUsername =
-                authResult.user.username;
-
-            currentPiAccessToken =
-                authResult.accessToken;
-
-            // Store username only.
-            sessionStorage.setItem(
-                "pconnect_pi_username",
-                currentPiUsername
-            );
-
-            setPiStatus(
-                "Connected ✔️ " + currentPiUsername
-            );
-
-            console.log(
-                "[PConnect] Authentication successful:",
-                currentPiUsername
-            );
-
-            // Recover queued incomplete payment before
-            // allowing the user to create another payment.
-            if (pendingIncompletePayment) {
-                setPaymentEnabled(false);
-
-                setPayStatus(
-                    "An incomplete Pi payment was found. Recovering it..."
-                );
-
-                await processIncompletePayment(
-                    pendingIncompletePayment
-                );
-            }
-
-            if (pendingIncompletePayment) {
-                setPaymentEnabled(false);
-
-                setPayStatus(
-                    "The previous payment still needs attention. Do not start another payment."
-                );
-            } else {
-                setPaymentEnabled(true);
-
-                setPayStatus(
-                    "Pi connected successfully. You can use the 0.01 π Test-Pi payment if your request is approved."
-                );
-            }
-
-            await refreshPaymentPageData();
-
-        } catch (error) {
-            if (loginTimeout) {
-                clearTimeout(loginTimeout);
-                loginTimeout = null;
-            }
-
-            console.error(
-                "[PConnect] Login failed:",
-                error
-            );
-
-            currentPiUsername = null;
-            currentPiAccessToken = "";
-
-            sessionStorage.removeItem(
-                "pconnect_pi_username"
-            );
-
-            setPaymentEnabled(false);
-
-            setPiStatus(
-                "Login failed: " + getErrorMessage(error)
-            );
+            setPiStatus("Connecting to Pi...");
 
             setPayStatus(
-                timedOut
-                    ? "Pi sign-in did not return a result. Please retry in Pi Browser."
-                    : "Pi login error: " + getErrorMessage(error)
+                "Waiting for Pi authentication..."
             );
 
-        } finally {
-            loginBtn.disabled = false;
+            loginBtn.disabled = true;
+            setPaymentEnabled(false);
+
+            let loginTimeout = null;
+            let timedOut = false;
+
+            try {
+                if (!piSdkReady) {
+                    throw piInitError || new Error(
+                        "Pi SDK did not initialize. Open PConnect in Pi Browser."
+                    );
+                }
+
+                if (
+                    !window.Pi ||
+                    typeof window.Pi.authenticate !== "function"
+                ) {
+                    throw new Error(
+                        "Pi.authenticate is unavailable."
+                    );
+                }
+
+                const scopes = [
+                    "username",
+                    "payments"
+                ];
+
+                const timeoutPromise = new Promise(
+                    function (_, reject) {
+                        loginTimeout = setTimeout(
+                            function () {
+                                timedOut = true;
+
+                                reject(
+                                    new Error(
+                                        "Pi authentication timed out after 15 seconds. Please retry in Pi Browser."
+                                    )
+                                );
+                            },
+                            15000
+                        );
+                    }
+                );
+
+                const authPromise = window.Pi.authenticate(
+                    scopes,
+                    onIncompletePaymentFound
+                );
+
+                const authResult = await Promise.race([
+                    authPromise,
+                    timeoutPromise
+                ]);
+
+                if (loginTimeout) {
+                    clearTimeout(loginTimeout);
+                    loginTimeout = null;
+                }
+
+                if (
+                    !authResult ||
+                    !authResult.user ||
+                    !authResult.user.username
+                ) {
+                    throw new Error(
+                        "Pi authentication returned no username."
+                    );
+                }
+
+                if (!authResult.accessToken) {
+                    throw new Error(
+                        "Pi returned no access token."
+                    );
+                }
+
+                currentPiUsername =
+                    authResult.user.username;
+
+                currentPiAccessToken =
+                    authResult.accessToken;
+
+                sessionStorage.setItem(
+                    "pconnect_pi_username",
+                    currentPiUsername
+                );
+
+                setPiStatus(
+                    "Connected ✔️ " + currentPiUsername
+                );
+
+                console.log(
+                    "[PConnect] Authentication successful:",
+                    currentPiUsername
+                );
+
+                // Recover incomplete payment first.
+                if (pendingIncompletePayment) {
+                    await processIncompletePayment(
+                        pendingIncompletePayment
+                    );
+                }
+
+                if (pendingIncompletePayment) {
+                    setPaymentEnabled(false);
+
+                    setPayStatus(
+                        "The previous payment still needs attention. Do not start another payment."
+                    );
+
+                } else {
+                    setPaymentEnabled(true);
+
+                    setPayStatus(
+                        "Pi connected successfully. You can use the 0.01 π Test-Pi payment if your request is approved."
+                    );
+                }
+
+                // Load dashboard and user data.
+                await refreshPaymentPageData();
+
+            } catch (error) {
+                if (loginTimeout) {
+                    clearTimeout(loginTimeout);
+                    loginTimeout = null;
+                }
+
+                console.error(
+                    "[PConnect] Login failed:",
+                    error
+                );
+
+                currentPiUsername = null;
+                currentPiAccessToken = "";
+
+                sessionStorage.removeItem(
+                    "pconnect_pi_username"
+                );
+
+                setPaymentEnabled(false);
+
+                setPiStatus(
+                    "Login failed: " +
+                    getErrorMessage(error)
+                );
+
+                setPayStatus(
+                    timedOut
+                        ? "Pi sign-in did not return a result. Please retry in Pi Browser."
+                        : "Pi login error: " +
+                          getErrorMessage(error)
+                );
+
+            } finally {
+                loginBtn.disabled = false;
+            }
         }
-    });
+    );
 }
 
 // ==========================================
@@ -580,277 +1107,255 @@ if (loginBtn) {
 // ==========================================
 
 if (payBtn) {
-    payBtn.addEventListener("click", function () {
-        const amount = 0.01;
+    payBtn.addEventListener(
+        "click",
+        function () {
+            const amount = 0.01;
 
-        if (!piSdkReady || !window.Pi) {
-            setPayStatus(
-                "Pi SDK is unavailable. Reload PConnect in Pi Browser."
-            );
-            return;
-        }
+            if (!piSdkReady || !window.Pi) {
+                setPayStatus(
+                    "Pi SDK is unavailable. Reload PConnect in Pi Browser."
+                );
+                return;
+            }
 
-        if (!currentPiUsername || !currentPiAccessToken) {
-            setPayStatus(
-                "Please sign in with Pi first."
-            );
-            return;
-        }
+            if (
+                !currentPiUsername ||
+                !currentPiAccessToken
+            ) {
+                setPayStatus(
+                    "Please sign in with Pi first."
+                );
+                return;
+            }
 
-        if (pendingIncompletePayment) {
-            setPaymentEnabled(false);
+            if (pendingIncompletePayment) {
+                setPaymentEnabled(false);
 
-            setPayStatus(
-                "A previous Pi payment is still pending. Resolve it before starting another payment."
-            );
-            return;
-        }
+                setPayStatus(
+                    "A previous Pi payment is still pending. Resolve it before starting another payment."
+                );
+                return;
+            }
 
-        if (!currentRequestId) {
-            setPayStatus(
-                "No approved request found. Open Payments from My Requests."
-            );
+            if (!currentRequestId) {
+                setPayStatus(
+                    "No approved request found. Open Payments from My Requests."
+                );
+                return;
+            }
 
-            console.error(
-                "[PConnect] Missing request_id."
-            );
+            if (
+                typeof window.Pi.createPayment !== "function"
+            ) {
+                setPayStatus(
+                    "Pi payment service is unavailable."
+                );
+                return;
+            }
 
-            return;
-        }
-
-        if (typeof window.Pi.createPayment !== "function") {
-            setPayStatus(
-                "Pi payment service is unavailable."
-            );
-            return;
-        }
-
-        payBtn.disabled = true;
-
-        if (loginBtn) {
-            loginBtn.disabled = true;
-        }
-
-        setPayStatus(
-            "Processing 0.01 π Test-Pi payment..."
-        );
-
-        console.log(
-            "[PConnect] Starting payment for request:",
-            currentRequestId
-        );
-
-        try {
-            window.Pi.createPayment(
-                {
-                    amount: amount,
-
-                    memo: "Payment for PConnect service",
-
-                    metadata: {
-                        request_id: currentRequestId,
-                        service: currentService,
-                        test: true
-                    }
-                },
-
-                {
-                    // Server approval.
-                    onReadyForServerApproval: async function (paymentId) {
-                        console.log(
-                            "[PConnect] Payment ready for approval:",
-                            paymentId
-                        );
-
-                        try {
-                            const response = await fetch(
-                                "/api/approve",
-                                {
-                                    method: "POST",
-
-                                    headers: piJsonHeaders(),
-
-                                    body: JSON.stringify({
-                                        paymentId: paymentId
-                                    })
-                                }
-                            );
-
-                            const data = await response.json();
-
-                            if (!response.ok) {
-                                throw new Error(
-                                    data.error ||
-                                    "Payment approval failed."
-                                );
-                            }
-
-                            console.log(
-                                "[PConnect] Approval response:",
-                                data
-                            );
-
-                            setPayStatus(
-                                "Payment approved. Waiting for the Pi transaction..."
-                            );
-
-                        } catch (error) {
-                            console.error(
-                                "[PConnect] Approval failed:",
-                                error
-                            );
-
-                            setPayStatus(
-                                "Payment approval failed: " +
-                                getErrorMessage(error)
-                            );
-
-                            payBtn.disabled = false;
-
-                            if (loginBtn) {
-                                loginBtn.disabled = false;
-                            }
-                        }
-                    },
-
-                    // Server completion.
-                    onReadyForServerCompletion: async function (
-                        paymentId,
-                        txid
-                    ) {
-                        console.log(
-                            "[PConnect] Completing payment:",
-                            paymentId,
-                            txid
-                        );
-
-                        setPayStatus(
-                            "Completing payment and saving transaction..."
-                        );
-
-                        try {
-                            const response = await fetch(
-                                "/api/complete",
-                                {
-                                    method: "POST",
-
-                                    headers: piJsonHeaders(),
-
-                                    body: JSON.stringify({
-                                        paymentId: paymentId,
-                                        txid: txid,
-                                        pi_username: currentPiUsername,
-                                        service: currentService,
-                                        request_id: currentRequestId
-                                    })
-                                }
-                            );
-
-                            const data = await response.json();
-
-                            if (!response.ok) {
-                                throw new Error(
-                                    data.error ||
-                                    "Payment completion failed."
-                                );
-                            }
-
-                            console.log(
-                                "[PConnect] Completion response:",
-                                data
-                            );
-
-                            setPayStatus(
-                                "✔️ Payment complete! Request #" +
-                                currentRequestId +
-                                " has been linked to this transaction."
-                            );
-
-                            payBtn.disabled = false;
-
-                            if (loginBtn) {
-                                loginBtn.disabled = false;
-                            }
-
-                            await refreshPaymentPageData();
-
-                        } catch (error) {
-                            console.error(
-                                "[PConnect] Completion failed:",
-                                error
-                            );
-
-                            setPayStatus(
-                                "Payment completion failed: " +
-                                getErrorMessage(error)
-                            );
-
-                            payBtn.disabled = false;
-
-                            if (loginBtn) {
-                                loginBtn.disabled = false;
-                            }
-                        }
-                    },
-
-                    // User cancelled payment.
-                    onCancel: function (paymentId) {
-                        console.log(
-                            "[PConnect] Payment cancelled:",
-                            paymentId
-                        );
-
-                        setPayStatus(
-                            "Payment cancelled."
-                        );
-
-                        payBtn.disabled = false;
-
-                        if (loginBtn) {
-                            loginBtn.disabled = false;
-                        }
-                    },
-
-                    // Payment error.
-                    onError: function (error, payment) {
-                        console.error(
-                            "[PConnect] Payment error:",
-                            error,
-                            payment
-                        );
-
-                        setPayStatus(
-                            "Payment error: " +
-                            getErrorMessage(error)
-                        );
-
-                        payBtn.disabled = false;
-
-                        if (loginBtn) {
-                            loginBtn.disabled = false;
-                        }
-                    }
-                }
-            );
-
-        } catch (error) {
-            console.error(
-                "[PConnect] Could not start payment:",
-                error
-            );
-
-            setPayStatus(
-                "Could not start payment: " +
-                getErrorMessage(error)
-            );
-
-            payBtn.disabled = false;
+            payBtn.disabled = true;
 
             if (loginBtn) {
-                loginBtn.disabled = false;
+                loginBtn.disabled = true;
+            }
+
+            setPayStatus(
+                "Processing 0.01 π Test-Pi payment..."
+            );
+
+            try {
+                window.Pi.createPayment(
+                    {
+                        amount: amount,
+
+                        memo: "Payment for PConnect service",
+
+                        metadata: {
+                            request_id: currentRequestId,
+                            service: currentService,
+                            test: true
+                        }
+                    },
+
+                    {
+                        // SERVER APPROVAL
+                        onReadyForServerApproval:
+                            async function (paymentId) {
+                                try {
+                                    const response = await fetch(
+                                        "/api/approve",
+                                        {
+                                            method: "POST",
+
+                                            headers: piJsonHeaders(),
+
+                                            body: JSON.stringify({
+                                                paymentId: paymentId
+                                            })
+                                        }
+                                    );
+
+                                    const data =
+                                        await response.json();
+
+                                    if (!response.ok) {
+                                        throw new Error(
+                                            data.error ||
+                                            "Payment approval failed."
+                                        );
+                                    }
+
+                                    setPayStatus(
+                                        "Payment approved. Waiting for the Pi transaction..."
+                                    );
+
+                                } catch (error) {
+                                    console.error(
+                                        "[PConnect] Approval failed:",
+                                        error
+                                    );
+
+                                    setPayStatus(
+                                        "Payment approval failed: " +
+                                        getErrorMessage(error)
+                                    );
+
+                                    payBtn.disabled = false;
+
+                                    if (loginBtn) {
+                                        loginBtn.disabled = false;
+                                    }
+                                }
+                            },
+
+                        // SERVER COMPLETION
+                        onReadyForServerCompletion:
+                            async function (paymentId, txid) {
+                                setPayStatus(
+                                    "Completing payment and saving transaction..."
+                                );
+
+                                try {
+                                    const response = await fetch(
+                                        "/api/complete",
+                                        {
+                                            method: "POST",
+
+                                            headers: piJsonHeaders(),
+
+                                            body: JSON.stringify({
+                                                paymentId: paymentId,
+                                                txid: txid,
+                                                pi_username: currentPiUsername,
+                                                service: currentService,
+                                                request_id: currentRequestId
+                                            })
+                                        }
+                                    );
+
+                                    const data =
+                                        await response.json();
+
+                                    if (!response.ok) {
+                                        throw new Error(
+                                            data.error ||
+                                            "Payment completion failed."
+                                        );
+                                    }
+
+                                    setPayStatus(
+                                        "✔️ Payment complete! Request #" +
+                                        currentRequestId +
+                                        " has been linked to this transaction."
+                                    );
+
+                                    payBtn.disabled = false;
+
+                                    if (loginBtn) {
+                                        loginBtn.disabled = false;
+                                    }
+
+                                    await refreshPaymentPageData();
+
+                                } catch (error) {
+                                    console.error(
+                                        "[PConnect] Completion failed:",
+                                        error
+                                    );
+
+                                    setPayStatus(
+                                        "Payment completion failed: " +
+                                        getErrorMessage(error)
+                                    );
+
+                                    payBtn.disabled = false;
+
+                                    if (loginBtn) {
+                                        loginBtn.disabled = false;
+                                    }
+                                }
+                            },
+
+                        // USER CANCELLED
+                        onCancel: function (paymentId) {
+                            console.log(
+                                "[PConnect] Payment cancelled:",
+                                paymentId
+                            );
+
+                            setPayStatus(
+                                "Payment cancelled."
+                            );
+
+                            payBtn.disabled = false;
+
+                            if (loginBtn) {
+                                loginBtn.disabled = false;
+                            }
+                        },
+
+                        // PAYMENT ERROR
+                        onError: function (error, payment) {
+                            console.error(
+                                "[PConnect] Payment error:",
+                                error,
+                                payment
+                            );
+
+                            setPayStatus(
+                                "Payment error: " +
+                                getErrorMessage(error)
+                            );
+
+                            payBtn.disabled = false;
+
+                            if (loginBtn) {
+                                loginBtn.disabled = false;
+                            }
+                        }
+                    }
+                );
+
+            } catch (error) {
+                console.error(
+                    "[PConnect] Could not start payment:",
+                    error
+                );
+
+                setPayStatus(
+                    "Could not start payment: " +
+                    getErrorMessage(error)
+                );
+
+                payBtn.disabled = false;
+
+                if (loginBtn) {
+                    loginBtn.disabled = false;
+                }
             }
         }
-    });
+    );
 }
 
 // ==========================================
