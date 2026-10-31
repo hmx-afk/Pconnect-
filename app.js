@@ -4,6 +4,7 @@
 // Request Validation
 // Dashboard + Notifications + Transactions
 // Incomplete Payment Recovery
+// Improved Payment State Management
 // ==========================================
 
 "use strict";
@@ -24,9 +25,7 @@ let piSdkReady = false;
 let piInitError = null;
 
 try {
-    if (
-        typeof window.Pi === "undefined"
-    ) {
+    if (typeof window.Pi === "undefined") {
         throw new Error(
             "Pi SDK is unavailable. Open PConnect inside Pi Browser."
         );
@@ -39,9 +38,7 @@ try {
 
     piSdkReady = true;
 
-    console.log(
-        "[PConnect] Pi SDK initialized."
-    );
+    console.log("[PConnect] Pi SDK initialized.");
 
 } catch (error) {
     piInitError = error;
@@ -84,6 +81,10 @@ let cachedTransactions = [];
 let cachedNotifications = [];
 
 let transactionsLoaded = false;
+
+// Prevent late authentication results from
+// overwriting a newer authentication attempt.
+let authAttemptId = 0;
 
 // ==========================================
 // REQUEST ID
@@ -180,6 +181,13 @@ function setPaymentEnabled(enabled) {
     }
 }
 
+function normalizeStatus(value) {
+
+    return String(value || "")
+        .trim()
+        .toLowerCase();
+}
+
 function updatePaymentButton() {
 
     const canPay =
@@ -187,14 +195,33 @@ function updatePaymentButton() {
         Boolean(currentPiAccessToken) &&
         Boolean(currentRequestId) &&
         Boolean(currentRequest) &&
-        currentRequest.review_status === "Approved" &&
-        currentRequest.order_status === "Pending" &&
+        normalizeStatus(
+            currentRequest.review_status
+        ) === "approved" &&
+        normalizeStatus(
+            currentRequest.order_status
+        ) === "pending" &&
         !paymentInProgress &&
         !paymentLocked &&
         !pendingIncompletePayment &&
         !processingIncompletePayment;
 
     setPaymentEnabled(canPay);
+}
+
+// ==========================================
+// PAYMENT STATE RESET
+// ==========================================
+
+function releasePaymentProgress() {
+
+    paymentInProgress = false;
+
+    if (loginBtn) {
+        loginBtn.disabled = false;
+    }
+
+    updatePaymentButton();
 }
 
 // ==========================================
@@ -489,12 +516,12 @@ async function validatePaymentRequest() {
     }
 
     if (
-        String(request.review_status || "")
-            .trim()
-            .toLowerCase() !== "approved"
+        normalizeStatus(request.review_status) !==
+        "approved"
     ) {
 
         currentRequest = null;
+        currentService = null;
 
         updatePaymentButton();
 
@@ -504,12 +531,12 @@ async function validatePaymentRequest() {
     }
 
     if (
-        String(request.order_status || "")
-            .trim()
-            .toLowerCase() !== "pending"
+        normalizeStatus(request.order_status) !==
+        "pending"
     ) {
 
         currentRequest = null;
+        currentService = null;
 
         updatePaymentButton();
 
@@ -527,6 +554,7 @@ async function validatePaymentRequest() {
     if (!currentService) {
 
         currentRequest = null;
+        currentService = null;
 
         updatePaymentButton();
 
@@ -564,9 +592,9 @@ window.loadTransactions = async function () {
         cachedTransactions.filter(
             function (transaction) {
 
-                return String(
-                    transaction.status || ""
-                ).trim().toLowerCase() === "completed";
+                return normalizeStatus(
+                    transaction.status
+                ) === "completed";
             }
         ).length;
 
@@ -732,9 +760,9 @@ window.loadDashboard = async function () {
     const waiting = cachedRequests.filter(
         function (request) {
 
-            const value = String(
-                request.review_status || ""
-            ).trim().toLowerCase();
+            const value = normalizeStatus(
+                request.review_status
+            );
 
             return (
                 value === "waiting for review" ||
@@ -746,18 +774,18 @@ window.loadDashboard = async function () {
     const approved = cachedRequests.filter(
         function (request) {
 
-            return String(
-                request.review_status || ""
-            ).trim().toLowerCase() === "approved";
+            return normalizeStatus(
+                request.review_status
+            ) === "approved";
         }
     ).length;
 
     const rejected = cachedRequests.filter(
         function (request) {
 
-            return String(
-                request.review_status || ""
-            ).trim().toLowerCase() === "rejected";
+            return normalizeStatus(
+                request.review_status
+            ) === "rejected";
         }
     ).length;
 
@@ -853,9 +881,9 @@ window.loadDashboard = async function () {
             cachedTransactions.filter(
                 function (transaction) {
 
-                    return String(
-                        transaction.status || ""
-                    ).trim().toLowerCase() === "completed";
+                    return normalizeStatus(
+                        transaction.status
+                    ) === "completed";
                 }
             ).length;
 
@@ -1140,7 +1168,7 @@ function onIncompletePaymentFound(payment) {
         setPaymentEnabled(false);
 
         setPayStatus(
-            "An incomplete payment needs attention. Do not start another payment."
+            "Another incomplete payment needs attention. Do not start a new payment."
         );
 
         return;
@@ -1247,6 +1275,12 @@ async function processIncompletePayment(payment) {
 
         processingIncompletePayment = false;
 
+        paymentInProgress = false;
+
+        if (loginBtn) {
+            loginBtn.disabled = false;
+        }
+
         updatePaymentButton();
     }
 }
@@ -1269,6 +1303,8 @@ if (loginBtn) {
             }
 
             loginInProgress = true;
+
+            const thisAttempt = ++authAttemptId;
 
             loginBtn.disabled = true;
             setPaymentEnabled(false);
@@ -1341,6 +1377,10 @@ if (loginBtn) {
                     authPromise,
                     timeoutPromise
                 ]);
+
+                if (thisAttempt !== authAttemptId) {
+                    return;
+                }
 
                 clearTimeout(loginTimeout);
                 loginTimeout = null;
@@ -1455,7 +1495,9 @@ if (loginBtn) {
 
                 loginInProgress = false;
 
-                loginBtn.disabled = false;
+                if (loginBtn) {
+                    loginBtn.disabled = false;
+                }
 
                 updatePaymentButton();
             }
@@ -1598,7 +1640,12 @@ if (payBtn) {
                                         error
                                     );
 
+                                    // Do not permit another payment.
+                                    // The current payment needs checking.
+
                                     paymentLocked = true;
+
+                                    releasePaymentProgress();
 
                                     setPayStatus(
                                         "Approval failed: " +
@@ -1651,7 +1698,9 @@ if (payBtn) {
                                     await refreshPaymentPageData();
 
                                     // Request has been paid.
+
                                     currentRequest = null;
+                                    currentService = null;
 
                                 } catch (error) {
 
@@ -1660,6 +1709,8 @@ if (payBtn) {
                                         error
                                     );
 
+                                    // Keep locked until payment is checked.
+
                                     paymentLocked = true;
 
                                     setPayStatus(
@@ -1667,6 +1718,10 @@ if (payBtn) {
                                         getErrorMessage(error) +
                                         ". Do not pay again."
                                     );
+
+                                } finally {
+
+                                    releasePaymentProgress();
                                 }
                             },
 
@@ -1679,18 +1734,14 @@ if (payBtn) {
                                 paymentId
                             );
 
-                            paymentInProgress = false;
                             paymentLocked = false;
+                            pendingIncompletePayment = null;
 
                             setPayStatus(
                                 "Payment cancelled."
                             );
 
-                            updatePaymentButton();
-
-                            if (loginBtn) {
-                                loginBtn.disabled = false;
-                            }
+                            releasePaymentProgress();
                         },
 
                         // PAYMENT ERROR
@@ -1706,12 +1757,10 @@ if (payBtn) {
                                 payment
                             );
 
-                            // Keep locked because payment
-                            // state may need verification.
+                            // Keep locked because the payment
+                            // state may need server verification.
 
                             paymentLocked = true;
-
-                            setPaymentEnabled(false);
 
                             setPayStatus(
                                 "Payment error: " +
@@ -1719,9 +1768,7 @@ if (payBtn) {
                                 ". Check payment status before retrying."
                             );
 
-                            if (loginBtn) {
-                                loginBtn.disabled = false;
-                            }
+                            releasePaymentProgress();
                         }
                     }
                 );
@@ -1733,18 +1780,13 @@ if (payBtn) {
                     error
                 );
 
-                paymentInProgress = false;
                 paymentLocked = false;
 
                 setPayStatus(
                     getErrorMessage(error)
                 );
 
-                updatePaymentButton();
-
-                if (loginBtn) {
-                    loginBtn.disabled = false;
-                }
+                releasePaymentProgress();
             }
         }
     );
