@@ -1,60 +1,161 @@
 // ==========================================
 // PConnect - Secure Transaction History API
 // Server-Side Pi Identity Verification
+// Supabase Timeout + Security Protection
+// ==========================================
+
+"use strict";
+
+import { createClient } from "@supabase/supabase-js";
+
+const PI_API_URL = "https://api.minepi.com/v2/me";
+
+const PI_TIMEOUT = 10000;
+const SUPABASE_TIMEOUT = 10000;
+const MAX_TRANSACTIONS = 100;
+
+// ==========================================
+// RESPONSE HELPER
+// ==========================================
+
+function send(res, status, data) {
+    return res.status(status).json(data);
+}
+
+// ==========================================
+// VERIFY PI TOKEN
 // ==========================================
 
 async function verifyPiToken(accessToken) {
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
+
+    const timer = setTimeout(
+        () => controller.abort(),
+        PI_TIMEOUT
+    );
 
     try {
 
         const response = await fetch(
-            "https://api.minepi.com/v2/me",
+            PI_API_URL,
             {
                 method: "GET",
                 headers: {
-                    Authorization: `Bearer ${accessToken}`
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: "application/json"
                 },
                 signal: controller.signal
             }
         );
 
         if (!response.ok) {
-            return null;
+            return {
+                success: false
+            };
         }
 
-        const me = await response.json();
+        const user = await response.json();
 
-        if (!me || !me.username) {
-            return null;
+        if (
+            !user ||
+            typeof user !== "object" ||
+            Array.isArray(user)
+        ) {
+            return {
+                success: false
+            };
         }
 
-        return String(me.username).trim();
+        const uid =
+            typeof user.uid === "string"
+                ? user.uid.trim()
+                : "";
+
+        const username =
+            typeof user.username === "string"
+                ? user.username.trim()
+                : "";
+
+        if (
+            !uid ||
+            uid.length > 200 ||
+            !username ||
+            username.length > 50 ||
+            !/^[a-zA-Z0-9._-]+$/.test(username)
+        ) {
+            return {
+                success: false
+            };
+        }
+
+        return {
+            success: true,
+            uid,
+            username
+        };
 
     } catch (error) {
 
+        if (error.name === "AbortError") {
+            return {
+                success: false,
+                timeout: true
+            };
+        }
+
         console.error(
-            "Pi token verification error:",
+            "Pi verification error:",
             error.message
         );
 
-        return null;
+        return {
+            success: false,
+            serverError: true
+        };
 
     } finally {
 
         clearTimeout(timer);
 
     }
-
 }
 
+// ==========================================
+// VALIDATE SUPABASE URL
+// ==========================================
+
+function validSupabaseUrl(url) {
+
+    try {
+
+        const parsed = new URL(url);
+
+        return (
+            parsed.protocol === "https:" &&
+            /^[a-z0-9-]+\.supabase\.co$/i.test(
+                parsed.hostname
+            )
+        );
+
+    } catch {
+        return false;
+    }
+}
+
+// ==========================================
+// MAIN API HANDLER
+// ==========================================
 
 export default async function handler(req, res) {
 
-    res.setHeader("Cache-Control", "no-store");
+    // ==========================================
+    // SECURITY HEADERS
+    // ==========================================
 
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Vary", "Authorization");
 
     // ==========================================
     // ONLY GET
@@ -62,135 +163,236 @@ export default async function handler(req, res) {
 
     if (req.method !== "GET") {
 
-        return res.status(405).json({
+        res.setHeader("Allow", "GET");
+
+        return send(res, 405, {
             success: false,
             error: "Method not allowed"
         });
-
     }
-
 
     try {
 
         // ==========================================
-        // SUPABASE CONFIG
+        // ENVIRONMENT VARIABLES
         // ==========================================
 
-        const supabaseUrl = process.env.SUPABASE_URL;
-        const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
+        const supabaseUrl =
+            process.env.SUPABASE_URL;
 
-        if (!supabaseUrl || !supabaseSecretKey) {
+        const supabaseSecretKey =
+            process.env.SUPABASE_SECRET_KEY;
 
-            console.error("Missing Supabase environment variables");
+        if (
+            !supabaseUrl ||
+            !supabaseSecretKey
+        ) {
 
-            return res.status(500).json({
+            console.error(
+                "Missing Supabase environment variables"
+            );
+
+            return send(res, 500, {
                 success: false,
                 error: "Server configuration error"
             });
-
         }
 
+        // ==========================================
+        // VALIDATE SUPABASE URL
+        // ==========================================
+
+        if (!validSupabaseUrl(supabaseUrl)) {
+
+            console.error(
+                "Invalid Supabase URL configuration"
+            );
+
+            return send(res, 500, {
+                success: false,
+                error: "Server configuration error"
+            });
+        }
 
         // ==========================================
-        // REQUIRE PI ACCESS TOKEN
+        // READ AUTHORIZATION HEADER
         // ==========================================
 
-        const authorization = String(req.headers.authorization || "");
+        const authorization =
+            typeof req.headers.authorization === "string"
+                ? req.headers.authorization
+                : "";
 
-        const match = authorization.match(/^Bearer\s+(.+)$/i);
+        const match =
+            authorization.match(/^Bearer\s+(.+)$/i);
 
-        const accessToken = match ? match[1].trim() : "";
+        const accessToken =
+            match ? match[1].trim() : "";
 
-        if (!accessToken) {
+        // ==========================================
+        // VALIDATE ACCESS TOKEN
+        // ==========================================
 
-            return res.status(401).json({
+        if (
+            !accessToken ||
+            accessToken.length < 20 ||
+            accessToken.length > 4096
+        ) {
+
+            return send(res, 401, {
                 success: false,
                 error: "Pi authentication required"
             });
-
         }
 
-
         // ==========================================
-        // VERIFY IDENTITY WITH PI SERVER
-        // The username from the URL is never trusted.
+        // VERIFY PI IDENTITY
         // ==========================================
 
-        const verifiedUsername = await verifyPiToken(accessToken);
+        const verifiedUser =
+            await verifyPiToken(accessToken);
 
-        if (!verifiedUsername) {
+        if (verifiedUser.timeout) {
 
-            return res.status(401).json({
+            return send(res, 504, {
+                success: false,
+                error: "Pi verification timed out. Please try again."
+            });
+        }
+
+        if (verifiedUser.serverError) {
+
+            return send(res, 502, {
+                success: false,
+                error: "Unable to verify Pi identity"
+            });
+        }
+
+        if (!verifiedUser.success) {
+
+            return send(res, 401, {
                 success: false,
                 error: "Invalid Pi authentication"
             });
-
         }
 
+        const piUsername =
+            verifiedUser.username;
 
         // ==========================================
-        // FETCH ONLY THIS VERIFIED USER'S TRANSACTIONS
+        // CREATE SUPABASE CLIENT
         // ==========================================
 
-        const encodedUsername = encodeURIComponent(verifiedUsername);
-
-        const response = await fetch(
-            `${supabaseUrl}/rest/v1/transactions?select=request_id,amount,currency,status,service,pi_username,created_at&pi_username=eq.${encodedUsername}&order=created_at.desc&limit=100`,
+        const supabase = createClient(
+            supabaseUrl,
+            supabaseSecretKey,
             {
-                headers: {
-                    apikey: supabaseSecretKey,
-                    Authorization: `Bearer ${supabaseSecretKey}`
+                auth: {
+                    persistSession: false,
+                    autoRefreshToken: false,
+                    detectSessionInUrl: false
                 }
             }
         );
 
-
         // ==========================================
-        // SUPABASE ERROR
+        // SUPABASE QUERY TIMEOUT
         // ==========================================
 
-        if (!response.ok) {
+        const controller = new AbortController();
 
-            const errorText = await response.text();
+        const timer = setTimeout(
+            () => controller.abort(),
+            SUPABASE_TIMEOUT
+        );
 
-            console.error(
-                "Supabase transaction fetch error:",
-                errorText
-            );
+        let result;
 
-            return res.status(500).json({
-                success: false,
-                error: "Failed to fetch transactions"
-            });
+        try {
+
+            result = await supabase
+                .from("transactions")
+                .select([
+                    "request_id",
+                    "amount",
+                    "currency",
+                    "status",
+                    "service",
+                    "pi_username",
+                    "created_at"
+                ].join(","))
+                .eq("pi_username", piUsername)
+                .order("created_at", {
+                    ascending: false
+                })
+                .limit(MAX_TRANSACTIONS)
+                .abortSignal(controller.signal);
+
+        } finally {
+
+            clearTimeout(timer);
 
         }
 
+        const { data, error } = result;
 
         // ==========================================
-        // RESPONSE
+        // HANDLE SUPABASE ERROR
         // ==========================================
 
-        const transactions = await response.json();
+        if (error) {
 
-        return res.status(200).json({
+            console.error(
+                "Supabase transactions error:",
+                error.message
+            );
+
+            const timedOut =
+                error.name === "AbortError" ||
+                /abort|timeout/i.test(
+                    error.message || ""
+                );
+
+            return send(
+                res,
+                timedOut ? 504 : 500,
+                {
+                    success: false,
+                    error: timedOut
+                        ? "Transaction loading timed out. Please try again."
+                        : "Failed to load transactions"
+                }
+            );
+        }
+
+        // ==========================================
+        // SUCCESS
+        // ==========================================
+
+        return send(res, 200, {
+
             success: true,
+
             user: {
-                username: verifiedUsername
+                username: piUsername
             },
-            transactions: Array.isArray(transactions)
-                ? transactions
+
+            transactions: Array.isArray(data)
+                ? data
                 : []
+
         });
 
     } catch (error) {
 
-        console.error("Transaction API error:", error);
+        console.error(
+            "Transactions API error:",
+            error.message
+        );
 
-        return res.status(500).json({
+        return send(res, 500, {
             success: false,
             error: "Internal server error"
         });
-
     }
-
 }
