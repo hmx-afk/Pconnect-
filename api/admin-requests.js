@@ -1,170 +1,384 @@
 // ==========================================
 // PConnect - Secure Admin Requests API
-// Security Hardened Version
+// Admin Authentication
+// Supabase REST API
+// Testnet
 // ==========================================
 
 import crypto from "crypto";
 
-function setSecurityHeaders(res) {
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("X-Content-Type-Options", "nosniff");
+const REQUEST_TIMEOUT = 10000;
+const MAX_REQUESTS = 100;
+
+
+/* ==========================================
+   RESPONSE HELPER
+========================================== */
+
+function send(res, status, data) {
+
+    return res.status(status).json(data);
+
 }
 
-function isAdmin(req) {
-    const suppliedKey = String(
-        req.headers["x-admin-key"] || ""
+
+/* ==========================================
+   SECURITY HEADERS
+========================================== */
+
+function setSecurityHeaders(res) {
+
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+
+    res.setHeader(
+        "X-Content-Type-Options",
+        "nosniff"
     );
 
-    const correctKey = String(
-        process.env.ADMIN_REVIEW_KEY || ""
+    res.setHeader(
+        "Vary",
+        "x-admin-key"
     );
 
-    if (!suppliedKey || !correctKey) {
+}
+
+
+/* ==========================================
+   ADMIN KEY VERIFICATION
+========================================== */
+
+function verifyAdminKey(providedKey, expectedKey) {
+
+    if (
+        typeof providedKey !== "string" ||
+        typeof expectedKey !== "string"
+    ) {
         return false;
     }
 
-    const suppliedBuffer = Buffer.from(suppliedKey, "utf8");
-    const correctBuffer = Buffer.from(correctKey, "utf8");
+    if (
+        !providedKey ||
+        !expectedKey ||
+        providedKey.length > 4096 ||
+        expectedKey.length > 4096
+    ) {
+        return false;
+    }
 
-    if (suppliedBuffer.length !== correctBuffer.length) {
+    const providedBuffer =
+        Buffer.from(providedKey, "utf8");
+
+    const expectedBuffer =
+        Buffer.from(expectedKey, "utf8");
+
+    if (
+        providedBuffer.length !==
+        expectedBuffer.length
+    ) {
         return false;
     }
 
     return crypto.timingSafeEqual(
-        suppliedBuffer,
-        correctBuffer
+        providedBuffer,
+        expectedBuffer
     );
+
 }
 
-export default async function handler(req, res) {
-    setSecurityHeaders(res);
 
-    // GET requests only
-    if (req.method !== "GET") {
-        res.setHeader("Allow", "GET");
+/* ==========================================
+   SUPABASE URL VALIDATION
+========================================== */
 
-        return res.status(405).json({
-            success: false,
-            error: "Method not allowed"
-        });
+function getSupabaseUrl(value) {
+
+    if (
+        typeof value !== "string" ||
+        !value.trim()
+    ) {
+        return null;
     }
 
-    // Authenticate admin
-    if (!process.env.ADMIN_REVIEW_KEY) {
-        console.error("Missing ADMIN_REVIEW_KEY");
-
-        return res.status(500).json({
-            success: false,
-            error: "Admin authentication is not configured"
-        });
-    }
-
-    if (!isAdmin(req)) {
-        return res.status(401).json({
-            success: false,
-            error: "Unauthorized"
-        });
-    }
-
-    // Validate Supabase configuration
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseSecretKey =
-        process.env.SUPABASE_SECRET_KEY;
-
-    if (!supabaseUrl || !supabaseSecretKey) {
-        console.error(
-            "Missing Supabase environment variables"
-        );
-
-        return res.status(500).json({
-            success: false,
-            error: "Server configuration error"
-        });
-    }
-
-    // Fetch requests with a timeout
     try {
-        const controller = new AbortController();
 
-        const timeout = setTimeout(() => {
-            controller.abort();
-        }, 8000);
+        const url = new URL(value);
 
-        let response;
-
-        try {
-            response = await fetch(
-                `${supabaseUrl}/rest/v1/requests?select=*&order=created_at.desc`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "apikey": supabaseSecretKey,
-                        "Authorization":
-                            `Bearer ${supabaseSecretKey}`
-                    },
-                    signal: controller.signal
-                }
-            );
-        } finally {
-            clearTimeout(timeout);
+        if (
+            url.protocol !== "https:" ||
+            !/^[a-z0-9-]+\.supabase\.co$/i.test(
+                url.hostname
+            ) ||
+            url.port ||
+            url.pathname !== "/" ||
+            url.search ||
+            url.hash ||
+            url.username ||
+            url.password
+        ) {
+            return null;
         }
 
+        return url.origin;
+
+    } catch {
+
+        return null;
+
+    }
+
+}
+
+
+/* ==========================================
+   MAIN HANDLER
+========================================== */
+
+export default async function handler(req, res) {
+
+    setSecurityHeaders(res);
+
+    /* METHOD CHECK */
+
+    if (req.method !== "GET") {
+
+        res.setHeader("Allow", "GET");
+
+        return send(res, 405, {
+            success: false,
+            error: "Method not allowed."
+        });
+
+    }
+
+
+    /* ENVIRONMENT VARIABLES */
+
+    const adminSecret =
+        process.env.ADMIN_REVIEW_KEY;
+
+    const supabaseUrl =
+        getSupabaseUrl(
+            process.env.SUPABASE_URL
+        );
+
+    const supabaseSecret =
+        process.env.SUPABASE_SECRET_KEY;
+
+
+    if (
+        !adminSecret ||
+        typeof adminSecret !== "string"
+    ) {
+
+        console.error(
+            "Admin authentication configuration missing."
+        );
+
+        return send(res, 500, {
+            success: false,
+            error: "Server configuration error."
+        });
+
+    }
+
+
+    /* ADMIN AUTHENTICATION */
+
+    const providedKey =
+        req.headers["x-admin-key"];
+
+    if (
+        !verifyAdminKey(
+            providedKey,
+            adminSecret
+        )
+    ) {
+
+        return send(res, 401, {
+            success: false,
+            error: "Unauthorized admin access."
+        });
+
+    }
+
+
+    /* SUPABASE CONFIGURATION */
+
+    if (
+        !supabaseUrl ||
+        typeof supabaseSecret !== "string" ||
+        !supabaseSecret.trim()
+    ) {
+
+        console.error(
+            "Supabase configuration missing or invalid."
+        );
+
+        return send(res, 500, {
+            success: false,
+            error: "Server configuration error."
+        });
+
+    }
+
+
+    /* ======================================
+       FETCH REQUESTS
+    ====================================== */
+
+    const controller =
+        new AbortController();
+
+    const timer = setTimeout(
+        () => controller.abort(),
+        REQUEST_TIMEOUT
+    );
+
+    try {
+
+        const query = new URLSearchParams({
+
+            select: [
+                "id",
+                "service",
+                "name",
+                "contact",
+                "details",
+                "payment",
+                "status",
+                "review_status",
+                "order_status",
+                "pi_username",
+                "created_at"
+            ].join(","),
+
+            order: "created_at.desc",
+
+            limit: String(MAX_REQUESTS)
+
+        });
+
+
+        const endpoint =
+            `${supabaseUrl}/rest/v1/requests?${query.toString()}`;
+
+
+        const response = await fetch(
+            endpoint,
+            {
+                method: "GET",
+
+                headers: {
+
+                    "apikey": supabaseSecret,
+
+                    "Authorization":
+                        `Bearer ${supabaseSecret}`,
+
+                    "Accept": "application/json"
+
+                },
+
+                signal: controller.signal
+
+            }
+        );
+
+
+        /* READ RESPONSE */
+
+        const responseText =
+            await response.text();
+
+
         if (!response.ok) {
+
             console.error(
-                "Supabase admin requests returned status:",
+                "Admin requests database error:",
                 response.status
             );
 
-            return res.status(502).json({
+            return send(res, 502, {
                 success: false,
-                error: "Failed to load requests"
+                error: "Unable to load requests."
             });
+
         }
 
-        let data;
+
+        /* PARSE JSON */
+
+        let requests;
 
         try {
-            data = await response.json();
-        } catch (error) {
+
+            requests = JSON.parse(responseText);
+
+        } catch {
+
             console.error(
-                "Invalid Supabase JSON response"
+                "Invalid Supabase response."
             );
 
-            return res.status(502).json({
+            return send(res, 502, {
                 success: false,
-                error: "Invalid response from database"
+                error: "Invalid database response."
             });
+
         }
 
-        if (!Array.isArray(data)) {
-            console.error(
-                "Unexpected Supabase requests response"
-            );
 
-            return res.status(502).json({
+        /* VALIDATE DATA */
+
+        if (!Array.isArray(requests)) {
+
+            return send(res, 502, {
                 success: false,
-                error: "Invalid response from database"
+                error: "Invalid requests data."
             });
+
         }
 
-        return res.status(200).json({
+
+        /* SUCCESS */
+
+        return send(res, 200, {
+
             success: true,
-            requests: data
+
+            count: requests.length,
+
+            requests: requests
+
         });
+
 
     } catch (error) {
+
+        if (error.name === "AbortError") {
+
+            return send(res, 504, {
+                success: false,
+                error: "Request timed out. Please try again."
+            });
+
+        }
+
         console.error(
             "Admin requests API error:",
-            error.name || "UnknownError"
+            error.message
         );
 
-        return res.status(500).json({
+        return send(res, 500, {
             success: false,
-            error: error.name === "AbortError"
-                ? "Database request timed out"
-                : "Internal server error"
+            error: "Internal server error."
         });
+
+    } finally {
+
+        clearTimeout(timer);
+
     }
+
 }
