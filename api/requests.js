@@ -1,45 +1,207 @@
+// ==========================================
+// PConnect - Secure User Requests API
+// Server-Side Pi Identity Verification
+// Supabase Timeout + Request Protection
+// ==========================================
+
 import { createClient } from "@supabase/supabase-js";
 
+"use strict";
+
+const PI_API_URL = "https://api.minepi.com/v2/me";
+
+const PI_TIMEOUT = 10000;
+const SUPABASE_TIMEOUT = 10000;
+const MAX_REQUESTS = 100;
+
+// ==========================================
+// RESPONSE HELPER
+// ==========================================
+
+function send(res, status, data) {
+    return res.status(status).json(data);
+}
+
+// ==========================================
+// VERIFY PI TOKEN
+// ==========================================
+
 async function verifyPiToken(accessToken) {
+
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
+
+    const timer = setTimeout(
+        () => controller.abort(),
+        PI_TIMEOUT
+    );
 
     try {
-        const response = await fetch("https://api.minepi.com/v2/me", {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${accessToken}`
-            },
-            signal: controller.signal
-        });
+
+        const response = await fetch(
+            PI_API_URL,
+            {
+                method: "GET",
+
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: "application/json"
+                },
+
+                signal: controller.signal
+            }
+        );
 
         if (!response.ok) {
-            return null;
+            return {
+                success: false,
+                timeout: false
+            };
         }
 
-        const me = await response.json();
+        const user = await response.json();
 
-        if (!me || !me.username) {
-            return null;
+        if (
+            !user ||
+            typeof user !== "object" ||
+            Array.isArray(user)
+        ) {
+            return {
+                success: false,
+                timeout: false
+            };
         }
 
-        return String(me.username).trim();
+        const uid =
+            typeof user.uid === "string"
+                ? user.uid.trim()
+                : "";
 
-    } catch (err) {
-        console.error("Pi token verification error:", err.message);
-        return null;
+        const username =
+            typeof user.username === "string"
+                ? user.username.trim()
+                : "";
+
+        if (
+            !uid ||
+            uid.length > 200 ||
+            !username ||
+            username.length > 50 ||
+            !/^[a-zA-Z0-9._-]+$/.test(username)
+        ) {
+            return {
+                success: false,
+                timeout: false
+            };
+        }
+
+        return {
+            success: true,
+            uid,
+            username
+        };
+
+    } catch (error) {
+
+        if (error.name === "AbortError") {
+            return {
+                success: false,
+                timeout: true
+            };
+        }
+
+        console.error(
+            "Pi token verification error:",
+            error.message
+        );
+
+        return {
+            success: false,
+            timeout: false,
+            serverError: true
+        };
 
     } finally {
+
         clearTimeout(timer);
+
     }
 }
 
+// ==========================================
+// SUPABASE URL VALIDATION
+// ==========================================
+
+function validSupabaseUrl(url) {
+
+    try {
+
+        const parsed = new URL(url);
+
+        return (
+            parsed.protocol === "https:" &&
+            /^[a-z0-9-]+\.supabase\.co$/i.test(
+                parsed.hostname
+            )
+        );
+
+    } catch {
+        return false;
+    }
+}
+
+// ==========================================
+// SUPABASE FETCH TIMEOUT
+// ==========================================
+
+async function fetchWithTimeout(url, options = {}) {
+
+    const controller = new AbortController();
+
+    const timer = setTimeout(
+        () => controller.abort(),
+        SUPABASE_TIMEOUT
+    );
+
+    try {
+
+        return await fetch(
+            url,
+            {
+                ...options,
+                signal: controller.signal
+            }
+        );
+
+    } finally {
+
+        clearTimeout(timer);
+
+    }
+}
+
+// ==========================================
+// MAIN API HANDLER
+// ==========================================
+
 export default async function handler(req, res) {
 
+    // ==========================================
+    // SECURITY HEADERS
+    // ==========================================
+
     res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Vary", "Authorization");
+
+    // ==========================================
+    // ONLY GET
+    // ==========================================
 
     if (req.method !== "GET") {
-        return res.status(405).json({
+
+        res.setHeader("Allow", "GET");
+
+        return send(res, 405, {
             success: false,
             error: "Method not allowed"
         });
@@ -47,43 +209,133 @@ export default async function handler(req, res) {
 
     try {
 
-        const supabaseUrl = process.env.SUPABASE_URL;
-        const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
+        // ==========================================
+        // ENVIRONMENT VARIABLES
+        // ==========================================
 
-        if (!supabaseUrl || !supabaseSecretKey) {
-            console.error("Missing Supabase environment variables");
+        const supabaseUrl =
+            process.env.SUPABASE_URL;
 
-            return res.status(500).json({
+        const supabaseSecretKey =
+            process.env.SUPABASE_SECRET_KEY;
+
+        if (
+            !supabaseUrl ||
+            !supabaseSecretKey
+        ) {
+
+            console.error(
+                "Missing Supabase environment variables"
+            );
+
+            return send(res, 500, {
                 success: false,
                 error: "Server configuration error"
             });
         }
 
-        // Pi access token from the Authorization header
-        const authHeader = String(req.headers.authorization || "");
+        // ==========================================
+        // VALIDATE SUPABASE URL
+        // ==========================================
 
-        const accessToken = authHeader.startsWith("Bearer ")
-            ? authHeader.slice(7).trim()
-            : "";
+        if (!validSupabaseUrl(supabaseUrl)) {
 
-        if (!accessToken) {
-            return res.status(401).json({
+            console.error(
+                "Invalid Supabase URL configuration"
+            );
+
+            return send(res, 500, {
+                success: false,
+                error: "Server configuration error"
+            });
+        }
+
+        // ==========================================
+        // READ BEARER TOKEN
+        // ==========================================
+
+        const authHeader =
+            typeof req.headers.authorization === "string"
+                ? req.headers.authorization
+                : "";
+
+        const accessToken =
+            authHeader.startsWith("Bearer ")
+                ? authHeader.slice(7).trim()
+                : "";
+
+        // ==========================================
+        // VALIDATE ACCESS TOKEN
+        // ==========================================
+
+        if (
+            !accessToken ||
+            accessToken.length < 20 ||
+            accessToken.length > 4096
+        ) {
+
+            return send(res, 401, {
                 success: false,
                 error: "Pi authentication required"
             });
         }
 
-        // Username comes from Pi, never from the URL
-        const piUsername = await verifyPiToken(accessToken);
+        // ==========================================
+        // VERIFY USER WITH PI
+        // ==========================================
 
-        if (!piUsername) {
-            return res.status(401).json({
+        const verifiedUser =
+            await verifyPiToken(accessToken);
+
+        if (verifiedUser.timeout) {
+
+            return send(res, 504, {
+                success: false,
+                error: "Pi verification timed out. Please try again."
+            });
+        }
+
+        if (verifiedUser.serverError) {
+
+            return send(res, 502, {
+                success: false,
+                error: "Unable to verify Pi identity"
+            });
+        }
+
+        if (!verifiedUser.success) {
+
+            return send(res, 401, {
                 success: false,
                 error: "Invalid Pi authentication"
             });
         }
 
-        const supabase = createClient(supabaseUrl, supabaseSecretKey);
+        const piUsername =
+            verifiedUser.username;
+
+        // ==========================================
+        // SUPABASE CLIENT
+        // ==========================================
+
+        const supabase = createClient(
+            supabaseUrl,
+            supabaseSecretKey,
+            {
+                global: {
+                    fetch: fetchWithTimeout
+                },
+                auth: {
+                    persistSession: false,
+                    autoRefreshToken: false,
+                    detectSessionInUrl: false
+                }
+            }
+        );
+
+        // ==========================================
+        // LOAD USER REQUESTS
+        // ==========================================
 
         const { data, error } = await supabase
             .from("requests")
@@ -103,29 +355,68 @@ export default async function handler(req, res) {
                 ].join(",")
             )
             .eq("pi_username", piUsername)
-            .order("created_at", { ascending: false });
+            .order("created_at", {
+                ascending: false
+            })
+            .limit(MAX_REQUESTS);
+
+        // ==========================================
+        // SUPABASE ERROR
+        // ==========================================
 
         if (error) {
-            console.error("Supabase requests error:", error.message);
 
-            return res.status(500).json({
-                success: false,
-                error: "Failed to load requests"
-            });
+            console.error(
+                "Supabase requests error:",
+                error.message
+            );
+
+            const timeoutError =
+                error.name === "AbortError" ||
+                /abort|timeout/i.test(error.message || "");
+
+            return send(
+                res,
+                timeoutError ? 504 : 500,
+                {
+                    success: false,
+                    error: timeoutError
+                        ? "Request loading timed out. Please try again."
+                        : "Failed to load requests"
+                }
+            );
         }
 
-        return res.status(200).json({
+        // ==========================================
+        // SUCCESS
+        // ==========================================
+
+        return send(res, 200, {
+
             success: true,
+
             user: {
                 username: piUsername
             },
-            requests: Array.isArray(data) ? data : []
+
+            requests: Array.isArray(data)
+                ? data
+                : []
+
         });
 
-    } catch (err) {
-        console.error("Requests API error:", err);
+    } catch (error) {
 
-        return res.status(500).json({
+        // ==========================================
+        // SERVER ERROR
+        // ==========================================
+
+        console.error(
+            "Requests API error:",
+            error.message
+        );
+
+        return send(res, 500, {
             success: false,
             error: "Internal server error"
         });
