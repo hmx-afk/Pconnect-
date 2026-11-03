@@ -147,6 +147,7 @@
             color: #d8cde1;
             line-height: 1.6;
             margin-top: 8px;
+            overflow-wrap: anywhere;
         }
 
         .message {
@@ -208,7 +209,6 @@
 <div class="container">
 
     <div class="topbar">
-
         <div>
             <h1>🔐 PConnect Admin</h1>
             <div class="subtitle">
@@ -219,18 +219,13 @@
         <button
             class="logout hidden"
             id="logoutBtn"
+            type="button"
         >
             Logout
         </button>
-
     </div>
 
-    <!-- LOGIN -->
-
-    <div
-        class="login-box"
-        id="loginBox"
-    >
+    <div class="login-box" id="loginBox">
 
         <h3>Admin Access</h3>
 
@@ -242,26 +237,23 @@
             type="password"
             id="adminKey"
             placeholder="Enter admin key"
-            autocomplete="off"
+            autocomplete="current-password"
+            maxlength="4096"
         >
 
         <button
             class="login-btn"
             id="loginBtn"
+            type="button"
         >
             Login
         </button>
 
-        <div id="loginMessage"></div>
+        <div id="loginMessage" aria-live="polite"></div>
 
     </div>
 
-    <!-- ADMIN CONTENT -->
-
-    <div
-        id="adminContent"
-        class="hidden"
-    >
+    <div id="adminContent" class="hidden">
 
         <div class="message">
 
@@ -270,10 +262,14 @@
             <br>
 
             Total:
-            <span
-                class="count"
-                id="totalCount"
-            >0</span>
+            <span class="count" id="totalCount">0</span>
+
+            <button
+                type="button"
+                id="refreshBtn"
+            >
+                Refresh
+            </button>
 
         </div>
 
@@ -284,13 +280,20 @@
 </div>
 
 <script>
-
 "use strict";
 
+/* ==========================================
+   CONFIGURATION
+========================================== */
+
+const API_TIMEOUT = 15000;
+const ADMIN_SESSION_KEY = "pconnect_admin_key";
+
 let adminKey =
-    sessionStorage.getItem(
-        "pconnect_admin_key"
-    ) || "";
+    sessionStorage.getItem(ADMIN_SESSION_KEY) || "";
+
+let loadingRequests = false;
+let actionInProgress = false;
 
 const loginBox =
     document.getElementById("loginBox");
@@ -303,6 +306,9 @@ const loginBtn =
 
 const logoutBtn =
     document.getElementById("logoutBtn");
+
+const refreshBtn =
+    document.getElementById("refreshBtn");
 
 const adminKeyInput =
     document.getElementById("adminKey");
@@ -318,7 +324,7 @@ const totalCount =
 
 
 /* ==========================================
-   ESCAPE HTML
+   SAFE HTML
 ========================================== */
 
 function escapeHtml(value) {
@@ -329,6 +335,62 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+
+/* ==========================================
+   API RESPONSE
+========================================== */
+
+async function apiRequest(url, options = {}) {
+
+    const controller = new AbortController();
+
+    const timer = setTimeout(
+        () => controller.abort(),
+        API_TIMEOUT
+    );
+
+    try {
+
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+            cache: "no-store"
+        });
+
+        const text = await response.text();
+
+        let data = {};
+
+        if (text) {
+
+            try {
+                data = JSON.parse(text);
+            } catch {
+                throw new Error("Invalid server response.");
+            }
+
+        }
+
+        return {
+            response,
+            data
+        };
+
+    } catch (error) {
+
+        if (error.name === "AbortError") {
+            throw new Error("Request timed out. Please try again.");
+        }
+
+        throw error;
+
+    } finally {
+
+        clearTimeout(timer);
+
+    }
 }
 
 
@@ -389,18 +451,34 @@ function showLogin() {
 
 
 /* ==========================================
+   INVALIDATE SESSION
+========================================== */
+
+function invalidateSession() {
+
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+
+    adminKey = "";
+
+    showLogin();
+
+    loginMessage.innerHTML =
+        '<div class="error">Admin session expired. Please login again.</div>';
+}
+
+
+/* ==========================================
    LOGIN
 ========================================== */
 
 async function login() {
 
-    const key =
-        adminKeyInput.value.trim();
+    const key = adminKeyInput.value.trim();
 
-    if (!key) {
+    if (!key || key.length > 4096) {
 
         loginMessage.innerHTML =
-            '<div class="error">Please enter your admin key.</div>';
+            '<div class="error">Please enter a valid admin key.</div>';
 
         return;
     }
@@ -412,7 +490,7 @@ async function login() {
 
     try {
 
-        const response = await fetch(
+        const result = await apiRequest(
             "/api/admin-requests",
             {
                 method: "GET",
@@ -422,26 +500,33 @@ async function login() {
             }
         );
 
-        const data = await response.json();
+        const { response, data } = result;
 
         if (!response.ok) {
 
             loginMessage.innerHTML =
                 `<div class="error">
-                    ${escapeHtml(
-                        data.error || "Invalid admin key."
-                    )}
+                    ${escapeHtml(data.error || "Invalid admin key.")}
                 </div>`;
 
             return;
         }
 
+        if (
+            data.success !== true ||
+            !Array.isArray(data.requests)
+        ) {
+            throw new Error("Unexpected server response.");
+        }
+
         adminKey = key;
 
         sessionStorage.setItem(
-            "pconnect_admin_key",
+            ADMIN_SESSION_KEY,
             adminKey
         );
+
+        adminKeyInput.value = "";
 
         loginMessage.innerHTML =
             '<div class="success">Admin access granted.</div>';
@@ -453,11 +538,12 @@ async function login() {
         console.error(error);
 
         loginMessage.innerHTML =
-            '<div class="error">Connection error.</div>';
+            `<div class="error">${escapeHtml(error.message)}</div>`;
 
     } finally {
 
         loginBtn.disabled = false;
+
     }
 }
 
@@ -468,12 +554,20 @@ async function login() {
 
 async function loadRequests() {
 
+    if (loadingRequests || !adminKey) {
+        return;
+    }
+
+    loadingRequests = true;
+
+    refreshBtn.disabled = true;
+
     requestsContainer.innerHTML =
         '<div class="empty">Loading requests...</div>';
 
     try {
 
-        const response = await fetch(
+        const result = await apiRequest(
             "/api/admin-requests",
             {
                 method: "GET",
@@ -483,20 +577,11 @@ async function loadRequests() {
             }
         );
 
-        const data = await response.json();
+        const { response, data } = result;
 
         if (response.status === 401) {
 
-            sessionStorage.removeItem(
-                "pconnect_admin_key"
-            );
-
-            adminKey = "";
-
-            showLogin();
-
-            loginMessage.innerHTML =
-                '<div class="error">Admin session expired. Please login again.</div>';
+            invalidateSession();
 
             return;
         }
@@ -504,11 +589,18 @@ async function loadRequests() {
         if (!response.ok) {
 
             throw new Error(
-                data.error || "Failed to load requests"
+                data.error || "Failed to load requests."
             );
         }
 
-        const requests = data.requests || [];
+        if (
+            data.success !== true ||
+            !Array.isArray(data.requests)
+        ) {
+            throw new Error("Invalid requests data.");
+        }
+
+        const requests = data.requests;
 
         totalCount.textContent = requests.length;
 
@@ -523,6 +615,15 @@ async function loadRequests() {
         requestsContainer.innerHTML = requests.map(
             request => {
 
+                const id = Number(request.id);
+
+                if (
+                    !Number.isSafeInteger(id) ||
+                    id <= 0
+                ) {
+                    return "";
+                }
+
                 const reviewStatus =
                     request.review_status ||
                     "Waiting for review";
@@ -531,15 +632,12 @@ async function loadRequests() {
                     request.order_status ||
                     "Pending";
 
-                let reviewClass = "";
-
-                if (reviewStatus === "Approved") {
-                    reviewClass = "approved";
-                }
-
-                if (reviewStatus === "Rejected") {
-                    reviewClass = "rejected";
-                }
+                const reviewClass =
+                    reviewStatus === "Approved"
+                        ? "approved"
+                        : reviewStatus === "Rejected"
+                            ? "rejected"
+                            : "pending";
 
                 const orderClass =
                     getOrderStatusClass(orderStatus);
@@ -552,20 +650,10 @@ async function loadRequests() {
                     orderStatus === "In Progress" &&
                     reviewStatus === "Approved";
 
-                /*
-                 * SECURITY / WORKFLOW RULE:
-                 * Cancel is available only for Pending orders.
-                 * Paid and In Progress orders must not be
-                 * cancelled through this button.
-                 */
-
                 const canCancel =
                     orderStatus === "Pending";
 
-                const canApprove =
-                    reviewStatus === "Waiting for review";
-
-                const canReject =
+                const canReview =
                     reviewStatus === "Waiting for review";
 
                 return `
@@ -579,7 +667,7 @@ async function loadRequests() {
                         <div class="info">
 
                             <strong>Request ID:</strong>
-                            #${escapeHtml(request.id)}
+                            #${id}
 
                             <br>
 
@@ -614,51 +702,57 @@ async function loadRequests() {
                             ${escapeHtml(orderStatus)}
                         </div>
 
-                        <!-- REVIEW ACTIONS -->
-
                         <div class="action-box">
 
                             <button
+                                type="button"
                                 class="approve"
-                                onclick="reviewRequest('${escapeHtml(request.id)}', 'approve')"
-                                ${canApprove ? "" : "disabled"}
+                                data-id="${id}"
+                                data-action="approve"
+                                ${canReview ? "" : "disabled"}
                             >
                                 ✅ Approve
                             </button>
 
                             <button
+                                type="button"
                                 class="reject"
-                                onclick="reviewRequest('${escapeHtml(request.id)}', 'reject')"
-                                ${canReject ? "" : "disabled"}
+                                data-id="${id}"
+                                data-action="reject"
+                                ${canReview ? "" : "disabled"}
                             >
                                 ❌ Reject
                             </button>
 
                         </div>
 
-                        <!-- ORDER ACTIONS -->
-
                         <div class="action-box">
 
                             <button
+                                type="button"
                                 class="progress"
-                                onclick="reviewRequest('${escapeHtml(request.id)}', 'in_progress')"
+                                data-id="${id}"
+                                data-action="in_progress"
                                 ${canStart ? "" : "disabled"}
                             >
                                 🔵 Start / In Progress
                             </button>
 
                             <button
+                                type="button"
                                 class="complete"
-                                onclick="reviewRequest('${escapeHtml(request.id)}', 'complete')"
+                                data-id="${id}"
+                                data-action="complete"
                                 ${canComplete ? "" : "disabled"}
                             >
                                 🟢 Complete
                             </button>
 
                             <button
+                                type="button"
                                 class="cancel"
-                                onclick="reviewRequest('${escapeHtml(request.id)}', 'cancel')"
+                                data-id="${id}"
+                                data-action="cancel"
                                 ${canCancel ? "" : "disabled"}
                             >
                                 ❌ Cancel
@@ -683,6 +777,13 @@ async function loadRequests() {
                 <br>
                 ${escapeHtml(error.message)}
             </div>`;
+
+    } finally {
+
+        loadingRequests = false;
+
+        refreshBtn.disabled = false;
+
     }
 }
 
@@ -693,37 +794,58 @@ async function loadRequests() {
 
 async function reviewRequest(id, action) {
 
-    let confirmText =
-        "Continue with this action?";
-
-    if (action === "approve") {
-        confirmText = "Approve this request?";
-    }
-
-    if (action === "reject") {
-        confirmText = "Reject this request?";
-    }
-
-    if (action === "in_progress") {
-        confirmText = "Start this service request?";
-    }
-
-    if (action === "complete") {
-        confirmText = "Mark this request as Completed?";
-    }
-
-    if (action === "cancel") {
-        confirmText =
-            "Cancel this Pending request? This action cannot be undone here.";
-    }
-
-    if (!confirm(confirmText)) {
+    if (actionInProgress || !adminKey) {
         return;
     }
 
+    const validActions = [
+        "approve",
+        "reject",
+        "in_progress",
+        "complete",
+        "cancel"
+    ];
+
+    if (!validActions.includes(action)) {
+        return;
+    }
+
+    const requestId = Number(id);
+
+    if (
+        !Number.isSafeInteger(requestId) ||
+        requestId <= 0
+    ) {
+        alert("Invalid request ID.");
+        return;
+    }
+
+    const messages = {
+
+        approve: "Approve this request?",
+
+        reject: "Reject this request?",
+
+        in_progress: "Start this service request?",
+
+        complete: "Mark this request as Completed?",
+
+        cancel:
+            "Cancel this Pending request? This action cannot be undone here."
+
+    };
+
+    if (!confirm(messages[action])) {
+        return;
+    }
+
+    actionInProgress = true;
+
+    setActionButtonsDisabled(true);
+
     try {
 
-        const response = await fetch(
+        const result = await apiRequest(
             "/api/admin-review",
             {
                 method: "POST",
@@ -734,31 +856,22 @@ async function reviewRequest(id, action) {
                 },
 
                 body: JSON.stringify({
-                    id: id,
+                    id: requestId,
                     action: action
                 })
             }
         );
 
-        const data = await response.json();
+        const { response, data } = result;
 
         if (response.status === 401) {
 
-            sessionStorage.removeItem(
-                "pconnect_admin_key"
-            );
-
-            adminKey = "";
-
-            showLogin();
-
-            loginMessage.innerHTML =
-                '<div class="error">Admin session expired. Please login again.</div>';
+            invalidateSession();
 
             return;
         }
 
-        if (!response.ok) {
+        if (!response.ok || data.success !== true) {
 
             alert(
                 data.error || "Failed to update request."
@@ -767,27 +880,21 @@ async function reviewRequest(id, action) {
             return;
         }
 
-        if (action === "approve") {
+        const successMessages = {
 
-            alert("Request approved successfully.");
+            approve: "Request approved successfully.",
 
-        } else if (action === "reject") {
+            reject: "Request rejected successfully.",
 
-            alert("Request rejected successfully.");
+            in_progress: "Request is now In Progress.",
 
-        } else if (action === "in_progress") {
+            complete: "Request marked as Completed.",
 
-            alert("Request is now In Progress.");
+            cancel: "Request cancelled successfully."
 
-        } else if (action === "complete") {
+        };
 
-            alert("Request marked as Completed.");
-
-        } else if (action === "cancel") {
-
-            alert("Request cancelled successfully.");
-
-        }
+        alert(successMessages[action]);
 
         await loadRequests();
 
@@ -795,9 +902,56 @@ async function reviewRequest(id, action) {
 
         console.error(error);
 
-        alert("Connection error. Please try again.");
+        alert(error.message || "Connection error. Please try again.");
+
+    } finally {
+
+        actionInProgress = false;
+
+        setActionButtonsDisabled(false);
+
     }
 }
+
+
+/* ==========================================
+   ACTION BUTTON LOCK
+========================================== */
+
+function setActionButtonsDisabled(disabled) {
+
+    const buttons =
+        requestsContainer.querySelectorAll("button[data-action]");
+
+    buttons.forEach(button => {
+        button.disabled = disabled;
+    });
+}
+
+
+/* ==========================================
+   EVENT DELEGATION
+========================================== */
+
+requestsContainer.addEventListener(
+    "click",
+    function(event) {
+
+        const button =
+            event.target.closest("button[data-action]");
+
+        if (!button || button.disabled) {
+            return;
+        }
+
+        const id = button.dataset.id;
+
+        const action = button.dataset.action;
+
+        reviewRequest(id, action);
+
+    }
+);
 
 
 /* ==========================================
@@ -806,15 +960,17 @@ async function reviewRequest(id, action) {
 
 function logout() {
 
-    sessionStorage.removeItem(
-        "pconnect_admin_key"
-    );
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
 
     adminKey = "";
 
     adminKeyInput.value = "";
 
     loginMessage.innerHTML = "";
+
+    requestsContainer.innerHTML = "";
+
+    totalCount.textContent = "0";
 
     showLogin();
 }
@@ -824,15 +980,11 @@ function logout() {
    EVENTS
 ========================================== */
 
-loginBtn.addEventListener(
-    "click",
-    login
-);
+loginBtn.addEventListener("click", login);
 
-logoutBtn.addEventListener(
-    "click",
-    logout
-);
+logoutBtn.addEventListener("click", logout);
+
+refreshBtn.addEventListener("click", loadRequests);
 
 adminKeyInput.addEventListener(
     "keydown",
@@ -847,7 +999,7 @@ adminKeyInput.addEventListener(
 
 
 /* ==========================================
-   RESTORE SESSION
+   RESTORE ADMIN SESSION
 ========================================== */
 
 async function restoreAdminSession() {
@@ -864,7 +1016,7 @@ async function restoreAdminSession() {
 
     try {
 
-        const response = await fetch(
+        const result = await apiRequest(
             "/api/admin-requests",
             {
                 method: "GET",
@@ -874,7 +1026,13 @@ async function restoreAdminSession() {
             }
         );
 
-        if (response.ok) {
+        const { response, data } = result;
+
+        if (
+            response.ok &&
+            data.success === true &&
+            Array.isArray(data.requests)
+        ) {
 
             showAdmin();
 
@@ -884,11 +1042,10 @@ async function restoreAdminSession() {
     } catch (error) {
 
         console.error(error);
+
     }
 
-    sessionStorage.removeItem(
-        "pconnect_admin_key"
-    );
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
 
     adminKey = "";
 
