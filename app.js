@@ -25,7 +25,9 @@ let piSdkReady = false;
 let piInitError = null;
 
 try {
+
     if (typeof window.Pi === "undefined") {
+
         throw new Error(
             "Pi SDK is unavailable. Open PConnect inside Pi Browser."
         );
@@ -41,6 +43,7 @@ try {
     console.log("[PConnect] Pi SDK initialized.");
 
 } catch (error) {
+
     piInitError = error;
 
     console.error(
@@ -84,6 +87,7 @@ let transactionsLoaded = false;
 
 // Prevent late authentication results from
 // overwriting a newer authentication attempt.
+
 let authAttemptId = 0;
 
 // ==========================================
@@ -1203,7 +1207,7 @@ async function processIncompletePayment(payment) {
         !currentPiAccessToken ||
         processingIncompletePayment
     ) {
-        return;
+        return false;
     }
 
     const txid =
@@ -1224,7 +1228,7 @@ async function processIncompletePayment(payment) {
             "The previous payment has no transaction ID yet. Do not create another payment."
         );
 
-        return;
+        return false;
     }
 
     processingIncompletePayment = true;
@@ -1235,6 +1239,8 @@ async function processIncompletePayment(payment) {
     setPayStatus(
         "Recovering your previous Pi payment..."
     );
+
+    let recovered = false;
 
     try {
 
@@ -1248,6 +1254,13 @@ async function processIncompletePayment(payment) {
 
         pendingIncompletePayment = null;
         paymentLocked = false;
+
+        // Clear stale request data after recovery.
+
+        currentRequest = null;
+        currentService = null;
+
+        recovered = true;
 
         setPayStatus(
             "Previous Pi payment recovered successfully."
@@ -1283,6 +1296,8 @@ async function processIncompletePayment(payment) {
 
         updatePaymentButton();
     }
+
+    return recovered;
 }
 
 // ==========================================
@@ -1417,18 +1432,43 @@ if (loginBtn) {
                     "[PConnect] Pi login successful."
                 );
 
+                // ==================================
                 // RECOVER PAYMENT FIRST
+                // ==================================
+
+                let recoveryWasFound = false;
+                let recoverySucceeded = false;
 
                 if (pendingIncompletePayment) {
 
-                    await processIncompletePayment(
-                        pendingIncompletePayment
-                    );
+                    recoveryWasFound = true;
+
+                    recoverySucceeded =
+                        await processIncompletePayment(
+                            pendingIncompletePayment
+                        );
                 }
 
+                // ==================================
                 // VALIDATE REQUEST
+                // ==================================
 
-                if (currentRequestId) {
+                if (recoveryWasFound) {
+
+                    if (recoverySucceeded) {
+
+                        setPayStatus(
+                            "Pi connected. Your previous payment was recovered successfully. Check your transaction history."
+                        );
+
+                    } else {
+
+                        setPayStatus(
+                            "Pi connected, but a previous payment still needs attention. Do not create another payment."
+                        );
+                    }
+
+                } else if (currentRequestId) {
 
                     try {
 
@@ -1452,7 +1492,9 @@ if (loginBtn) {
                     );
                 }
 
+                // ==================================
                 // LOAD USER DATA
+                // ==================================
 
                 await refreshPaymentPageData();
 
@@ -1640,8 +1682,8 @@ if (payBtn) {
                                         error
                                     );
 
-                                    // Do not permit another payment.
-                                    // The current payment needs checking.
+                                    // Keep payment locked.
+                                    // Do not allow another payment.
 
                                     paymentLocked = true;
 
@@ -1690,17 +1732,17 @@ if (payBtn) {
                                     pendingIncompletePayment = null;
                                     paymentLocked = false;
 
+                                    // Clear stale request data.
+
+                                    currentRequest = null;
+                                    currentService = null;
+
                                     setPayStatus(
                                         "✔️ Payment completed successfully for Request #" +
                                         currentRequestId
                                     );
 
                                     await refreshPaymentPageData();
-
-                                    // Request has been paid.
-
-                                    currentRequest = null;
-                                    currentService = null;
 
                                 } catch (error) {
 
@@ -1709,7 +1751,7 @@ if (payBtn) {
                                         error
                                     );
 
-                                    // Keep locked until payment is checked.
+                                    // Keep locked until recovery.
 
                                     paymentLocked = true;
 
@@ -1757,8 +1799,8 @@ if (payBtn) {
                                 payment
                             );
 
-                            // Keep locked because the payment
-                            // state may need server verification.
+                            // Keep locked because payment state
+                            // may need server verification.
 
                             paymentLocked = true;
 
