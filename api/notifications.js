@@ -1,14 +1,18 @@
 // ==========================================
-// PConnect - Notifications API
-// Security Hardened Version
+// PConnect - Secure Notifications API
 // Pi Testnet / Vercel / Supabase
 // ==========================================
 
 import crypto from "crypto";
 
 const PI_ME_URL = "https://api.minepi.com/v2/me";
+
 const REQUEST_TIMEOUT = 10000;
-const MAX_USERNAME_LENGTH = 100;
+
+const MAX_TOKEN_LENGTH = 4096;
+const MAX_ADMIN_KEY_LENGTH = 4096;
+const MAX_USERNAME_LENGTH = 50;
+
 const MAX_TYPE_LENGTH = 50;
 const MAX_TITLE_LENGTH = 200;
 const MAX_MESSAGE_LENGTH = 1000;
@@ -24,10 +28,16 @@ function sendError(res, status, message) {
     });
 }
 
+// ==========================================
+// BEARER TOKEN
+// ==========================================
+
 function getBearerToken(req) {
-    const header = String(
-        req.headers.authorization || ""
-    );
+
+    const header =
+        typeof req.headers.authorization === "string"
+            ? req.headers.authorization
+            : "";
 
     const match = header.match(/^Bearer\s+(\S+)$/i);
 
@@ -38,8 +48,8 @@ function getBearerToken(req) {
     const token = match[1].trim();
 
     if (
-        !token ||
-        token.length > 10000
+        token.length < 20 ||
+        token.length > MAX_TOKEN_LENGTH
     ) {
         return null;
     }
@@ -52,15 +62,21 @@ function getBearerToken(req) {
 // ==========================================
 
 function isAdmin(req) {
-    const suppliedKey = String(
-        req.headers["x-admin-key"] || ""
-    );
 
-    const expectedKey = String(
-        process.env.ADMIN_REVIEW_KEY || ""
-    );
+    const suppliedKey =
+        typeof req.headers["x-admin-key"] === "string"
+            ? req.headers["x-admin-key"]
+            : "";
 
-    if (!suppliedKey || !expectedKey) {
+    const expectedKey =
+        process.env.ADMIN_REVIEW_KEY || "";
+
+    if (
+        !suppliedKey ||
+        !expectedKey ||
+        suppliedKey.length > MAX_ADMIN_KEY_LENGTH ||
+        expectedKey.length > MAX_ADMIN_KEY_LENGTH
+    ) {
         return false;
     }
 
@@ -84,10 +100,11 @@ function isAdmin(req) {
 }
 
 // ==========================================
-// VERIFY PI ACCESS TOKEN
+// VERIFY PI USER
 // ==========================================
 
 async function verifyPiUser(req) {
+
     const token = getBearerToken(req);
 
     if (!token) {
@@ -106,6 +123,7 @@ async function verifyPiUser(req) {
     );
 
     try {
+
         const response = await fetch(
             PI_ME_URL,
             {
@@ -128,18 +146,22 @@ async function verifyPiUser(req) {
 
         const identity = await response.json();
 
-        const username = String(
-            identity?.username || ""
-        ).trim();
+        const username =
+            typeof identity?.username === "string"
+                ? identity.username.trim()
+                : "";
 
-        const uid = String(
-            identity?.uid || ""
-        ).trim();
+        const uid =
+            typeof identity?.uid === "string"
+                ? identity.uid.trim()
+                : "";
 
         if (
+            !uid ||
+            uid.length > 200 ||
             !username ||
             username.length > MAX_USERNAME_LENGTH ||
-            !uid
+            !/^[a-zA-Z0-9._-]+$/.test(username)
         ) {
             return {
                 ok: false,
@@ -155,6 +177,7 @@ async function verifyPiUser(req) {
         };
 
     } catch (error) {
+
         if (error?.name === "AbortError") {
             return {
                 ok: false,
@@ -175,40 +198,18 @@ async function verifyPiUser(req) {
         };
 
     } finally {
+
         clearTimeout(timeout);
+
     }
 }
 
 // ==========================================
-// SUPABASE REQUEST HELPER
+// SUPABASE CONFIGURATION
 // ==========================================
-
-async function supabaseFetch(
-    url,
-    options = {}
-) {
-    const controller = new AbortController();
-
-    const timeout = setTimeout(
-        () => controller.abort(),
-        REQUEST_TIMEOUT
-    );
-
-    try {
-        return await fetch(
-            url,
-            {
-                ...options,
-                signal: controller.signal
-            }
-        );
-
-    } finally {
-        clearTimeout(timeout);
-    }
-}
 
 function getSupabaseConfig() {
+
     const url = String(
         process.env.SUPABASE_URL || ""
     ).replace(/\/+$/, "");
@@ -217,11 +218,30 @@ function getSupabaseConfig() {
         process.env.SUPABASE_SECRET_KEY || ""
     );
 
-    if (
-        !url ||
-        !key ||
-        !/^https:\/\/[^/]+$/i.test(url)
-    ) {
+    if (!url || !key) {
+        return null;
+    }
+
+    try {
+
+        const parsed = new URL(url);
+
+        if (
+            parsed.protocol !== "https:" ||
+            !/^[a-z0-9-]+\.supabase\.co$/i.test(
+                parsed.hostname
+            ) ||
+            parsed.port ||
+            parsed.username ||
+            parsed.password ||
+            parsed.pathname !== "" ||
+            parsed.search ||
+            parsed.hash
+        ) {
+            return null;
+        }
+
+    } catch {
         return null;
     }
 
@@ -236,20 +256,79 @@ function getSupabaseConfig() {
 }
 
 // ==========================================
+// SUPABASE REQUEST WITH FULL TIMEOUT
+// Includes response body reading
+// ==========================================
+
+async function supabaseRequest(url, options = {}) {
+
+    const controller = new AbortController();
+
+    const timeout = setTimeout(
+        () => controller.abort(),
+        REQUEST_TIMEOUT
+    );
+
+    try {
+
+        const response = await fetch(
+            url,
+            {
+                ...options,
+                signal: controller.signal
+            }
+        );
+
+        const text = await response.text();
+
+        let data = null;
+
+        if (text) {
+            try {
+                data = JSON.parse(text);
+            } catch {
+                throw new Error(
+                    "Invalid Supabase response"
+                );
+            }
+        }
+
+        return {
+            ok: response.ok,
+            status: response.status,
+            data
+        };
+
+    } finally {
+
+        clearTimeout(timeout);
+
+    }
+}
+
+// ==========================================
 // MAIN HANDLER
 // ==========================================
 
 export default async function handler(req, res) {
+
+    // ==========================================
+    // SECURITY HEADERS
+    // ==========================================
+
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Vary", "Authorization");
 
+    // ==========================================
+    // ALLOWED METHODS
+    // ==========================================
+
     if (
-        !["GET", "POST", "PATCH"].includes(
-            req.method
-        )
+        !["GET", "POST", "PATCH"].includes(req.method)
     ) {
+
         res.setHeader(
             "Allow",
             "GET, POST, PATCH"
@@ -263,11 +342,17 @@ export default async function handler(req, res) {
     }
 
     try {
+
+        // ==========================================
+        // SUPABASE CONFIGURATION
+        // ==========================================
+
         const config = getSupabaseConfig();
 
         if (!config) {
+
             console.error(
-                "Supabase server configuration is missing or invalid"
+                "Invalid Supabase configuration"
             );
 
             return sendError(
@@ -285,11 +370,12 @@ export default async function handler(req, res) {
 
         const headers = config.headers;
 
-        // ======================================
-        // GET - USER'S OWN NOTIFICATIONS
-        // ======================================
+        // ==========================================
+        // GET - USER NOTIFICATIONS
+        // ==========================================
 
         if (req.method === "GET") {
+
             const identity = await verifyPiUser(req);
 
             if (!identity.ok) {
@@ -322,15 +408,16 @@ export default async function handler(req, res) {
                 "50"
             );
 
-            const response = await supabaseFetch(
+            const result = await supabaseRequest(
                 url.toString(),
                 { headers }
             );
 
-            if (!response.ok) {
+            if (!result.ok) {
+
                 console.error(
-                    "Notifications GET failed with status:",
-                    response.status
+                    "Notifications GET failed:",
+                    result.status
                 );
 
                 return sendError(
@@ -340,21 +427,20 @@ export default async function handler(req, res) {
                 );
             }
 
-            const data = await response.json();
-
             return res.status(200).json({
                 success: true,
-                notifications: Array.isArray(data)
-                    ? data
+                notifications: Array.isArray(result.data)
+                    ? result.data
                     : []
             });
         }
 
-        // ======================================
+        // ==========================================
         // POST - ADMIN ONLY
-        // ======================================
+        // ==========================================
 
         if (req.method === "POST") {
+
             if (!isAdmin(req)) {
                 return sendError(
                     res,
@@ -374,17 +460,20 @@ export default async function handler(req, res) {
                 body.request_id
             );
 
-            const type = String(
-                body.type || ""
-            ).trim();
+            const type =
+                typeof body.type === "string"
+                    ? body.type.trim()
+                    : "";
 
-            const title = String(
-                body.title || ""
-            ).trim();
+            const title =
+                typeof body.title === "string"
+                    ? body.title.trim()
+                    : "";
 
-            const message = String(
-                body.message || ""
-            ).trim();
+            const message =
+                typeof body.message === "string"
+                    ? body.message.trim()
+                    : "";
 
             if (
                 !Number.isSafeInteger(requestId) ||
@@ -412,8 +501,10 @@ export default async function handler(req, res) {
                 );
             }
 
-            // Confirm the request exists and obtain
-            // its owner from the database.
+            // ======================================
+            // VERIFY REQUEST OWNER
+            // ======================================
+
             const requestUrl = new URL(
                 requestsEndpoint
             );
@@ -433,16 +524,17 @@ export default async function handler(req, res) {
                 "1"
             );
 
-            const requestResponse =
-                await supabaseFetch(
+            const requestResult =
+                await supabaseRequest(
                     requestUrl.toString(),
                     { headers }
                 );
 
-            if (!requestResponse.ok) {
+            if (!requestResult.ok) {
+
                 console.error(
-                    "Request owner lookup failed with status:",
-                    requestResponse.status
+                    "Request owner lookup failed:",
+                    requestResult.status
                 );
 
                 return sendError(
@@ -452,8 +544,7 @@ export default async function handler(req, res) {
                 );
             }
 
-            const requests =
-                await requestResponse.json();
+            const requests = requestResult.data;
 
             if (
                 !Array.isArray(requests) ||
@@ -466,13 +557,15 @@ export default async function handler(req, res) {
                 );
             }
 
-            const requestOwner = String(
-                requests[0].pi_username || ""
-            ).trim();
+            const requestOwner =
+                typeof requests[0].pi_username === "string"
+                    ? requests[0].pi_username.trim()
+                    : "";
 
             if (
                 !requestOwner ||
-                requestOwner.length > MAX_USERNAME_LENGTH
+                requestOwner.length > MAX_USERNAME_LENGTH ||
+                !/^[a-zA-Z0-9._-]+$/.test(requestOwner)
             ) {
                 return sendError(
                     res,
@@ -481,8 +574,10 @@ export default async function handler(req, res) {
                 );
             }
 
-            // Use the database owner, never a
-            // client-supplied username.
+            // ======================================
+            // DUPLICATE NOTIFICATION CHECK
+            // ======================================
+
             const duplicateUrl = new URL(endpoint);
 
             duplicateUrl.searchParams.set(
@@ -505,16 +600,17 @@ export default async function handler(req, res) {
                 "1"
             );
 
-            const duplicateResponse =
-                await supabaseFetch(
+            const duplicateResult =
+                await supabaseRequest(
                     duplicateUrl.toString(),
                     { headers }
                 );
 
-            if (!duplicateResponse.ok) {
+            if (!duplicateResult.ok) {
+
                 console.error(
-                    "Notification duplicate check failed with status:",
-                    duplicateResponse.status
+                    "Notification duplicate check failed:",
+                    duplicateResult.status
                 );
 
                 return sendError(
@@ -524,8 +620,7 @@ export default async function handler(req, res) {
                 );
             }
 
-            const duplicates =
-                await duplicateResponse.json();
+            const duplicates = duplicateResult.data;
 
             if (
                 Array.isArray(duplicates) &&
@@ -537,8 +632,12 @@ export default async function handler(req, res) {
                 });
             }
 
-            const insertResponse =
-                await supabaseFetch(
+            // ======================================
+            // INSERT NOTIFICATION
+            // ======================================
+
+            const insertResult =
+                await supabaseRequest(
                     endpoint,
                     {
                         method: "POST",
@@ -557,15 +656,11 @@ export default async function handler(req, res) {
                     }
                 );
 
-            const insertData =
-                await insertResponse.json().catch(
-                    () => null
-                );
+            if (!insertResult.ok) {
 
-            if (!insertResponse.ok) {
                 console.error(
-                    "Notification insert failed with status:",
-                    insertResponse.status
+                    "Notification insert failed:",
+                    insertResult.status
                 );
 
                 return sendError(
@@ -575,19 +670,22 @@ export default async function handler(req, res) {
                 );
             }
 
+            const inserted = insertResult.data;
+
             return res.status(201).json({
                 success: true,
-                notification: Array.isArray(insertData)
-                    ? insertData[0] || null
-                    : insertData
+                notification: Array.isArray(inserted)
+                    ? inserted[0] || null
+                    : inserted
             });
         }
 
-        // ======================================
+        // ==========================================
         // PATCH - MARK OWN NOTIFICATION AS READ
-        // ======================================
+        // ==========================================
 
         if (req.method === "PATCH") {
+
             const identity = await verifyPiUser(req);
 
             if (!identity.ok) {
@@ -625,8 +723,6 @@ export default async function handler(req, res) {
                 `eq.${id}`
             );
 
-            // This username comes from the verified
-            // Pi identity, not from the request body.
             updateUrl.searchParams.set(
                 "pi_username",
                 `eq.${identity.username}`
@@ -637,24 +733,26 @@ export default async function handler(req, res) {
                 "id,request_id,type,title,message,is_read,created_at"
             );
 
-            const response = await supabaseFetch(
-                updateUrl.toString(),
-                {
-                    method: "PATCH",
-                    headers: {
-                        ...headers,
-                        Prefer: "return=representation"
-                    },
-                    body: JSON.stringify({
-                        is_read: true
-                    })
-                }
-            );
+            const updateResult =
+                await supabaseRequest(
+                    updateUrl.toString(),
+                    {
+                        method: "PATCH",
+                        headers: {
+                            ...headers,
+                            Prefer: "return=representation"
+                        },
+                        body: JSON.stringify({
+                            is_read: true
+                        })
+                    }
+                );
 
-            if (!response.ok) {
+            if (!updateResult.ok) {
+
                 console.error(
-                    "Notification PATCH failed with status:",
-                    response.status
+                    "Notification PATCH failed:",
+                    updateResult.status
                 );
 
                 return sendError(
@@ -664,11 +762,11 @@ export default async function handler(req, res) {
                 );
             }
 
-            const data = await response.json();
+            const updated = updateResult.data;
 
             if (
-                !Array.isArray(data) ||
-                data.length === 0
+                !Array.isArray(updated) ||
+                updated.length === 0
             ) {
                 return sendError(
                     res,
@@ -679,11 +777,12 @@ export default async function handler(req, res) {
 
             return res.status(200).json({
                 success: true,
-                notification: data[0]
+                notification: updated[0]
             });
         }
 
     } catch (error) {
+
         if (error?.name === "AbortError") {
             return sendError(
                 res,
