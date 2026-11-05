@@ -1,8 +1,9 @@
 // ==========================================
 // PConnect - Secure Pi Payment Completion API
 // Testnet | Vercel | Supabase
-// Verified Transaction ID | Idempotent
-// Recovery | Duplicate Protection
+// Verified Transaction | Recovery
+// Idempotent | Duplicate Protection
+// Status Preservation | Strict Validation
 // ==========================================
 
 const PI_API = "https://api.minepi.com/v2";
@@ -13,7 +14,7 @@ function send(res, status, data) {
     return res.status(status).json(data);
 }
 
-async function fetchWithTimeout(url, options = {}) {
+async function requestJson(url, options = {}) {
     const controller = new AbortController();
 
     const timer = setTimeout(
@@ -22,20 +23,20 @@ async function fetchWithTimeout(url, options = {}) {
     );
 
     try {
-        return await fetch(url, {
+        const response = await fetch(url, {
             ...options,
             signal: controller.signal
         });
+
+        const data = await response.json().catch(() => null);
+
+        return {
+            response,
+            data
+        };
+
     } finally {
         clearTimeout(timer);
-    }
-}
-
-async function readJson(response) {
-    try {
-        return await response.json();
-    } catch {
-        return null;
     }
 }
 
@@ -47,6 +48,7 @@ function validSupabaseUrl(value) {
             url.protocol === "https:" &&
             url.hostname.endsWith(".supabase.co")
         );
+
     } catch {
         return false;
     }
@@ -61,7 +63,7 @@ function validTxid(value) {
 }
 
 async function verifyPiToken(accessToken) {
-    const response = await fetchWithTimeout(
+    const { response, data } = await requestJson(
         `${PI_API}/me`,
         {
             method: "GET",
@@ -70,8 +72,6 @@ async function verifyPiToken(accessToken) {
             }
         }
     );
-
-    const data = await readJson(response);
 
     if (
         !response.ok ||
@@ -88,7 +88,7 @@ async function verifyPiToken(accessToken) {
 }
 
 async function supabaseRequest(path, options = {}) {
-    const response = await fetchWithTimeout(
+    const { response, data } = await requestJson(
         `${process.env.SUPABASE_URL}/rest/v1/${path}`,
         {
             ...options,
@@ -102,8 +102,6 @@ async function supabaseRequest(path, options = {}) {
             }
         }
     );
-
-    const data = await readJson(response);
 
     if (!response.ok) {
         const error = new Error(
@@ -125,7 +123,7 @@ async function supabaseRequest(path, options = {}) {
 }
 
 async function getPiPayment(paymentId, apiKey) {
-    const response = await fetchWithTimeout(
+    const { response, data } = await requestJson(
         `${PI_API}/payments/${encodeURIComponent(paymentId)}`,
         {
             method: "GET",
@@ -134,8 +132,6 @@ async function getPiPayment(paymentId, apiKey) {
             }
         }
     );
-
-    const data = await readJson(response);
 
     if (!response.ok || !data) {
         throw new Error("PI_PAYMENT_LOOKUP_FAILED");
@@ -161,8 +157,24 @@ async function getExistingByPayment(paymentId) {
 
 async function getExistingByTxid(txid) {
     const query = new URLSearchParams({
-        select: "id,payment_id,txid,request_id",
+        select:
+            "id,payment_id,txid,request_id,amount,currency,pi_username,status",
         txid: `eq.${txid}`,
+        limit: "1"
+    });
+
+    const rows = await supabaseRequest(
+        `transactions?${query.toString()}`
+    );
+
+    return rows?.[0] || null;
+}
+
+async function getExistingByRequest(requestId) {
+    const query = new URLSearchParams({
+        select:
+            "id,payment_id,txid,request_id,amount,currency,pi_username,status",
+        request_id: `eq.${requestId}`,
         limit: "1"
     });
 
@@ -189,13 +201,14 @@ async function getRequest(requestId) {
 }
 
 async function markRequestPaid(requestId) {
+    // Only Pending can transition to Paid.
     const query = new URLSearchParams({
         id: `eq.${requestId}`,
         review_status: "eq.Approved",
         order_status: "eq.Pending"
     });
 
-    const updated = await supabaseRequest(
+    await supabaseRequest(
         `requests?${query.toString()}`,
         {
             method: "PATCH",
@@ -208,19 +221,36 @@ async function markRequestPaid(requestId) {
         }
     );
 
-    if (updated?.length) {
-        return true;
-    }
-
-    // Check latest state without overwriting
-    // In Progress or Completed orders.
+    // Always retrieve the actual latest status.
     const latest = await getRequest(requestId);
 
-    return (
-        latest?.order_status === "Paid" ||
-        latest?.order_status === "In Progress" ||
-        latest?.order_status === "Completed"
-    );
+    if (
+        !latest ||
+        latest.review_status !== "Approved"
+    ) {
+        return {
+            success: false,
+            orderStatus: latest?.order_status || null
+        };
+    }
+
+    const allowedStatuses = [
+        "Paid",
+        "In Progress",
+        "Completed"
+    ];
+
+    if (!allowedStatuses.includes(latest.order_status)) {
+        return {
+            success: false,
+            orderStatus: latest.order_status
+        };
+    }
+
+    return {
+        success: true,
+        orderStatus: latest.order_status
+    };
 }
 
 function sameTransaction(
@@ -237,7 +267,8 @@ function sameTransaction(
         Number(existing.request_id) === requestId &&
         Number(existing.amount) === EXPECTED_AMOUNT &&
         existing.currency === "Pi" &&
-        String(existing.pi_username).toLowerCase() ===
+        typeof existing.pi_username === "string" &&
+        existing.pi_username.toLowerCase() ===
             username.toLowerCase() &&
         existing.status === "Completed"
     );
@@ -255,6 +286,24 @@ function verifyPaymentDetails(payment, user, requestId) {
         Number.isSafeInteger(metadataRequestId) &&
         metadataRequestId === requestId
     );
+}
+
+function paymentCancelled(payment) {
+    const status = payment.status || {};
+
+    return (
+        status.cancelled === true ||
+        status.user_cancelled === true
+    );
+}
+
+function validOrderForRecovery(status) {
+    return [
+        "Pending",
+        "Paid",
+        "In Progress",
+        "Completed"
+    ].includes(status);
 }
 
 export default async function handler(req, res) {
@@ -307,7 +356,7 @@ export default async function handler(req, res) {
         accessToken.length < 20 ||
         accessToken.length > 4096 ||
         typeof paymentId !== "string" ||
-        paymentId.length < 1 ||
+        paymentId.trim().length < 1 ||
         paymentId.length > 200 ||
         !validTxid(submittedTxid)
     ) {
@@ -321,22 +370,21 @@ export default async function handler(req, res) {
         // 1. Verify Pi identity
         const user = await verifyPiToken(accessToken);
 
-        // 2. Retrieve authoritative payment from Pi
+        // 2. Retrieve authoritative payment
         let payment = await getPiPayment(
             paymentId,
             PI_API_KEY
         );
 
-        // 3. Verify payment identity and amount
-        if (
-            String(payment.user_uid) !== user.uid
-        ) {
+        // 3. Verify payment owner
+        if (String(payment.user_uid) !== user.uid) {
             return send(res, 403, {
                 success: false,
                 error: "Payment owner mismatch."
             });
         }
 
+        // 4. Verify amount
         if (
             typeof payment.amount !== "number" ||
             payment.amount !== EXPECTED_AMOUNT
@@ -347,7 +395,7 @@ export default async function handler(req, res) {
             });
         }
 
-        // 4. Verify request ID from Pi metadata
+        // 5. Verify request reference
         const requestId = Number(
             payment.metadata?.request_id
         );
@@ -372,7 +420,26 @@ export default async function handler(req, res) {
             });
         }
 
-        // 5. Verify request
+        // 6. Verify complete payment details
+        if (!verifyPaymentDetails(
+            payment,
+            user,
+            requestId
+        )) {
+            return send(res, 403, {
+                success: false,
+                error: "Payment verification failed."
+            });
+        }
+
+        if (paymentCancelled(payment)) {
+            return send(res, 409, {
+                success: false,
+                error: "Payment was cancelled."
+            });
+        }
+
+        // 7. Verify request
         const request = await getRequest(requestId);
 
         if (!request) {
@@ -382,7 +449,7 @@ export default async function handler(req, res) {
             });
         }
 
-        // 6. Verify request ownership
+        // 8. Verify request ownership
         if (
             String(request.pi_username).toLowerCase() !==
             user.username.toLowerCase()
@@ -400,88 +467,28 @@ export default async function handler(req, res) {
             });
         }
 
-        const paymentStatus = payment.status || {};
-
-        if (
-            paymentStatus.cancelled === true ||
-            paymentStatus.user_cancelled === true
-        ) {
+        if (!validOrderForRecovery(request.order_status)) {
             return send(res, 409, {
                 success: false,
-                error: "Payment was cancelled."
+                error: "Request is not eligible for payment recovery."
             });
         }
 
-        if (
-            paymentStatus.developer_approved !== true
-        ) {
+        const paymentStatus = payment.status || {};
+
+        if (paymentStatus.developer_approved !== true) {
             return send(res, 409, {
                 success: false,
                 error: "Payment has not been approved by the developer."
             });
         }
 
-        // 7. Check existing transaction first.
-        // This allows safe retries after an order
-        // has moved to In Progress or Completed.
-        let existingPayment = await getExistingByPayment(
-            paymentId
-        );
-
-        if (existingPayment) {
-            const verifiedExistingTxid =
-                payment.transaction?.txid;
-
-            if (
-                paymentStatus.developer_completed !== true ||
-                !validTxid(verifiedExistingTxid) ||
-                verifiedExistingTxid !== submittedTxid ||
-                !sameTransaction(
-                    existingPayment,
-                    paymentId,
-                    verifiedExistingTxid,
-                    requestId,
-                    user.username
-                )
-            ) {
-                return send(res, 409, {
-                    success: false,
-                    error: "Existing payment record does not match Pi's confirmed payment."
-                });
-            }
-
-            const paid = await markRequestPaid(requestId);
-
-            if (!paid) {
-                return send(res, 409, {
-                    success: false,
-                    error: "Payment is recorded, but request status needs reconciliation."
-                });
-            }
-
-            return send(res, 200, {
-                success: true,
-                alreadyCompleted: true,
-                transaction: existingPayment
-            });
-        }
-
-        // 8. New transactions require Pending or Paid
-        if (
-            request.order_status !== "Pending" &&
-            request.order_status !== "Paid"
-        ) {
-            return send(res, 409, {
-                success: false,
-                error: "Request is not eligible for payment completion."
-            });
-        }
-
-        // 9. Complete payment with Pi if necessary
+        // 9. If Pi has not confirmed completion,
+        // complete it using the submitted transaction ID.
         if (
             paymentStatus.developer_completed !== true
         ) {
-            const completionResponse = await fetchWithTimeout(
+            const completionResult = await requestJson(
                 `${PI_API}/payments/${encodeURIComponent(paymentId)}/complete`,
                 {
                     method: "POST",
@@ -495,25 +502,17 @@ export default async function handler(req, res) {
                 }
             );
 
-            if (!completionResponse.ok) {
-                // Recover uncertain response by checking Pi again.
-                payment = await getPiPayment(
-                    paymentId,
-                    PI_API_KEY
+            // Even if the response is uncertain,
+            // verify the actual payment status from Pi.
+            if (!completionResult.response.ok) {
+                console.error(
+                    "PConnect Pi completion response:",
+                    completionResult.response.status
                 );
-
-                if (
-                    payment.status?.developer_completed !== true
-                ) {
-                    return send(res, 502, {
-                        success: false,
-                        error: "Pi payment completion could not be confirmed."
-                    });
-                }
             }
         }
 
-        // 10. Re-fetch authoritative payment from Pi
+        // 10. Re-fetch authoritative payment
         payment = await getPiPayment(
             paymentId,
             PI_API_KEY
@@ -532,22 +531,20 @@ export default async function handler(req, res) {
 
         const finalStatus = payment.status || {};
 
+        if (paymentCancelled(payment)) {
+            return send(res, 409, {
+                success: false,
+                error: "Payment was cancelled."
+            });
+        }
+
         if (
+            finalStatus.developer_approved !== true ||
             finalStatus.developer_completed !== true
         ) {
             return send(res, 409, {
                 success: false,
                 error: "Pi has not confirmed payment completion."
-            });
-        }
-
-        if (
-            finalStatus.cancelled === true ||
-            finalStatus.user_cancelled === true
-        ) {
-            return send(res, 409, {
-                success: false,
-                error: "Payment was cancelled."
             });
         }
 
@@ -564,7 +561,48 @@ export default async function handler(req, res) {
             });
         }
 
-        // 12. Prevent transaction ID reuse
+        // 12. Check existing payment
+        const existingPayment = await getExistingByPayment(
+            paymentId
+        );
+
+        if (existingPayment) {
+            if (!sameTransaction(
+                existingPayment,
+                paymentId,
+                verifiedTxid,
+                requestId,
+                user.username
+            )) {
+                return send(res, 409, {
+                    success: false,
+                    error: "Existing payment record does not match Pi's confirmed payment."
+                });
+            }
+
+            const paidResult = await markRequestPaid(
+                requestId
+            );
+
+            if (!paidResult.success) {
+                return send(res, 409, {
+                    success: false,
+                    error: "Payment is recorded, but request status needs reconciliation."
+                });
+            }
+
+            return send(res, 200, {
+                success: true,
+                alreadyCompleted: true,
+                transaction: existingPayment,
+                request: {
+                    id: requestId,
+                    order_status: paidResult.orderStatus
+                }
+            });
+        }
+
+        // 13. Prevent transaction ID reuse
         const existingTxid = await getExistingByTxid(
             verifiedTxid
         );
@@ -576,7 +614,19 @@ export default async function handler(req, res) {
             });
         }
 
-        // 13. Save verified transaction
+        // 14. Prevent a second payment for same request
+        const existingRequest = await getExistingByRequest(
+            requestId
+        );
+
+        if (existingRequest) {
+            return send(res, 409, {
+                success: false,
+                error: "A transaction already exists for this request."
+            });
+        }
+
+        // 15. Save verified transaction
         const transactionRecord = {
             payment_id: paymentId,
             txid: verifiedTxid,
@@ -605,28 +655,28 @@ export default async function handler(req, res) {
             );
 
         } catch (error) {
-            // Handle concurrent duplicate insertion.
+            // Recover from a concurrent duplicate insert.
             if (error.code === "23505") {
                 const duplicate = await getExistingByPayment(
                     paymentId
                 );
 
-                if (
-                    sameTransaction(
-                        duplicate,
-                        paymentId,
-                        verifiedTxid,
-                        requestId,
-                        user.username
-                    )
-                ) {
+                if (sameTransaction(
+                    duplicate,
+                    paymentId,
+                    verifiedTxid,
+                    requestId,
+                    user.username
+                )) {
                     inserted = [duplicate];
+
                 } else {
                     return send(res, 409, {
                         success: false,
                         error: "Duplicate transaction detected."
                     });
                 }
+
             } else {
                 throw error;
             }
@@ -639,11 +689,13 @@ export default async function handler(req, res) {
             });
         }
 
-        // 14. Mark request as Paid without
+        // 16. Mark request Paid without
         // overwriting In Progress or Completed.
-        const paid = await markRequestPaid(requestId);
+        const paidResult = await markRequestPaid(
+            requestId
+        );
 
-        if (!paid) {
+        if (!paidResult.success) {
             return send(res, 409, {
                 success: false,
                 error: "Transaction saved, but request status needs reconciliation."
@@ -656,7 +708,7 @@ export default async function handler(req, res) {
             transaction: inserted[0],
             request: {
                 id: requestId,
-                order_status: "Paid"
+                order_status: paidResult.orderStatus
             }
         });
 
