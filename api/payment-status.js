@@ -13,6 +13,10 @@ function send(res, status, data) {
     return res.status(status).json(data);
 }
 
+// ==========================================
+// FETCH WITH TIMEOUT
+// ==========================================
+
 async function requestJson(url, options = {}) {
     const controller = new AbortController();
 
@@ -36,6 +40,10 @@ async function requestJson(url, options = {}) {
     }
 }
 
+// ==========================================
+// VALIDATION HELPERS
+// ==========================================
+
 function validSupabaseUrl(value) {
     try {
         const url = new URL(value);
@@ -44,10 +52,32 @@ function validSupabaseUrl(value) {
             url.protocol === "https:" &&
             url.hostname.endsWith(".supabase.co")
         );
+
     } catch {
         return false;
     }
 }
+
+function isValidPaymentIdentifier(value) {
+    return (
+        typeof value === "string" &&
+        value.trim().length > 0 &&
+        value.length <= 200 &&
+        /^[a-zA-Z0-9_-]+$/.test(value)
+    );
+}
+
+function validTxid(value) {
+    return (
+        typeof value === "string" &&
+        value.trim().length > 0 &&
+        value.length <= 200
+    );
+}
+
+// ==========================================
+// PI AUTHENTICATION
+// ==========================================
 
 async function verifyPiToken(accessToken) {
     const { response, data } = await requestJson(
@@ -74,6 +104,10 @@ async function verifyPiToken(accessToken) {
     };
 }
 
+// ==========================================
+// GET PI PAYMENT
+// ==========================================
+
 async function getPiPayment(paymentId, apiKey) {
     const { response, data } = await requestJson(
         `${PI_API}/payments/${encodeURIComponent(paymentId)}`,
@@ -91,6 +125,10 @@ async function getPiPayment(paymentId, apiKey) {
 
     return data;
 }
+
+// ==========================================
+// SUPABASE READ
+// ==========================================
 
 async function supabaseRequest(path) {
     const { response, data } = await requestJson(
@@ -113,6 +151,10 @@ async function supabaseRequest(path) {
     return data;
 }
 
+// ==========================================
+// GET REQUEST
+// ==========================================
+
 async function getRequest(requestId) {
     const query = new URLSearchParams({
         select:
@@ -127,6 +169,10 @@ async function getRequest(requestId) {
 
     return rows?.[0] || null;
 }
+
+// ==========================================
+// GET EXISTING PAYMENT
+// ==========================================
 
 async function getExistingPayment(paymentId) {
     const query = new URLSearchParams({
@@ -143,21 +189,22 @@ async function getExistingPayment(paymentId) {
     return rows?.[0] || null;
 }
 
-function validTxid(value) {
-    return (
-        typeof value === "string" &&
-        value.trim().length > 0 &&
-        value.length <= 200
-    );
-}
+// ==========================================
+// PAYMENT OWNER
+// ==========================================
 
 function sameOwner(payment, user, request) {
     return (
         String(payment.user_uid) === user.uid &&
-        String(request.pi_username).toLowerCase() ===
+        typeof request.pi_username === "string" &&
+        request.pi_username.toLowerCase() ===
             user.username.toLowerCase()
     );
 }
+
+// ==========================================
+// PAYMENT CANCELLATION
+// ==========================================
 
 function paymentCancelled(status) {
     return (
@@ -165,6 +212,10 @@ function paymentCancelled(status) {
         status.user_cancelled === true
     );
 }
+
+// ==========================================
+// VERIFY PAYMENT DETAILS
+// ==========================================
 
 function verifyPayment(payment, user, requestId) {
     const metadataRequestId = Number(
@@ -180,15 +231,21 @@ function verifyPayment(payment, user, requestId) {
     );
 }
 
+// ==========================================
+// VERIFY EXISTING TRANSACTION
+// ==========================================
+
 function sameTransaction(
     transaction,
     payment,
+    paymentId,
     requestId,
     username
 ) {
     return (
         !!transaction &&
-        transaction.payment_id === payment.identifier &&
+        transaction.payment_id === paymentId &&
+        validTxid(transaction.txid) &&
         transaction.txid === payment.transaction?.txid &&
         Number(transaction.request_id) === requestId &&
         Number(transaction.amount) === EXPECTED_AMOUNT &&
@@ -200,11 +257,17 @@ function sameTransaction(
     );
 }
 
+// ==========================================
+// MAIN API HANDLER
+// ==========================================
+
 export default async function handler(req, res) {
+
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Content-Type-Options", "nosniff");
 
     if (req.method !== "POST") {
+
         res.setHeader("Allow", "POST");
 
         return send(res, 405, {
@@ -235,6 +298,7 @@ export default async function handler(req, res) {
         req.headers.authorization || "";
 
     if (!authorization.startsWith("Bearer ")) {
+
         return send(res, 401, {
             success: false,
             error: "Authentication required."
@@ -247,9 +311,7 @@ export default async function handler(req, res) {
     if (
         accessToken.length < 20 ||
         accessToken.length > 4096 ||
-        typeof paymentId !== "string" ||
-        paymentId.trim().length < 1 ||
-        paymentId.length > 200
+        !isValidPaymentIdentifier(paymentId)
     ) {
         return send(res, 400, {
             success: false,
@@ -258,10 +320,11 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 1. Verify logged-in Pi user
+
+        // 1. Verify Pi user
         const user = await verifyPiToken(accessToken);
 
-        // 2. Retrieve payment directly from Pi
+        // 2. Retrieve payment from Pi
         const payment = await getPiPayment(
             paymentId,
             PI_API_KEY
@@ -269,13 +332,14 @@ export default async function handler(req, res) {
 
         // 3. Verify payment owner
         if (String(payment.user_uid) !== user.uid) {
+
             return send(res, 403, {
                 success: false,
                 error: "Payment owner mismatch."
             });
         }
 
-        // 4. Verify payment amount
+        // 4. Verify amount
         if (
             typeof payment.amount !== "number" ||
             payment.amount !== EXPECTED_AMOUNT
@@ -311,56 +375,57 @@ export default async function handler(req, res) {
             });
         }
 
-        // 6. Verify complete payment details
+        // 6. Verify payment details
         if (!verifyPayment(payment, user, requestId)) {
+
             return send(res, 403, {
                 success: false,
                 error: "Payment verification failed."
             });
         }
 
-        // 7. Verify request ownership and state
+        // 7. Get request
         const request = await getRequest(requestId);
 
         if (!request) {
+
             return send(res, 404, {
                 success: false,
                 error: "Request not found."
             });
         }
 
+        // 8. Verify request owner
         if (!sameOwner(payment, user, request)) {
+
             return send(res, 403, {
                 success: false,
                 error: "Request ownership mismatch."
             });
         }
 
-        if (request.review_status !== "Approved") {
-            return send(res, 409, {
-                success: false,
-                error: "Request is not approved."
-            });
-        }
-
         const status = payment.status || {};
 
-        // 8. Check existing transaction
+        // 9. Check existing transaction
         const existing = await getExistingPayment(
             paymentId
         );
 
         if (existing) {
+
             if (!sameTransaction(
                 existing,
                 payment,
+                paymentId,
                 requestId,
                 user.username
             )) {
+
                 return send(res, 409, {
                     success: false,
                     state: "conflict",
-                    error: "Existing transaction does not match Pi payment."
+                    error:
+                        "Existing transaction does not match Pi payment."
                 });
             }
 
@@ -374,11 +439,14 @@ export default async function handler(req, res) {
             });
         }
 
-        // 9. Completed payment
+        // 10. Completed payment
+        // Check this BEFORE review_status.
         if (status.developer_completed === true) {
+
             const txid = payment.transaction?.txid;
 
             if (!validTxid(txid)) {
+
                 return send(res, 200, {
                     success: true,
                     state: "verification_required",
@@ -396,8 +464,20 @@ export default async function handler(req, res) {
             });
         }
 
-        // 10. Confirmed cancellation
+        // 11. Verify request approval
+        if (request.review_status !== "Approved") {
+
+            return send(res, 409, {
+                success: false,
+                state: "conflict",
+                error: "Request is not approved.",
+                canRetry: false
+            });
+        }
+
+        // 12. Confirmed cancellation
         if (paymentCancelled(status)) {
+
             return send(res, 200, {
                 success: true,
                 state: "cancelled",
@@ -407,8 +487,9 @@ export default async function handler(req, res) {
             });
         }
 
-        // 11. Approved but not completed
+        // 13. Approved but not completed
         if (status.developer_approved === true) {
+
             return send(res, 200, {
                 success: true,
                 state: "processing",
@@ -417,7 +498,7 @@ export default async function handler(req, res) {
             });
         }
 
-        // 12. Payment still awaiting approval
+        // 14. Payment awaiting approval
         return send(res, 200, {
             success: true,
             state: "pending",
@@ -426,19 +507,23 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
+
         console.error(
             "PConnect payment status API error:",
             error.message
         );
 
         if (error.name === "AbortError") {
+
             return send(res, 504, {
                 success: false,
-                error: "Payment status verification timed out."
+                error:
+                    "Payment status verification timed out."
             });
         }
 
         if (error.message === "PI_AUTH_FAILED") {
+
             return send(res, 401, {
                 success: false,
                 error: "Pi authentication failed."
@@ -448,15 +533,18 @@ export default async function handler(req, res) {
         if (
             error.message === "PI_PAYMENT_LOOKUP_FAILED"
         ) {
+
             return send(res, 502, {
                 success: false,
-                error: "Unable to verify payment with Pi."
+                error:
+                    "Unable to verify payment with Pi."
             });
         }
 
         return send(res, 500, {
             success: false,
-            error: "Unable to verify payment status."
+            error:
+                "Unable to verify payment status."
         });
     }
 }
