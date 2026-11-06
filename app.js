@@ -3,8 +3,9 @@
 // Authentication + Payments
 // Request Validation
 // Dashboard + Notifications + Transactions
+// Payment Status Verification
 // Incomplete Payment Recovery
-// Improved Payment State Management
+// Secure Payment State Management
 // ==========================================
 
 "use strict";
@@ -27,7 +28,6 @@ let piInitError = null;
 try {
 
     if (typeof window.Pi === "undefined") {
-
         throw new Error(
             "Pi SDK is unavailable. Open PConnect inside Pi Browser."
         );
@@ -85,10 +85,10 @@ let cachedNotifications = [];
 
 let transactionsLoaded = false;
 
-// Prevent late authentication results from
-// overwriting a newer authentication attempt.
-
 let authAttemptId = 0;
+
+// Prevent duplicate recovery attempts.
+let recoveryAttemptId = 0;
 
 // ==========================================
 // REQUEST ID
@@ -124,7 +124,7 @@ const urlRequestId = getValidRequestId(
     pageParams.get("request_id")
 );
 
-if (urlRequestId) {
+if (urlRequestId !== null) {
 
     sessionStorage.setItem(
         "pconnect_request_id",
@@ -139,14 +139,15 @@ if (urlRequestId) {
 }
 
 let currentRequestId =
-    urlRequestId ||
-    getValidRequestId(
-        sessionStorage.getItem(
-            "pconnect_request_id"
-        )
-    );
+    urlRequestId !== null
+        ? urlRequestId
+        : getValidRequestId(
+            sessionStorage.getItem(
+                "pconnect_request_id"
+            )
+        );
 
-if (!currentRequestId) {
+if (currentRequestId === null) {
 
     sessionStorage.removeItem(
         "pconnect_request_id"
@@ -214,7 +215,7 @@ function updatePaymentButton() {
 }
 
 // ==========================================
-// PAYMENT STATE RESET
+// PAYMENT STATE
 // ==========================================
 
 function releasePaymentProgress() {
@@ -224,6 +225,24 @@ function releasePaymentProgress() {
     if (loginBtn) {
         loginBtn.disabled = false;
     }
+
+    updatePaymentButton();
+}
+
+function lockPayment(message) {
+
+    paymentLocked = true;
+
+    setPaymentEnabled(false);
+
+    if (message) {
+        setPayStatus(message);
+    }
+}
+
+function unlockPayment() {
+
+    paymentLocked = false;
 
     updatePaymentButton();
 }
@@ -274,6 +293,17 @@ async function fetchWithTimeout(
             ...options,
             signal: controller.signal
         });
+
+    } catch (error) {
+
+        if (error.name === "AbortError") {
+
+            throw new Error(
+                "The request timed out. Please check your connection."
+            );
+        }
+
+        throw error;
 
     } finally {
 
@@ -399,6 +429,98 @@ async function sendPaymentApi(
     );
 
     return readApiResponse(response);
+}
+
+// ==========================================
+// PAYMENT IDENTIFIER HELPERS
+// ==========================================
+
+function getPaymentIdentifier(payment) {
+
+    if (!payment || typeof payment !== "object") {
+        return null;
+    }
+
+    const identifier =
+        payment.identifier ||
+        payment.paymentId ||
+        payment.payment_id;
+
+    if (
+        typeof identifier !== "string" ||
+        !identifier.trim() ||
+        identifier.length > 200
+    ) {
+        return null;
+    }
+
+    return identifier.trim();
+}
+
+function getPaymentTxid(payment) {
+
+    if (!payment || typeof payment !== "object") {
+        return null;
+    }
+
+    const txid =
+        payment.transaction &&
+        payment.transaction.txid;
+
+    if (
+        typeof txid !== "string" ||
+        !txid.trim() ||
+        txid.length > 200
+    ) {
+        return null;
+    }
+
+    return txid.trim();
+}
+
+// ==========================================
+// SAVE INCOMPLETE PAYMENT
+// ==========================================
+
+function savePendingPayment(payment) {
+
+    const paymentId =
+        getPaymentIdentifier(payment);
+
+    if (!paymentId) {
+        return false;
+    }
+
+    const existingId =
+        getPaymentIdentifier(
+            pendingIncompletePayment
+        );
+
+    if (
+        existingId &&
+        existingId !== paymentId
+    ) {
+
+        lockPayment(
+            "Another incomplete payment already exists. Do not start another payment."
+        );
+
+        return false;
+    }
+
+    pendingIncompletePayment = {
+        identifier: paymentId,
+
+        transaction: {
+            txid: getPaymentTxid(payment)
+        }
+    };
+
+    lockPayment(
+        "An incomplete payment was found. Verifying its status..."
+    );
+
+    return true;
 }
 
 // ==========================================
@@ -798,8 +920,6 @@ window.loadDashboard = async function () {
     setElementText("approvedRequests", approved);
     setElementText("rejectedRequests", rejected);
 
-    // RECENT ACTIVITY
-
     const container = getElement(
         "recentActivity"
     );
@@ -872,8 +992,6 @@ window.loadDashboard = async function () {
             );
         }
     }
-
-    // PAYMENT COUNT
 
     try {
 
@@ -1140,6 +1258,234 @@ async function refreshPaymentPageData() {
 }
 
 // ==========================================
+// PAYMENT STATUS CHECK
+// ==========================================
+
+async function checkPaymentStatus(paymentId) {
+
+    if (
+        typeof paymentId !== "string" ||
+        !paymentId.trim()
+    ) {
+
+        throw new Error(
+            "A valid payment ID is required."
+        );
+    }
+
+    const data = await sendPaymentApi(
+        "/api/payment-status",
+        {
+            paymentId: paymentId.trim()
+        }
+    );
+
+    const state = normalizeStatus(
+        data.state || data.status
+    );
+
+    return {
+        ...data,
+        state: state
+    };
+}
+
+// ==========================================
+// VERIFY CANCELLED PAYMENT
+// ==========================================
+
+async function verifyCancelledPayment(paymentId) {
+
+    lockPayment(
+        "Verifying cancellation with Pi..."
+    );
+
+    try {
+
+        const result =
+            await checkPaymentStatus(paymentId);
+
+        if (
+            result.state !== "cancelled" ||
+            result.canRetry !== true
+        ) {
+
+            lockPayment(
+                "The server has not confirmed that this payment is safe to retry. Do not pay again."
+            );
+
+            return false;
+        }
+
+        pendingIncompletePayment = null;
+
+        await validatePaymentRequest();
+
+        unlockPayment();
+
+        setPayStatus(
+            "The previous payment was confirmed cancelled. You may retry this approved request."
+        );
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "[PConnect] Cancellation verification failed:",
+            error
+        );
+
+        lockPayment(
+            "Cancellation could not be verified: " +
+            getErrorMessage(error) +
+            ". Do not start another payment."
+        );
+
+        return false;
+    }
+}
+
+// ==========================================
+// COMPLETE RECOVERED PAYMENT
+// ==========================================
+
+async function completeRecoveredPayment(
+    paymentId,
+    txid
+) {
+
+    if (!paymentId || !txid) {
+
+        throw new Error(
+            "Payment ID and transaction ID are required."
+        );
+    }
+
+    await sendPaymentApi(
+        "/api/complete",
+        {
+            paymentId: paymentId,
+            txid: txid
+        }
+    );
+
+    pendingIncompletePayment = null;
+    paymentLocked = false;
+
+    currentRequest = null;
+    currentService = null;
+
+    setPayStatus(
+        "Previous Pi payment recovered successfully."
+    );
+
+    await refreshPaymentPageData();
+
+    return true;
+}
+
+// ==========================================
+// HANDLE PAYMENT STATUS
+// ==========================================
+
+async function handlePaymentStatus(paymentId) {
+
+    const result =
+        await checkPaymentStatus(paymentId);
+
+    switch (result.state) {
+
+        case "recorded":
+
+            pendingIncompletePayment = null;
+
+            unlockPayment();
+
+            setPayStatus(
+                "This payment is already recorded successfully."
+            );
+
+            await refreshPaymentPageData();
+
+            return "recorded";
+
+        case "completed":
+
+            if (!result.txid) {
+
+                lockPayment(
+                    "Pi reports a completed payment, but its transaction ID is unavailable. Do not pay again."
+                );
+
+                return "verification_required";
+            }
+
+            await completeRecoveredPayment(
+                paymentId,
+                result.txid
+            );
+
+            return "completed";
+
+        case "cancelled":
+
+            if (result.canRetry === true) {
+
+                pendingIncompletePayment = null;
+
+                await validatePaymentRequest();
+
+                unlockPayment();
+
+                setPayStatus(
+                    "The previous payment was confirmed cancelled. You can retry."
+                );
+
+                return "cancelled";
+            }
+
+            lockPayment(
+                "Payment cancellation is not yet confirmed as safe to retry."
+            );
+
+            return "verification_required";
+
+        case "processing":
+
+            lockPayment(
+                "Your Pi payment is still processing. Do not start another payment."
+            );
+
+            return "processing";
+
+        case "pending":
+
+            lockPayment(
+                "Your Pi payment is still pending. Do not start another payment."
+            );
+
+            return "pending";
+
+        case "verification_required":
+
+            lockPayment(
+                "Payment verification is required. Do not pay again."
+            );
+
+            return "verification_required";
+
+        default:
+
+            lockPayment(
+                "The payment status is unknown. Do not start another payment."
+            );
+
+            return "unknown";
+    }
+}
+
+// ==========================================
 // INCOMPLETE PAYMENT CALLBACK
 // ==========================================
 
@@ -1149,39 +1495,11 @@ function onIncompletePaymentFound(payment) {
         "[PConnect] Incomplete payment found."
     );
 
-    if (
-        !payment ||
-        !payment.identifier
-    ) {
+    const saved = savePendingPayment(payment);
 
-        console.warn(
-            "[PConnect] Invalid incomplete payment."
-        );
-
+    if (!saved) {
         return;
     }
-
-    if (
-        pendingIncompletePayment &&
-        pendingIncompletePayment.identifier !==
-            payment.identifier
-    ) {
-
-        paymentLocked = true;
-
-        setPaymentEnabled(false);
-
-        setPayStatus(
-            "Another incomplete payment needs attention. Do not start a new payment."
-        );
-
-        return;
-    }
-
-    pendingIncompletePayment = payment;
-    paymentLocked = true;
-
-    setPaymentEnabled(false);
 
     if (!currentPiAccessToken) {
 
@@ -1203,29 +1521,19 @@ async function processIncompletePayment(payment) {
 
     if (
         !payment ||
-        !payment.identifier ||
         !currentPiAccessToken ||
         processingIncompletePayment
     ) {
         return false;
     }
 
-    const txid =
-        payment.transaction &&
-        payment.transaction.txid;
+    const paymentId =
+        getPaymentIdentifier(payment);
 
-    if (
-        !txid ||
-        typeof txid !== "string"
-    ) {
+    if (!paymentId) {
 
-        pendingIncompletePayment = payment;
-        paymentLocked = true;
-
-        setPaymentEnabled(false);
-
-        setPayStatus(
-            "The previous payment has no transaction ID yet. Do not create another payment."
+        lockPayment(
+            "The incomplete payment has an invalid payment ID."
         );
 
         return false;
@@ -1234,39 +1542,114 @@ async function processIncompletePayment(payment) {
     processingIncompletePayment = true;
     paymentLocked = true;
 
+    const thisRecovery = ++recoveryAttemptId;
+
     setPaymentEnabled(false);
 
     setPayStatus(
-        "Recovering your previous Pi payment..."
+        "Checking your previous Pi payment..."
     );
 
     let recovered = false;
 
     try {
 
-        await sendPaymentApi(
-            "/api/complete",
-            {
-                paymentId: payment.identifier,
-                txid: txid
-            }
-        );
+        const result =
+            await checkPaymentStatus(paymentId);
 
-        pendingIncompletePayment = null;
-        paymentLocked = false;
+        if (thisRecovery !== recoveryAttemptId) {
+            return false;
+        }
 
-        // Clear stale request data after recovery.
+        switch (result.state) {
 
-        currentRequest = null;
-        currentService = null;
+            case "recorded":
 
-        recovered = true;
+                pendingIncompletePayment = null;
 
-        setPayStatus(
-            "Previous Pi payment recovered successfully."
-        );
+                paymentLocked = false;
 
-        await refreshPaymentPageData();
+                setPayStatus(
+                    "Your previous payment is already recorded."
+                );
+
+                await refreshPaymentPageData();
+
+                recovered = true;
+
+                break;
+
+            case "completed":
+
+                if (!result.txid) {
+
+                    throw new Error(
+                        "Payment is completed but its transaction ID is unavailable."
+                    );
+                }
+
+                await completeRecoveredPayment(
+                    paymentId,
+                    result.txid
+                );
+
+                recovered = true;
+
+                break;
+
+            case "cancelled":
+
+                if (result.canRetry === true) {
+
+                    pendingIncompletePayment = null;
+
+                    await validatePaymentRequest();
+
+                    paymentLocked = false;
+
+                    setPayStatus(
+                        "The previous payment was confirmed cancelled. You may retry."
+                    );
+
+                } else {
+
+                    lockPayment(
+                        "Payment cancellation is not confirmed. Do not pay again."
+                    );
+                }
+
+                break;
+
+            case "processing":
+
+                lockPayment(
+                    "Your previous payment is still processing. Do not pay again."
+                );
+
+                break;
+
+            case "pending":
+
+                lockPayment(
+                    "Your previous payment is still pending. Do not pay again."
+                );
+
+                break;
+
+            case "verification_required":
+
+                lockPayment(
+                    "Your previous payment requires verification. Do not pay again."
+                );
+
+                break;
+
+            default:
+
+                lockPayment(
+                    "The previous payment status is unknown. Do not pay again."
+                );
+        }
 
     } catch (error) {
 
@@ -1276,9 +1659,8 @@ async function processIncompletePayment(payment) {
         );
 
         pendingIncompletePayment = payment;
-        paymentLocked = true;
 
-        setPayStatus(
+        lockPayment(
             "Payment recovery failed: " +
             getErrorMessage(error) +
             ". Do not create another payment."
@@ -1287,12 +1669,6 @@ async function processIncompletePayment(payment) {
     } finally {
 
         processingIncompletePayment = false;
-
-        paymentInProgress = false;
-
-        if (loginBtn) {
-            loginBtn.disabled = false;
-        }
 
         updatePaymentButton();
     }
@@ -1432,41 +1808,13 @@ if (loginBtn) {
                     "[PConnect] Pi login successful."
                 );
 
-                // ==================================
                 // RECOVER PAYMENT FIRST
-                // ==================================
-
-                let recoveryWasFound = false;
-                let recoverySucceeded = false;
 
                 if (pendingIncompletePayment) {
 
-                    recoveryWasFound = true;
-
-                    recoverySucceeded =
-                        await processIncompletePayment(
-                            pendingIncompletePayment
-                        );
-                }
-
-                // ==================================
-                // VALIDATE REQUEST
-                // ==================================
-
-                if (recoveryWasFound) {
-
-                    if (recoverySucceeded) {
-
-                        setPayStatus(
-                            "Pi connected. Your previous payment was recovered successfully. Check your transaction history."
-                        );
-
-                    } else {
-
-                        setPayStatus(
-                            "Pi connected, but a previous payment still needs attention. Do not create another payment."
-                        );
-                    }
+                    await processIncompletePayment(
+                        pendingIncompletePayment
+                    );
 
                 } else if (currentRequestId) {
 
@@ -1492,15 +1840,14 @@ if (loginBtn) {
                     );
                 }
 
-                // ==================================
                 // LOAD USER DATA
-                // ==================================
 
                 await refreshPaymentPageData();
 
             } catch (error) {
 
                 if (loginTimeout) {
+
                     clearTimeout(loginTimeout);
                     loginTimeout = null;
                 }
@@ -1557,7 +1904,10 @@ if (payBtn) {
         "click",
         async function () {
 
-            if (paymentInProgress) {
+            if (
+                paymentInProgress ||
+                processingIncompletePayment
+            ) {
                 return;
             }
 
@@ -1584,7 +1934,6 @@ if (payBtn) {
 
             if (
                 pendingIncompletePayment ||
-                processingIncompletePayment ||
                 paymentLocked
             ) {
 
@@ -1624,8 +1973,6 @@ if (payBtn) {
 
             try {
 
-                // RECHECK REQUEST BEFORE PAYMENT
-
                 const request =
                     await validatePaymentRequest();
 
@@ -1657,10 +2004,13 @@ if (payBtn) {
 
                                 try {
 
-                                    if (!paymentId) {
+                                    if (
+                                        !paymentId ||
+                                        typeof paymentId !== "string"
+                                    ) {
 
                                         throw new Error(
-                                            "Pi returned no payment ID."
+                                            "Pi returned no valid payment ID."
                                         );
                                     }
 
@@ -1682,18 +2032,13 @@ if (payBtn) {
                                         error
                                     );
 
-                                    // Keep payment locked.
-                                    // Do not allow another payment.
-
-                                    paymentLocked = true;
-
-                                    releasePaymentProgress();
-
-                                    setPayStatus(
+                                    lockPayment(
                                         "Approval failed: " +
                                         getErrorMessage(error) +
-                                        ". Check this payment before trying again."
+                                        ". Verify this payment before trying again."
                                     );
+
+                                    releasePaymentProgress();
                                 }
                             },
 
@@ -1732,8 +2077,6 @@ if (payBtn) {
                                     pendingIncompletePayment = null;
                                     paymentLocked = false;
 
-                                    // Clear stale request data.
-
                                     currentRequest = null;
                                     currentService = null;
 
@@ -1751,12 +2094,18 @@ if (payBtn) {
                                         error
                                     );
 
-                                    // Keep locked until recovery.
+                                    // Save payment for recovery.
 
-                                    paymentLocked = true;
+                                    savePendingPayment({
+                                        identifier: paymentId,
 
-                                    setPayStatus(
-                                        "Payment completion needs checking: " +
+                                        transaction: {
+                                            txid: txid
+                                        }
+                                    });
+
+                                    lockPayment(
+                                        "Payment completion needs verification: " +
                                         getErrorMessage(error) +
                                         ". Do not pay again."
                                     );
@@ -1769,26 +2118,43 @@ if (payBtn) {
 
                         // USER CANCELLED
 
-                        onCancel: function (paymentId) {
+                        onCancel: async function (paymentId) {
 
                             console.log(
-                                "[PConnect] Payment cancelled:",
+                                "[PConnect] Payment cancellation callback:",
                                 paymentId
                             );
 
-                            paymentLocked = false;
-                            pendingIncompletePayment = null;
+                            if (
+                                typeof paymentId !== "string" ||
+                                !paymentId.trim()
+                            ) {
 
-                            setPayStatus(
-                                "Payment cancelled."
-                            );
+                                lockPayment(
+                                    "Pi cancellation needs verification. Do not pay again."
+                                );
+
+                                releasePaymentProgress();
+
+                                return;
+                            }
+
+                            // Never unlock based only on callback.
+
+                            savePendingPayment({
+                                identifier: paymentId
+                            });
 
                             releasePaymentProgress();
+
+                            await verifyCancelledPayment(
+                                paymentId
+                            );
                         },
 
                         // PAYMENT ERROR
 
-                        onError: function (
+                        onError: async function (
                             error,
                             payment
                         ) {
@@ -1799,18 +2165,43 @@ if (payBtn) {
                                 payment
                             );
 
-                            // Keep locked because payment state
-                            // may need server verification.
+                            const paymentId =
+                                getPaymentIdentifier(payment);
 
-                            paymentLocked = true;
+                            if (paymentId) {
 
-                            setPayStatus(
-                                "Payment error: " +
-                                getErrorMessage(error) +
-                                ". Check payment status before retrying."
-                            );
+                                savePendingPayment(payment);
 
-                            releasePaymentProgress();
+                                releasePaymentProgress();
+
+                                try {
+
+                                    await handlePaymentStatus(
+                                        paymentId
+                                    );
+
+                                } catch (statusError) {
+
+                                    console.error(
+                                        "[PConnect] Error status verification failed:",
+                                        statusError
+                                    );
+
+                                    lockPayment(
+                                        "Payment status could not be verified. Do not pay again."
+                                    );
+                                }
+
+                            } else {
+
+                                lockPayment(
+                                    "Payment error: " +
+                                    getErrorMessage(error) +
+                                    ". Payment status must be checked before retrying."
+                                );
+
+                                releasePaymentProgress();
+                            }
                         }
                     }
                 );
@@ -1822,7 +2213,17 @@ if (payBtn) {
                     error
                 );
 
-                paymentLocked = false;
+                // Only unlock if payment creation
+                // failed before Pi created a payment.
+
+                if (!pendingIncompletePayment) {
+
+                    paymentLocked = false;
+
+                } else {
+
+                    paymentLocked = true;
+                }
 
                 setPayStatus(
                     getErrorMessage(error)
