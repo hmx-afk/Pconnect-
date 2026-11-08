@@ -71,7 +71,7 @@ function isAdmin(req) {
 }
 
 // ==========================================
-// VERIFY PI USER - SHARED HELPER
+// SHARED PI IDENTITY VERIFICATION
 // ==========================================
 
 async function verifyPiUser(req) {
@@ -82,10 +82,9 @@ async function verifyPiUser(req) {
         return identity;
     }
 
-    // Preserve original API timeout response.
     if (
         identity.status === 503 &&
-        identity.error === "Pi verification timed out"
+        String(identity.error || "").toLowerCase().includes("timed out")
     ) {
         return {
             ok: false,
@@ -94,16 +93,10 @@ async function verifyPiUser(req) {
         };
     }
 
-    // Preserve original network / verification error.
     if (
         identity.status === 503 ||
         identity.status === 502
     ) {
-        console.error(
-            "Pi identity verification failed:",
-            identity.error
-        );
-
         return {
             ok: false,
             status: 502,
