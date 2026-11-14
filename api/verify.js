@@ -1,3 +1,5 @@
+import { verifyPiToken } from "../lib/verifyPi.js";
+
 // ==========================================
 // PConnect - Verify Pi User Access Token
 // Server-Side Pi Identity Verification
@@ -47,75 +49,18 @@ export default async function handler(req, res) {
         // VERIFY WITH PI PLATFORM API
         // ==========================================
 
-        const piResponse =
-            await fetch(
-                "https://api.minepi.com/v2/me",
-                {
-                    method: "GET",
+        const identity = await verifyPiToken(accessToken);
 
-                    headers: {
-                        "Authorization":
-                            `Bearer ${accessToken}`
-                    }
-                }
-            );
-
-
-        // ==========================================
-        // INVALID TOKEN
-        // ==========================================
-
-        if (!piResponse.ok) {
-
-            console.error(
-                "Pi identity verification failed:",
-                piResponse.status
-            );
-
-            return res.status(401).json({
+        if (!identity.ok) {
+            return res.status(identity.status).json({
                 success: false,
-                error: "Invalid Pi authentication"
+                error: identity.error
             });
         }
 
-
-        // ==========================================
-        // READ VERIFIED USER
-        // ==========================================
-
-        const user =
-            await piResponse.json();
+        const { uid, username } = identity;
 
 
-        const uid =
-            String(
-                user.uid || ""
-            ).trim();
-
-        const username =
-            String(
-                user.username || ""
-            ).trim();
-
-
-        // ==========================================
-        // VERIFY REQUIRED IDENTITY DATA
-        // ==========================================
-
-        if (!uid || !username) {
-
-            console.error(
-                "Pi verification returned incomplete user data"
-            );
-
-            return res.status(401).json({
-                success: false,
-                error: "Invalid Pi identity"
-            });
-        }
-
-
-        // ==========================================
         // SUCCESS
         // ==========================================
 

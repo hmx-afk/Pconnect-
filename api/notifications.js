@@ -4,12 +4,10 @@
 // ==========================================
 
 import crypto from "crypto";
-
-const PI_ME_URL = "https://api.minepi.com/v2/me";
+import { verifyPi } from "../lib/verifyPi.js";
 
 const REQUEST_TIMEOUT = 10000;
 
-const MAX_TOKEN_LENGTH = 4096;
 const MAX_ADMIN_KEY_LENGTH = 4096;
 const MAX_USERNAME_LENGTH = 50;
 
@@ -26,35 +24,6 @@ function sendError(res, status, message) {
         success: false,
         error: message
     });
-}
-
-// ==========================================
-// BEARER TOKEN
-// ==========================================
-
-function getBearerToken(req) {
-
-    const header =
-        typeof req.headers.authorization === "string"
-            ? req.headers.authorization
-            : "";
-
-    const match = header.match(/^Bearer\s+(\S+)$/i);
-
-    if (!match) {
-        return null;
-    }
-
-    const token = match[1].trim();
-
-    if (
-        token.length < 20 ||
-        token.length > MAX_TOKEN_LENGTH
-    ) {
-        return null;
-    }
-
-    return token;
 }
 
 // ==========================================
@@ -100,111 +69,6 @@ function isAdmin(req) {
 }
 
 // ==========================================
-// VERIFY PI USER
-// ==========================================
-
-async function verifyPiUser(req) {
-
-    const token = getBearerToken(req);
-
-    if (!token) {
-        return {
-            ok: false,
-            status: 401,
-            error: "Pi authentication required"
-        };
-    }
-
-    const controller = new AbortController();
-
-    const timeout = setTimeout(
-        () => controller.abort(),
-        REQUEST_TIMEOUT
-    );
-
-    try {
-
-        const response = await fetch(
-            PI_ME_URL,
-            {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    Accept: "application/json"
-                },
-                signal: controller.signal
-            }
-        );
-
-        if (!response.ok) {
-            return {
-                ok: false,
-                status: 401,
-                error: "Pi authentication failed"
-            };
-        }
-
-        const identity = await response.json();
-
-        const username =
-            typeof identity?.username === "string"
-                ? identity.username.trim()
-                : "";
-
-        const uid =
-            typeof identity?.uid === "string"
-                ? identity.uid.trim()
-                : "";
-
-        if (
-            !uid ||
-            uid.length > 200 ||
-            !username ||
-            username.length > MAX_USERNAME_LENGTH ||
-            !/^[a-zA-Z0-9._-]+$/.test(username)
-        ) {
-            return {
-                ok: false,
-                status: 401,
-                error: "Invalid Pi identity"
-            };
-        }
-
-        return {
-            ok: true,
-            username,
-            uid
-        };
-
-    } catch (error) {
-
-        if (error?.name === "AbortError") {
-            return {
-                ok: false,
-                status: 504,
-                error: "Pi authentication timed out"
-            };
-        }
-
-        console.error(
-            "Pi identity verification failed:",
-            error?.message || "Unknown error"
-        );
-
-        return {
-            ok: false,
-            status: 502,
-            error: "Unable to verify Pi identity"
-        };
-
-    } finally {
-
-        clearTimeout(timeout);
-
-    }
-}
-
-// ==========================================
 // SUPABASE CONFIGURATION
 // ==========================================
 
@@ -234,7 +98,7 @@ function getSupabaseConfig() {
             parsed.port ||
             parsed.username ||
             parsed.password ||
-            parsed.pathname !== "" ||
+            parsed.pathname !== "/" ||
             parsed.search ||
             parsed.hash
         ) {
@@ -376,7 +240,7 @@ export default async function handler(req, res) {
 
         if (req.method === "GET") {
 
-            const identity = await verifyPiUser(req);
+            const identity = await verifyPi(req);
 
             if (!identity.ok) {
                 return sendError(
@@ -658,9 +522,25 @@ export default async function handler(req, res) {
 
             if (!insertResult.ok) {
 
+                const insertError = insertResult.data;
+
+                // Handle concurrent duplicate notification.
+                if (
+                    insertResult.status === 409 &&
+                    insertError &&
+                    typeof insertError === "object" &&
+                    insertError.code === "23505"
+                ) {
+                    return res.status(200).json({
+                        success: true,
+                        duplicate: true
+                    });
+                }
+
                 console.error(
                     "Notification insert failed:",
-                    insertResult.status
+                    insertResult.status,
+                    insertError?.code || "UNKNOWN"
                 );
 
                 return sendError(
@@ -686,7 +566,7 @@ export default async function handler(req, res) {
 
         if (req.method === "PATCH") {
 
-            const identity = await verifyPiUser(req);
+            const identity = await verifyPi(req);
 
             if (!identity.ok) {
                 return sendError(

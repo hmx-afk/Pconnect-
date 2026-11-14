@@ -1,3 +1,5 @@
+import { isValidPaymentIdentifier, verifyPi } from "../lib/verifyPi.js";
+
 // ==========================================
 // PConnect - Secure Pi Payment Status API
 // Testnet | Vercel | Supabase
@@ -45,12 +47,23 @@ async function requestJson(url, options = {}) {
 // ==========================================
 
 function validSupabaseUrl(value) {
+
+    if (typeof value !== "string" || !value.trim()) {
+        return false;
+    }
+
     try {
-        const url = new URL(value);
+        const url = new URL(value.trim());
 
         return (
             url.protocol === "https:" &&
-            url.hostname.endsWith(".supabase.co")
+            /^[a-z0-9-]+\.supabase\.co$/i.test(url.hostname) &&
+            !url.port &&
+            !url.username &&
+            !url.password &&
+            url.pathname === "/" &&
+            !url.search &&
+            !url.hash
         );
 
     } catch {
@@ -58,14 +71,6 @@ function validSupabaseUrl(value) {
     }
 }
 
-function isValidPaymentIdentifier(value) {
-    return (
-        typeof value === "string" &&
-        value.trim().length > 0 &&
-        value.length <= 200 &&
-        /^[a-zA-Z0-9_-]+$/.test(value)
-    );
-}
 
 function validTxid(value) {
     return (
@@ -73,35 +78,6 @@ function validTxid(value) {
         value.trim().length > 0 &&
         value.length <= 200
     );
-}
-
-// ==========================================
-// PI AUTHENTICATION
-// ==========================================
-
-async function verifyPiToken(accessToken) {
-    const { response, data } = await requestJson(
-        `${PI_API}/me`,
-        {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${accessToken}`
-            }
-        }
-    );
-
-    if (
-        !response.ok ||
-        !data?.uid ||
-        !data?.username
-    ) {
-        throw new Error("PI_AUTH_FAILED");
-    }
-
-    return {
-        uid: String(data.uid),
-        username: String(data.username)
-    };
 }
 
 // ==========================================
@@ -294,25 +270,9 @@ export default async function handler(req, res) {
         });
     }
 
-    const authorization =
-        req.headers.authorization || "";
-
-    if (!authorization.startsWith("Bearer ")) {
-
-        return send(res, 401, {
-            success: false,
-            error: "Authentication required."
-        });
-    }
-
-    const accessToken = authorization.slice(7).trim();
     const paymentId = req.body?.paymentId;
 
-    if (
-        accessToken.length < 20 ||
-        accessToken.length > 4096 ||
-        !isValidPaymentIdentifier(paymentId)
-    ) {
+    if (!isValidPaymentIdentifier(paymentId)) {
         return send(res, 400, {
             success: false,
             error: "Invalid payment information."
@@ -321,8 +281,15 @@ export default async function handler(req, res) {
 
     try {
 
-        // 1. Verify Pi user
-        const user = await verifyPiToken(accessToken);
+        // 1. Verify Pi user with shared helper
+        const user = await verifyPi(req);
+
+        if (!user.ok) {
+            return send(res, user.status, {
+                success: false,
+                error: user.error
+            });
+        }
 
         // 2. Retrieve payment from Pi
         const payment = await getPiPayment(
@@ -522,13 +489,6 @@ export default async function handler(req, res) {
             });
         }
 
-        if (error.message === "PI_AUTH_FAILED") {
-
-            return send(res, 401, {
-                success: false,
-                error: "Pi authentication failed."
-            });
-        }
 
         if (
             error.message === "PI_PAYMENT_LOOKUP_FAILED"

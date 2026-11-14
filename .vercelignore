@@ -1,0 +1,6 @@
+tests/
+*.backup-*
+*.bak
+.env
+.env.*
+!.env.example

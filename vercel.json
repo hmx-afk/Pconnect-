@@ -1,14 +1,13 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "script-src 'self' 'unsafe-inline' https://sdk.minepi.com; object-src 'none'; base-uri 'self'"
+          "value": "script-src 'self' https://sdk.minepi.com; object-src 'none'; base-uri 'self'"
         }
       ]
     },

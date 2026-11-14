@@ -1,3 +1,5 @@
+import { verifyPiToken } from "../lib/verifyPi.js";
+
 // ==========================================
 // PConnect - Secure Service Request API
 // Pi Identity Verification | Supabase
@@ -114,34 +116,31 @@ export default async function handler(req, res) {
         let parsedSupabaseUrl;
 
         try {
-
-            parsedSupabaseUrl =
-                new URL(supabaseUrl);
-
+            parsedSupabaseUrl = new URL(supabaseUrl);
         } catch {
-
             return send(res, 500, {
                 success: false,
                 error: "Server configuration error"
             });
-
         }
-
 
         if (
             parsedSupabaseUrl.protocol !== "https:" ||
-            !parsedSupabaseUrl.hostname.endsWith(
-                ".supabase.co"
-            )
+            !/^[a-z0-9-]+\.supabase\.co$/i.test(
+                parsedSupabaseUrl.hostname
+            ) ||
+            parsedSupabaseUrl.port ||
+            parsedSupabaseUrl.username ||
+            parsedSupabaseUrl.password ||
+            parsedSupabaseUrl.pathname !== "/" ||
+            parsedSupabaseUrl.search ||
+            parsedSupabaseUrl.hash
         ) {
-
             return send(res, 500, {
                 success: false,
                 error: "Server configuration error"
             });
-
         }
-
 
         // ==========================================
         // READ REQUEST BODY
@@ -291,128 +290,30 @@ export default async function handler(req, res) {
 
 
         // ==========================================
-        // ACCESS TOKEN VALIDATION
+        // SHARED PI IDENTITY VERIFICATION
         // ==========================================
 
-        if (
-            accessToken.length < 20 ||
-            accessToken.length > 4096
-        ) {
+        const identity = await verifyPiToken(accessToken);
 
-            return send(res, 401, {
+        if (!identity.ok) {
+            return send(res, identity.status, {
                 success: false,
-                error: "Invalid Pi authentication"
+                error: identity.error
             });
-
         }
 
-
-        // ==========================================
-        // VERIFY IDENTITY WITH PI SERVER
-        // ==========================================
-
-        let piResponse;
-
-        try {
-
-            piResponse =
-                await fetchWithTimeout(
-                    "https://api.minepi.com/v2/me",
-                    {
-                        method: "GET",
-                        headers: {
-                            "Authorization":
-                                `Bearer ${accessToken}`
-                        }
-                    }
-                );
-
-        } catch (error) {
-
-            console.error(
-                "Pi verification request failed:",
-                error.name
-            );
-
-            return send(res, 503, {
-                success: false,
-                error: "Pi verification is temporarily unavailable. Please try again."
-            });
-
-        }
-
-
-        if (!piResponse.ok) {
-
-            console.error(
-                "Pi verification rejected:",
-                piResponse.status
-            );
-
-            return send(res, 401, {
-                success: false,
-                error: "Pi authentication failed. Please sign in again."
-            });
-
-        }
-
-
-        // ==========================================
-        // READ VERIFIED PI IDENTITY
-        // ==========================================
-
-        let piUser;
-
-        try {
-
-            piUser = await piResponse.json();
-
-        } catch {
-
-            return send(res, 502, {
-                success: false,
-                error: "Invalid response from Pi Network"
-            });
-
-        }
-
-
-        const piUid =
-            String(piUser.uid || "").trim();
-
-        const piUsername =
-            String(piUser.username || "").trim();
-
-
-        if (
-            !piUid ||
-            !piUsername ||
-            piUsername.length > 50 ||
-            !/^[a-zA-Z0-9._-]+$/.test(piUsername)
-        ) {
-
-            console.error(
-                "Invalid verified Pi identity"
-            );
-
-            return send(res, 401, {
-                success: false,
-                error: "Unable to verify Pi identity"
-            });
-
-        }
-
+        const piUsername = identity.username;
 
         // ==========================================
         // CREATE REQUEST IN SUPABASE
-        // ==========================================
+          // ==========================================
 
         let supabaseResponse;
 
         try {
 
             const insertUrl =
-                `${supabaseUrl}/rest/v1/requests` +
+                `${parsedSupabaseUrl.origin}/rest/v1/requests` +
                 "?select=id,service,status,review_status,order_status,created_at";
 
             supabaseResponse =

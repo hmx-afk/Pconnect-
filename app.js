@@ -1398,15 +1398,18 @@ async function handlePaymentStatus(paymentId) {
 
         case "recorded":
 
-            pendingIncompletePayment = null;
+            if (!result.txid) {
+                lockPayment(
+                    "Payment is recorded, but its transaction ID is unavailable. Do not pay again."
+                );
 
-            unlockPayment();
+                return "verification_required";
+            }
 
-            setPayStatus(
-                "This payment is already recorded successfully."
+            await completeRecoveredPayment(
+                paymentId,
+                result.txid
             );
-
-            await refreshPaymentPageData();
 
             return "recorded";
 
@@ -1565,15 +1568,16 @@ async function processIncompletePayment(payment) {
 
             case "recorded":
 
-                pendingIncompletePayment = null;
+                if (!result.txid) {
+                    throw new Error(
+                        "Payment is recorded, but its transaction ID is unavailable. Do not pay again."
+                    );
+                }
 
-                paymentLocked = false;
-
-                setPayStatus(
-                    "Your previous payment is already recorded."
+                await completeRecoveredPayment(
+                    paymentId,
+                    result.txid
                 );
-
-                await refreshPaymentPageData();
 
                 recovered = true;
 

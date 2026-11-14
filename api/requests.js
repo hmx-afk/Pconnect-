@@ -5,12 +5,10 @@
 // ==========================================
 
 import { createClient } from "@supabase/supabase-js";
+import { verifyPi } from "../lib/verifyPi.js";
 
 "use strict";
 
-const PI_API_URL = "https://api.minepi.com/v2/me";
-
-const PI_TIMEOUT = 10000;
 const SUPABASE_TIMEOUT = 10000;
 const MAX_REQUESTS = 100;
 
@@ -23,125 +21,28 @@ function send(res, status, data) {
 }
 
 // ==========================================
-// VERIFY PI TOKEN
-// ==========================================
-
-async function verifyPiToken(accessToken) {
-
-    const controller = new AbortController();
-
-    const timer = setTimeout(
-        () => controller.abort(),
-        PI_TIMEOUT
-    );
-
-    try {
-
-        const response = await fetch(
-            PI_API_URL,
-            {
-                method: "GET",
-
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    Accept: "application/json"
-                },
-
-                signal: controller.signal
-            }
-        );
-
-        if (!response.ok) {
-            return {
-                success: false,
-                timeout: false
-            };
-        }
-
-        const user = await response.json();
-
-        if (
-            !user ||
-            typeof user !== "object" ||
-            Array.isArray(user)
-        ) {
-            return {
-                success: false,
-                timeout: false
-            };
-        }
-
-        const uid =
-            typeof user.uid === "string"
-                ? user.uid.trim()
-                : "";
-
-        const username =
-            typeof user.username === "string"
-                ? user.username.trim()
-                : "";
-
-        if (
-            !uid ||
-            uid.length > 200 ||
-            !username ||
-            username.length > 50 ||
-            !/^[a-zA-Z0-9._-]+$/.test(username)
-        ) {
-            return {
-                success: false,
-                timeout: false
-            };
-        }
-
-        return {
-            success: true,
-            uid,
-            username
-        };
-
-    } catch (error) {
-
-        if (error.name === "AbortError") {
-            return {
-                success: false,
-                timeout: true
-            };
-        }
-
-        console.error(
-            "Pi token verification error:",
-            error.message
-        );
-
-        return {
-            success: false,
-            timeout: false,
-            serverError: true
-        };
-
-    } finally {
-
-        clearTimeout(timer);
-
-    }
-}
-
-// ==========================================
 // SUPABASE URL VALIDATION
 // ==========================================
 
 function validSupabaseUrl(url) {
 
+    if (typeof url !== "string" || !url.trim()) {
+        return false;
+    }
+
     try {
 
-        const parsed = new URL(url);
+        const parsed = new URL(url.trim());
 
         return (
             parsed.protocol === "https:" &&
-            /^[a-z0-9-]+\.supabase\.co$/i.test(
-                parsed.hostname
-            )
+            /^[a-z0-9-]+\.supabase\.co$/i.test(parsed.hostname) &&
+            !parsed.port &&
+            !parsed.username &&
+            !parsed.password &&
+            parsed.pathname === "/" &&
+            !parsed.search &&
+            !parsed.hash
         );
 
     } catch {
@@ -251,68 +152,19 @@ export default async function handler(req, res) {
         }
 
         // ==========================================
-        // READ BEARER TOKEN
+        // VERIFY USER WITH SHARED PI HELPER
         // ==========================================
 
-        const authHeader =
-            typeof req.headers.authorization === "string"
-                ? req.headers.authorization
-                : "";
+        const verifiedUser = await verifyPi(req);
 
-        const accessToken =
-            authHeader.startsWith("Bearer ")
-                ? authHeader.slice(7).trim()
-                : "";
-
-        // ==========================================
-        // VALIDATE ACCESS TOKEN
-        // ==========================================
-
-        if (
-            !accessToken ||
-            accessToken.length < 20 ||
-            accessToken.length > 4096
-        ) {
-
-            return send(res, 401, {
+        if (!verifiedUser.ok) {
+            return send(res, verifiedUser.status, {
                 success: false,
-                error: "Pi authentication required"
+                error: verifiedUser.error
             });
         }
 
-        // ==========================================
-        // VERIFY USER WITH PI
-        // ==========================================
-
-        const verifiedUser =
-            await verifyPiToken(accessToken);
-
-        if (verifiedUser.timeout) {
-
-            return send(res, 504, {
-                success: false,
-                error: "Pi verification timed out. Please try again."
-            });
-        }
-
-        if (verifiedUser.serverError) {
-
-            return send(res, 502, {
-                success: false,
-                error: "Unable to verify Pi identity"
-            });
-        }
-
-        if (!verifiedUser.success) {
-
-            return send(res, 401, {
-                success: false,
-                error: "Invalid Pi authentication"
-            });
-        }
-
-        const piUsername =
-            verifiedUser.username;
+        const piUsername = verifiedUser.username;
 
         // ==========================================
         // SUPABASE CLIENT
@@ -408,7 +260,7 @@ export default async function handler(req, res) {
     } catch (error) {
 
         // ==========================================
-        // SERVER ERROR
+        // SERVER ERROR / TIMEOUT
         // ==========================================
 
         console.error(
@@ -416,9 +268,19 @@ export default async function handler(req, res) {
             error.message
         );
 
-        return send(res, 500, {
-            success: false,
-            error: "Internal server error"
-        });
+        const timeoutError =
+            error.name === "AbortError" ||
+            /abort|timeout/i.test(error.message || "");
+
+        return send(
+            res,
+            timeoutError ? 504 : 500,
+            {
+                success: false,
+                error: timeoutError
+                    ? "Request loading timed out. Please try again."
+                    : "Internal server error"
+            }
+        );
     }
 }
