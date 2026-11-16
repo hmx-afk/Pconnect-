@@ -310,6 +310,60 @@ test("Return 500 when Supabase rejects request insert", async () => {
     assert.equal(result.data.success, false);
 });
 
+test("Do not log sensitive request data when Supabase rejects insert", async () => {
+    const sensitiveBody = {
+        ...validBody,
+        name: "PRIVATE_TEST_NAME_9281",
+        contact: "PRIVATE_CONTACT_9281",
+        details: "PRIVATE_PROJECT_DETAILS_9281",
+        accessToken: "PRIVATE_ACCESS_TOKEN_9281"
+    };
+
+    const sensitiveResponse = {
+        name: sensitiveBody.name,
+        contact: sensitiveBody.contact,
+        details: sensitiveBody.details,
+        accessToken: sensitiveBody.accessToken
+    };
+
+    const fetchImpl = async (url) => {
+        if (String(url).includes("api.minepi.com")) {
+            return response(200, {
+                uid: "verified-pi-user-123",
+                username: "verifieduser"
+            });
+        }
+
+        return response(400, sensitiveResponse);
+    };
+
+    const originalConsoleError = console.error;
+    const loggedArguments = [];
+
+    console.error = (...args) => {
+        loggedArguments.push(args);
+    };
+
+    try {
+        const result = await invoke({
+            body: sensitiveBody,
+            fetchImpl
+        });
+
+        assert.equal(result.statusCode, 500);
+
+        const loggedText = JSON.stringify(loggedArguments);
+
+        assert.match(loggedText, /400/);
+        assert.doesNotMatch(loggedText, /PRIVATE_TEST_NAME_9281/);
+        assert.doesNotMatch(loggedText, /PRIVATE_CONTACT_9281/);
+        assert.doesNotMatch(loggedText, /PRIVATE_PROJECT_DETAILS_9281/);
+        assert.doesNotMatch(loggedText, /PRIVATE_ACCESS_TOKEN_9281/);
+    } finally {
+        console.error = originalConsoleError;
+    }
+});
+
 test("Return 503 when Supabase request times out", async () => {
     const fetchImpl = async (url) => {
         if (String(url).includes("api.minepi.com")) {

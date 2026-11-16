@@ -44,14 +44,18 @@ function createResponse() {
     };
 }
 
-async function invoke(handler, body) {
-    let fetchCalls = 0;
-
+function setTestEnvironment() {
     process.env.SUPABASE_URL =
         "https://capjfdyyeaxvekqzsbbi.supabase.co";
 
     process.env.SUPABASE_SECRET_KEY = "test-secret-key";
     process.env.PI_API_KEY = "test-pi-api-key";
+}
+
+async function invoke(handler, body) {
+    let fetchCalls = 0;
+
+    setTestEnvironment();
 
     globalThis.fetch = async () => {
         fetchCalls++;
@@ -79,42 +83,250 @@ async function invoke(handler, body) {
     };
 }
 
-test("Approve API rejects unsafe payment ID before external calls", async () => {
-    const result = await invoke(approveHandler, {
-        paymentId: "payment/id"
-    });
+function mockFetchResponse(data) {
+    return {
+        ok: true,
+        status: 200,
 
-    assert.equal(result.statusCode, 400);
-    assert.equal(result.fetchCalls, 0);
-});
+        async json() {
+            return data;
+        }
+    };
+}
 
-test("Complete API rejects unsafe payment ID before external calls", async () => {
-    const result = await invoke(completeHandler, {
-        paymentId: "payment,id",
-        txid: "valid-test-txid"
-    });
+async function invokePaymentStatus(payment) {
+    let fetchCalls = 0;
 
-    assert.equal(result.statusCode, 400);
-    assert.equal(result.fetchCalls, 0);
-});
+    setTestEnvironment();
 
-test("Complete API rejects missing TXID before external calls", async () => {
-    const result = await invoke(completeHandler, {
-        paymentId: "valid-payment-123"
-    });
+    const user = {
+        uid: "test-pi-uid",
+        username: "testuser"
+    };
 
-    assert.equal(result.statusCode, 400);
-    assert.equal(result.fetchCalls, 0);
-});
+    const request = {
+        id: 1,
+        review_status: "Approved",
+        order_status: "Pending",
+        pi_username: "testuser"
+    };
 
-test("Payment status API rejects unsafe payment ID before external calls", async () => {
-    const result = await invoke(paymentStatusHandler, {
-        paymentId: "payment(id)"
-    });
+    globalThis.fetch = async url => {
+        fetchCalls++;
 
-    assert.equal(result.statusCode, 400);
-    assert.equal(result.fetchCalls, 0);
-});
+        const target = String(url);
+
+        if (target === "https://api.minepi.com/v2/me") {
+            return mockFetchResponse(user);
+        }
+
+        if (
+            target ===
+            "https://api.minepi.com/v2/payments/valid-payment-123"
+        ) {
+            return mockFetchResponse(payment);
+        }
+
+        if (
+            target.includes("/rest/v1/requests?")
+        ) {
+            return mockFetchResponse([request]);
+        }
+
+        if (
+            target.includes("/rest/v1/transactions?")
+        ) {
+            return mockFetchResponse([]);
+        }
+
+        throw new Error("Unexpected mocked URL");
+    };
+
+    const req = {
+        method: "POST",
+        headers: {
+            authorization: "Bearer test-pi-access-token-123456"
+        },
+        body: {
+            paymentId: "valid-payment-123"
+        }
+    };
+
+    const res = createResponse();
+
+    try {
+        await paymentStatusHandler(req, res);
+    } finally {
+        globalThis.fetch = originalFetch;
+    }
+
+    return {
+        statusCode: res.statusCode,
+        body: res.body,
+        fetchCalls
+    };
+}
+
+function createTestPayment(status, txid = "valid-test-txid") {
+    return {
+        user_uid: "test-pi-uid",
+        amount: 0.01,
+
+        metadata: {
+            request_id: 1
+        },
+
+        status,
+
+        transaction: {
+            txid
+        }
+    };
+}
+
+// ==========================================
+// EXISTING VALIDATION TESTS
+// ==========================================
+
+test(
+    "Approve API rejects unsafe payment ID before external calls",
+    async () => {
+        const result = await invoke(
+            approveHandler,
+            {
+                paymentId: "payment/id"
+            }
+        );
+
+        assert.equal(result.statusCode, 400);
+        assert.equal(result.fetchCalls, 0);
+    }
+);
+
+test(
+    "Complete API rejects unsafe payment ID before external calls",
+    async () => {
+        const result = await invoke(
+            completeHandler,
+            {
+                paymentId: "payment,id",
+                txid: "valid-test-txid"
+            }
+        );
+
+        assert.equal(result.statusCode, 400);
+        assert.equal(result.fetchCalls, 0);
+    }
+);
+
+test(
+    "Complete API rejects missing TXID before external calls",
+    async () => {
+        const result = await invoke(
+            completeHandler,
+            {
+                paymentId: "valid-payment-123"
+            }
+        );
+
+        assert.equal(result.statusCode, 400);
+        assert.equal(result.fetchCalls, 0);
+    }
+);
+
+test(
+    "Payment status API rejects unsafe payment ID before external calls",
+    async () => {
+        const result = await invoke(
+            paymentStatusHandler,
+            {
+                paymentId: "payment(id)"
+            }
+        );
+
+        assert.equal(result.statusCode, 400);
+        assert.equal(result.fetchCalls, 0);
+    }
+);
+
+// ==========================================
+// PAYMENT STATUS REGRESSION TESTS
+// ==========================================
+
+test(
+    "Payment status reports confirmed cancellation as cancelled",
+    async () => {
+        const payment = createTestPayment({
+            cancelled: true
+        });
+
+        const result = await invokePaymentStatus(payment);
+
+        assert.equal(result.statusCode, 200);
+        assert.equal(result.body.state, "cancelled");
+        assert.equal(result.body.canRetry, true);
+    }
+);
+
+test(
+    "Payment status requires verification when completed lacks approval",
+    async () => {
+        const payment = createTestPayment({
+            developer_completed: true,
+            developer_approved: false
+        });
+
+        const result = await invokePaymentStatus(payment);
+
+        assert.equal(result.statusCode, 200);
+        assert.equal(
+            result.body.state,
+            "verification_required"
+        );
+        assert.equal(result.body.canRetry, false);
+    }
+);
+
+test(
+    "Payment status reports completed only after both Pi confirmations",
+    async () => {
+        const payment = createTestPayment({
+            developer_approved: true,
+            developer_completed: true
+        });
+
+        const result = await invokePaymentStatus(payment);
+
+        assert.equal(result.statusCode, 200);
+        assert.equal(result.body.state, "completed");
+        assert.equal(result.body.txid, "valid-test-txid");
+        assert.equal(result.body.canRetry, false);
+    }
+);
+
+test(
+    "Payment status requires verification for conflicting cancellation and completion flags",
+    async () => {
+        const payment = createTestPayment({
+            cancelled: true,
+            developer_approved: true,
+            developer_completed: true
+        });
+
+        const result = await invokePaymentStatus(payment);
+
+        assert.equal(result.statusCode, 200);
+        assert.equal(
+            result.body.state,
+            "verification_required"
+        );
+        assert.equal(result.body.canRetry, false);
+    }
+);
+
+// ==========================================
+// RESTORE ORIGINAL ENVIRONMENT
+// ==========================================
 
 test.after(() => {
     globalThis.fetch = originalFetch;

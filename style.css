@@ -85,3 +85,15 @@ button:disabled {
     font-size: 13px;
     color: #98a2b3;
 }
+
+
+/* PConnect logout button */
+#logoutBtn {
+    background: #667085;
+    color: white;
+}
+
+#loginBtn[hidden],
+#logoutBtn[hidden] {
+    display: none !important;
+}

@@ -380,10 +380,7 @@ export default async function handler(req, res) {
         } catch (error) {
             // Approval response may be uncertain.
             // Verify actual state directly from Pi.
-            console.error(
-                "PConnect approval response uncertain:",
-                error.message
-            );
+            console.error("PConnect approval response uncertain:", error?.name || "UnknownError");
         }
 
         // 12. Always re-fetch payment from Pi
@@ -444,10 +441,7 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error(
-            "PConnect approve API error:",
-            error.message
-        );
+        console.error("PConnect approve API error:", error?.name || "UnknownError");
 
         if (error.name === "AbortError") {
             return send(res, 504, {

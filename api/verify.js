@@ -81,10 +81,7 @@ export default async function handler(req, res) {
         // SERVER ERROR
         // ==========================================
 
-        console.error(
-            "Pi verification error:",
-            error
-        );
+        console.error("Pi verification error:", error?.name || "UnknownError");
 
         return res.status(500).json({
             success: false,

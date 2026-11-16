@@ -365,10 +365,7 @@ export default async function handler(req, res) {
 
         }
 
-        console.error(
-            "Admin requests API error:",
-            error.message
-        );
+        console.error("Admin requests API error:", error?.name || "UnknownError");
 
         return send(res, 500, {
             success: false,

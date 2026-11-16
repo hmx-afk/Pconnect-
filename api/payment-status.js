@@ -406,14 +406,47 @@ export default async function handler(req, res) {
             });
         }
 
-        // 10. Completed payment
-        // Check this BEFORE review_status.
+        // 10. Confirmed cancellation
+        if (paymentCancelled(status)) {
+
+            // Conflicting Pi states require manual verification.
+            if (
+                status.developer_completed === true ||
+                status.developer_approved === true
+            ) {
+                return send(res, 200, {
+                    success: true,
+                    state: "verification_required",
+                    paymentId,
+                    canRetry: false
+                });
+            }
+
+            return send(res, 200, {
+                success: true,
+                state: "cancelled",
+                paymentId,
+                canRetry:
+                    request.order_status === "Pending"
+            });
+        }
+
+        // 11. Completed payment
+        // Both Pi developer flags must be confirmed.
         if (status.developer_completed === true) {
+
+            if (status.developer_approved !== true) {
+                return send(res, 200, {
+                    success: true,
+                    state: "verification_required",
+                    paymentId,
+                    canRetry: false
+                });
+            }
 
             const txid = payment.transaction?.txid;
 
             if (!validTxid(txid)) {
-
                 return send(res, 200, {
                     success: true,
                     state: "verification_required",
@@ -431,26 +464,13 @@ export default async function handler(req, res) {
             });
         }
 
-        // 11. Verify request approval
+        // 12. Verify request approval
         if (request.review_status !== "Approved") {
-
             return send(res, 409, {
                 success: false,
                 state: "conflict",
                 error: "Request is not approved.",
                 canRetry: false
-            });
-        }
-
-        // 12. Confirmed cancellation
-        if (paymentCancelled(status)) {
-
-            return send(res, 200, {
-                success: true,
-                state: "cancelled",
-                paymentId,
-                canRetry:
-                    request.order_status === "Pending"
             });
         }
 
@@ -475,10 +495,7 @@ export default async function handler(req, res) {
 
     } catch (error) {
 
-        console.error(
-            "PConnect payment status API error:",
-            error.message
-        );
+        console.error("PConnect payment status API error:", error?.name || "UnknownError");
 
         if (error.name === "AbortError") {
 

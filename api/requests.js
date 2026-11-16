@@ -218,10 +218,7 @@ export default async function handler(req, res) {
 
         if (error) {
 
-            console.error(
-                "Supabase requests error:",
-                error.message
-            );
+            console.error("Supabase requests error:", error?.name || "UnknownError");
 
             const timeoutError =
                 error.name === "AbortError" ||
@@ -263,10 +260,7 @@ export default async function handler(req, res) {
         // SERVER ERROR / TIMEOUT
         // ==========================================
 
-        console.error(
-            "Requests API error:",
-            error.message
-        );
+        console.error("Requests API error:", error?.name || "UnknownError");
 
         const timeoutError =
             error.name === "AbortError" ||

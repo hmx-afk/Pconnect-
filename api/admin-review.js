@@ -578,9 +578,9 @@ export default async function handler(req, res) {
 
                 console.error(
                     "Notification operation failed:",
-                    error.name === "AbortError"
+                    error?.name === "AbortError"
                         ? "Timeout"
-                        : error.message
+                        : error?.name || "UnknownError"
                 );
 
                 return false;
@@ -930,10 +930,7 @@ export default async function handler(req, res) {
 
         }
 
-        console.error(
-            "Admin review API error:",
-            error.message
-        );
+        console.error("Admin review API error:", error?.name || "UnknownError");
 
         return send(res, 500, {
             success: false,

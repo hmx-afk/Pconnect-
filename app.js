@@ -48,7 +48,7 @@ try {
 
     console.error(
         "[PConnect] Pi SDK initialization failed:",
-        error
+        error?.name || "UnknownError"
     );
 }
 
@@ -57,6 +57,7 @@ try {
 // ==========================================
 
 const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
 const piStatus = document.getElementById("piStatus");
 const payBtn = document.getElementById("payBtn");
 const payStatus = document.getElementById("payStatus");
@@ -186,6 +187,28 @@ function setPaymentEnabled(enabled) {
     }
 }
 
+function updatePiAuthButtons() {
+    // Keep logout controls limited to pages that contain a logout button.
+    if (!logoutBtn) return;
+
+    const connected = Boolean(
+        currentPiUsername && currentPiAccessToken
+    );
+
+    if (loginBtn) {
+        loginBtn.hidden = connected;
+        loginBtn.disabled = loginInProgress || paymentInProgress;
+    }
+
+    if (logoutBtn) {
+        logoutBtn.hidden = !connected;
+        logoutBtn.disabled =
+            loginInProgress ||
+            paymentInProgress ||
+            processingIncompletePayment;
+    }
+}
+
 function normalizeStatus(value) {
 
     return String(value || "")
@@ -227,6 +250,7 @@ function releasePaymentProgress() {
     }
 
     updatePaymentButton();
+    updatePiAuthButtons();
 }
 
 function lockPayment(message) {
@@ -1018,7 +1042,7 @@ window.loadDashboard = async function () {
 
         console.error(
             "[PConnect] Transaction count failed:",
-            error
+            error?.name || "UnknownError"
         );
 
         setElementText(
@@ -1188,7 +1212,7 @@ window.loadNotifications = async function () {
 
                                     console.error(
                                         "[PConnect] Notification update failed:",
-                                        error
+                                        error?.name || "UnknownError"
                                     );
 
                                     button.disabled = false;
@@ -1228,7 +1252,7 @@ async function refreshPaymentPageData() {
 
         console.error(
             "[PConnect] Transactions refresh failed:",
-            error
+            error?.name || "UnknownError"
         );
     }
 
@@ -1240,7 +1264,7 @@ async function refreshPaymentPageData() {
 
         console.error(
             "[PConnect] Dashboard refresh failed:",
-            error
+            error?.name || "UnknownError"
         );
     }
 
@@ -1252,7 +1276,7 @@ async function refreshPaymentPageData() {
 
         console.error(
             "[PConnect] Notifications refresh failed:",
-            error
+            error?.name || "UnknownError"
         );
     }
 }
@@ -1333,7 +1357,7 @@ async function verifyCancelledPayment(paymentId) {
 
         console.error(
             "[PConnect] Cancellation verification failed:",
-            error
+            error?.name || "UnknownError"
         );
 
         lockPayment(
@@ -1659,7 +1683,7 @@ async function processIncompletePayment(payment) {
 
         console.error(
             "[PConnect] Payment recovery failed:",
-            error
+            error?.name || "UnknownError"
         );
 
         pendingIncompletePayment = payment;
@@ -1856,10 +1880,7 @@ if (loginBtn) {
                     loginTimeout = null;
                 }
 
-                console.error(
-                    "[PConnect] Login failed:",
-                    error
-                );
+                console.error("[PConnect] Login failed:", error?.name || "UnknownError");
 
                 currentPiUsername = null;
                 currentPiAccessToken = "";
@@ -1893,9 +1914,50 @@ if (loginBtn) {
                 }
 
                 updatePaymentButton();
+                updatePiAuthButtons();
             }
         }
     );
+}
+
+// ==========================================
+// PCONNECT LOGOUT
+// ==========================================
+
+if (logoutBtn) {
+    logoutBtn.addEventListener("click", function () {
+        if (
+            loginInProgress ||
+            paymentInProgress ||
+            processingIncompletePayment
+        ) {
+            setPayStatus(
+                "Please wait until the current operation finishes before signing out."
+            );
+            return;
+        }
+
+        currentPiAccessToken = "";
+        currentPiUsername = null;
+
+        sessionStorage.removeItem("pconnect_pi_username");
+
+        setPaymentEnabled(false);
+        updatePiAuthButtons();
+        setPiStatus("Signed out of PConnect.");
+
+        if (pendingIncompletePayment || paymentLocked) {
+            setPayStatus(
+                "You are signed out. A previous payment still needs verification. Sign in again to continue recovery. Do not pay again."
+            );
+        } else {
+            setPayStatus(
+                "You are signed out. Sign in with Pi to continue."
+            );
+        }
+
+        console.log("[PConnect] User signed out of PConnect.");
+    });
 }
 
 // ==========================================
@@ -1971,6 +2033,8 @@ if (payBtn) {
                 loginBtn.disabled = true;
             }
 
+            updatePiAuthButtons();
+
             setPayStatus(
                 "Checking approved request..."
             );
@@ -2031,10 +2095,7 @@ if (payBtn) {
 
                                 } catch (error) {
 
-                                    console.error(
-                                        "[PConnect] Approval failed:",
-                                        error
-                                    );
+                                    console.error("[PConnect] Approval failed:", error?.name || "UnknownError");
 
                                     lockPayment(
                                         "Approval failed: " +
@@ -2093,10 +2154,7 @@ if (payBtn) {
 
                                 } catch (error) {
 
-                                    console.error(
-                                        "[PConnect] Completion failed:",
-                                        error
-                                    );
+                                    console.error("[PConnect] Completion failed:", error?.name || "UnknownError");
 
                                     // Save payment for recovery.
 
@@ -2124,10 +2182,7 @@ if (payBtn) {
 
                         onCancel: async function (paymentId) {
 
-                            console.log(
-                                "[PConnect] Payment cancellation callback:",
-                                paymentId
-                            );
+                            console.log("[PConnect] Payment cancellation callback received.");
 
                             if (
                                 typeof paymentId !== "string" ||
@@ -2163,11 +2218,7 @@ if (payBtn) {
                             payment
                         ) {
 
-                            console.error(
-                                "[PConnect] Payment error:",
-                                error,
-                                payment
-                            );
+                            console.error("[PConnect] Payment error:", error?.name || "UnknownError");
 
                             const paymentId =
                                 getPaymentIdentifier(payment);
@@ -2186,10 +2237,7 @@ if (payBtn) {
 
                                 } catch (statusError) {
 
-                                    console.error(
-                                        "[PConnect] Error status verification failed:",
-                                        statusError
-                                    );
+                                    console.error("[PConnect] Error status verification failed:", statusError?.name || "UnknownError");
 
                                     lockPayment(
                                         "Payment status could not be verified. Do not pay again."
@@ -2212,10 +2260,7 @@ if (payBtn) {
 
             } catch (error) {
 
-                console.error(
-                    "[PConnect] Payment could not start:",
-                    error
-                );
+                console.error("[PConnect] Payment could not start:", error?.name || "UnknownError");
 
                 // Only unlock if payment creation
                 // failed before Pi created a payment.

@@ -778,10 +778,7 @@ export default async function handler(req, res) {
 
                 } catch (recoveryError) {
 
-                    console.error(
-                        "PConnect duplicate recovery failed:",
-                        recoveryError.message
-                    );
+                    console.error("PConnect duplicate recovery failed:", recoveryError?.name || "UnknownError");
 
                     return send(res, 503, {
                         success: false,
@@ -874,10 +871,7 @@ export default async function handler(req, res) {
 
     } catch (error) {
 
-        console.error(
-            "PConnect complete API error:",
-            error.message
-        );
+        console.error("PConnect complete API error:", error?.name || "UnknownError");
 
         if (error.name === "AbortError") {
             return send(res, 504, {

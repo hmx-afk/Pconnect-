@@ -408,9 +408,8 @@ export default async function handler(req, res) {
         ) {
 
             console.error(
-                "Supabase request creation failed:",
-                supabaseResponse.status,
-                savedRequest
+                "Supabase request creation failed. HTTP status:",
+                supabaseResponse.status
             );
 
             return send(res, 500, {
@@ -441,8 +440,8 @@ export default async function handler(req, res) {
     } catch (error) {
 
         console.error(
-            "Request API error:",
-            error
+            "Request API failed:",
+            error?.name || "UnknownError"
         );
 
         return send(res, 500, {

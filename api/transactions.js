@@ -199,10 +199,7 @@ export default async function handler(req, res) {
 
         if (error) {
 
-            console.error(
-                "Supabase transactions error:",
-                error.message
-            );
+            console.error("Supabase transactions error:", error?.name || "UnknownError");
 
             const timedOut =
                 error.name === "AbortError" ||
@@ -246,10 +243,7 @@ export default async function handler(req, res) {
             error?.name === "AbortError" ||
             /abort|timeout/i.test(error?.message || "");
 
-        console.error(
-            "Transactions API error:",
-            error?.message || "Unknown error"
-        );
+        console.error("Transactions API error:", error?.name || "UnknownError");
 
         return send(
             res,

@@ -671,10 +671,7 @@ export default async function handler(req, res) {
             );
         }
 
-        console.error(
-            "Notifications API error:",
-            error?.message || "Unknown error"
-        );
+        console.error("Notifications API error:", error?.name || "UnknownError");
 
         return sendError(
             res,

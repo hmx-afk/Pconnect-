@@ -262,6 +262,20 @@
         .bottom-nav a.active {
             color: #f5b942;
         }
+        .legal-footer {
+            text-align: center;
+            padding: 16px 12px;
+            margin: 12px auto;
+            font-size: 12px;
+            color: inherit;
+            opacity: 0.75;
+        }
+
+        .legal-footer a {
+            color: inherit;
+            text-decoration: underline;
+        }
+
     </style>
 </head>
 
@@ -316,6 +330,14 @@
                 type="button"
             >
                 Sign in with Pi
+            </button>
+
+            <button
+                id="logoutBtn"
+                type="button"
+                hidden
+            >
+                Sign out of PConnect
             </button>
 
             <div
@@ -382,7 +404,15 @@
 
     </main>
 
-    <!-- BOTTOM NAV -->
+        <footer class="legal-footer">
+        <a href="/privacy.html">Privacy Policy</a>
+        <span aria-hidden="true"> · </span>
+        <a href="/terms.html">Terms of Service</a>
+        <span aria-hidden="true"> · </span>
+        <a href="mailto:supportpconnect@gmail.com">Contact Support</a>
+    </footer>
+
+<!-- BOTTOM NAV -->
 
     <nav class="bottom-nav">
 

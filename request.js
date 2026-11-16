@@ -24,14 +24,13 @@
 
         piSdkReady = true;
 
-        console.log("[PConnect] Pi SDK initialized.");
+        // Pi SDK initialized successfully.
 
     } catch (error) {
         piInitError = error;
 
         console.error(
-            "[PConnect] Pi SDK initialization failed:",
-            error
+            "[PConnect] Pi SDK initialization failed."
         );
     }
 
@@ -90,18 +89,16 @@
 
     async function authenticatePi() {
 
+        piAccessToken = null;
+        piUsername = null;
+
         try {
 
             const authResult =
                 await window.Pi.authenticate(
                     ["username"],
-                    function(payment) {
-
-                        console.log(
-                            "Incomplete payment:",
-                            payment
-                        );
-
+                    function() {
+                        // Do not log payment data.
                     }
                 );
 
@@ -157,8 +154,7 @@
         } catch (error) {
 
             console.error(
-                "Pi authentication error:",
-                error
+                "Pi authentication failed."
             );
 
             return false;
@@ -371,26 +367,27 @@
             } catch (error) {
 
                 console.error(
-                    "Request error:",
-                    error
+                    "Request submission failed."
                 );
-
 
                 status.className =
                     "status error";
 
-
                 status.textContent =
                     "⚠️ " +
-                    error.message;
-
+                    (error.message || "Request submission failed. Please try again.");
 
                 submitBtn.disabled =
                     false;
 
-
                 submitBtn.textContent =
                     "📩 Submit Request";
+
+            } finally {
+
+                // Clear sensitive Pi credentials from memory.
+                piAccessToken = null;
+                piUsername = null;
 
             }
 
