@@ -60,16 +60,19 @@ function createPayment(overrides = {}) {
         user_uid: UID,
         amount: 0.01,
         metadata: { request_id: REQUEST_ID },
+        direction: "user_to_app",
+        network: "Pi Testnet",
+        to_address: "GB4XAB2DCULHBLUCWUANE57XWKDFOUYS5HJC2TH4SLEN7XKQ2UUPWVXU",
+        ...overrides,
         status: {
             developer_approved: false,
             developer_completed: false,
+            transaction_verified: true,
             ...overrides.status
         },
-        transaction: null,
-        ...overrides
+        transaction: overrides.transaction ?? null
     };
 }
-
 function createRequest(overrides = {}) {
     return {
         id: REQUEST_ID,
@@ -165,6 +168,20 @@ function createApprovalMock(options = {}) {
             ) {
                 calls.approval++;
                 payment.status.developer_approved = true;
+
+                if (options.afterApprovalPayment) {
+                    const finalOverrides = options.afterApprovalPayment;
+
+                    Object.assign(payment, finalOverrides);
+
+                    if (finalOverrides.status) {
+                        payment.status = {
+                            ...payment.status,
+                            ...finalOverrides.status
+                        };
+                    }
+                }
+
                 return response({ success: true });
             }
 
@@ -189,12 +206,13 @@ function createApprovalMock(options = {}) {
 
 function createCompletionMock(options = {}) {
     const payment = createPayment({
+        ...(options.payment || {}),
         status: {
             developer_approved: true,
             developer_completed: false,
+            transaction_verified: true,
             ...(options.payment?.status || {})
-        },
-        ...(options.payment || {})
+        }
     });
 
     const request = createRequest(
@@ -213,6 +231,7 @@ function createCompletionMock(options = {}) {
         completion: 0,
         requestLookup: 0,
         requestUpdate: 0,
+        requestUpdateFilters: null,
         transactionLookup: 0,
         transactionInsert: 0
     };
@@ -249,7 +268,14 @@ function createCompletionMock(options = {}) {
                 calls.completion++;
 
                 payment.status.developer_completed = true;
-                payment.transaction = { txid: finalTxid };
+                payment.transaction = {
+                    txid: finalTxid,
+                    verified: options.payment?.transaction?.verified ?? true
+                };
+
+                if (options.afterCompletionPayment) {
+                    Object.assign(payment, options.afterCompletionPayment);
+                }
 
                 return response({ success: true });
             }
@@ -268,11 +294,26 @@ function createCompletionMock(options = {}) {
             ) {
                 calls.requestUpdate++;
 
-                if (request?.order_status === "Pending") {
+                calls.requestUpdateFilters = {
+                    id: parsed.searchParams.get("id"),
+                    review_status: parsed.searchParams.get("review_status"),
+                    order_status: parsed.searchParams.get("order_status")
+                };
+
+                const validUpdate =
+                    calls.requestUpdateFilters.id === `eq.${REQUEST_ID}` &&
+                    calls.requestUpdateFilters.review_status === "eq.Approved" &&
+                    calls.requestUpdateFilters.order_status === "eq.Pending" &&
+                    request?.id === REQUEST_ID &&
+                    request?.review_status === "Approved" &&
+                    request?.order_status === "Pending";
+
+                if (validUpdate) {
                     request.order_status = "Paid";
+                    return response([request]);
                 }
 
-                return response(request ? [request] : []);
+                return response([]);
             }
 
             if (
@@ -354,6 +395,73 @@ test("Approve rejects incorrect payment amount", async () => {
     assert.equal(mock.calls.approval, 0);
 });
 
+test("Approve rejects an incorrect payment recipient", async () => {
+    const mock = createApprovalMock({
+        payment: { to_address: "WRONG_APP_WALLET" }
+    });
+
+    const result = await invoke(
+        approveHandler,
+        { paymentId: PAYMENT_ID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 409);
+    assert.equal(result.body.success, false);
+    assert.equal(mock.calls.approval, 0);
+});
+
+test("Approve rejects a payment on the wrong network", async () => {
+    const mock = createApprovalMock({
+        payment: { network: "Pi Mainnet" }
+    });
+
+    const result = await invoke(
+        approveHandler,
+        { paymentId: PAYMENT_ID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 409);
+    assert.equal(result.body.success, false);
+    assert.equal(mock.calls.approval, 0);
+});
+
+test("Approve rejects an app-to-user payment", async () => {
+    const mock = createApprovalMock({
+        payment: { direction: "app_to_user" }
+    });
+
+    const result = await invoke(
+        approveHandler,
+        { paymentId: PAYMENT_ID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 409);
+    assert.equal(result.body.success, false);
+    assert.equal(mock.calls.approval, 0);
+});
+
+test("Approve rejects a payment route changed after Pi approval", async () => {
+    const mock = createApprovalMock({
+        afterApprovalPayment: {
+            to_address: "CHANGED_APP_WALLET"
+        }
+    });
+
+    const result = await invoke(
+        approveHandler,
+        { paymentId: PAYMENT_ID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 409);
+    assert.equal(result.body.success, false);
+    assert.equal(mock.calls.approval, 1);
+    assert.equal(mock.calls.paymentLookup, 2);
+});
+
 test("Approve rejects cancelled payment", async () => {
     const mock = createApprovalMock({
         payment: {
@@ -369,6 +477,31 @@ test("Approve rejects cancelled payment", async () => {
 
     assert.equal(result.statusCode, 409);
     assert.equal(mock.calls.approval, 0);
+});
+
+test("Approve rejects when final Pi lookup does not confirm approval", async () => {
+    const mock = createApprovalMock({
+        afterApprovalPayment: {
+            status: {
+                developer_approved: false
+            }
+        }
+    });
+
+    const result = await invoke(
+        approveHandler,
+        { paymentId: PAYMENT_ID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 502);
+    assert.equal(result.body.success, false);
+    assert.equal(
+        result.body.error,
+        "Pi approval could not be verified."
+    );
+    assert.equal(mock.calls.approval, 1);
+    assert.equal(mock.calls.paymentLookup, 2);
 });
 
 test("Approve rejects request ownership mismatch", async () => {
@@ -526,6 +659,108 @@ test("Complete rejects TXID that differs from Pi confirmation", async () => {
 // DUPLICATE AND RECOVERY TESTS
 // ==========================================
 
+test("Complete accepts a correctly verified Pi Testnet payment", async () => {
+    const mock = createCompletionMock();
+
+    const result = await invoke(
+        completeHandler,
+        { paymentId: PAYMENT_ID, txid: TXID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body.success, true);
+    assert.equal(mock.calls.transactionInsert, 1);
+});
+
+test("Complete rejects an incorrect payment recipient", async () => {
+    const mock = createCompletionMock({
+        payment: { to_address: "WRONG_RECIPIENT_ADDRESS" }
+    });
+
+    const result = await invoke(
+        completeHandler,
+        { paymentId: PAYMENT_ID, txid: TXID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 409);
+    assert.equal(mock.calls.transactionInsert, 0);
+    assert.equal(mock.calls.completion, 0);
+});
+
+test("Complete rejects a payment on the wrong network", async () => {
+    const mock = createCompletionMock({
+        payment: { network: "Pi Network" }
+    });
+
+    const result = await invoke(
+        completeHandler,
+        { paymentId: PAYMENT_ID, txid: TXID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 409);
+    assert.equal(mock.calls.transactionInsert, 0);
+    assert.equal(mock.calls.completion, 0);
+});
+
+test("Complete rejects an app-to-user payment", async () => {
+    const mock = createCompletionMock({
+        payment: { direction: "app_to_user" }
+    });
+
+    const result = await invoke(
+        completeHandler,
+        { paymentId: PAYMENT_ID, txid: TXID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 409);
+    assert.equal(mock.calls.transactionInsert, 0);
+    assert.equal(mock.calls.completion, 0);
+});
+
+test("Complete rejects an unverified blockchain transaction", async () => {
+    const mock = createCompletionMock({
+        payment: {
+            status: { transaction_verified: false },
+            transaction: { verified: false }
+        }
+    });
+
+    const result = await invoke(
+        completeHandler,
+        { paymentId: PAYMENT_ID, txid: TXID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 409);
+    assert.equal(mock.calls.completion, 1);
+    assert.equal(mock.calls.requestUpdate, 0);
+    assert.equal(mock.calls.transactionInsert, 0);
+});
+
+test("Complete rejects a recipient changed after Pi completion", async () => {
+    const mock = createCompletionMock({
+        afterCompletionPayment: {
+            to_address: "GWRONGTESTWALLETADDRESS"
+        }
+    });
+
+    const result = await invoke(
+        completeHandler,
+        { paymentId: PAYMENT_ID, txid: TXID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 409);
+    assert.equal(mock.calls.completion, 1);
+    assert.equal(mock.calls.paymentLookup, 2);
+    assert.equal(mock.calls.requestUpdate, 0);
+    assert.equal(mock.calls.transactionInsert, 0);
+});
+
 test("Complete rejects an existing conflicting payment record", async () => {
     const mock = createCompletionMock({
         existingPayment: createTransaction({
@@ -552,7 +787,7 @@ test("Complete recovers an identical existing transaction", async () => {
                 developer_approved: true,
                 developer_completed: true
             },
-            transaction: { txid: TXID }
+            transaction: { txid: TXID, verified: true }
         },
         request: { order_status: "In Progress" },
         existingPayment: existing
@@ -571,6 +806,77 @@ test("Complete recovers an identical existing transaction", async () => {
 
     assert.equal(mock.calls.completion, 0);
     assert.equal(mock.calls.transactionInsert, 0);
+});
+
+test("Complete recovers an existing transaction and marks a Pending request as Paid", async () => {
+    const existing = createTransaction();
+
+    const mock = createCompletionMock({
+        payment: {
+            status: {
+                developer_approved: true,
+                developer_completed: true
+            },
+            transaction: {
+                txid: TXID,
+                verified: true
+            }
+        },
+        request: {
+            order_status: "Pending"
+        },
+        existingPayment: existing
+    });
+
+    const result = await invoke(
+        completeHandler,
+        { paymentId: PAYMENT_ID, txid: TXID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body.success, true);
+    assert.equal(result.body.alreadyCompleted, true);
+    assert.equal(result.body.request.order_status, "Paid");
+    assert.equal(mock.calls.requestUpdate, 1);
+    assert.equal(mock.calls.transactionInsert, 0);
+    assert.equal(mock.calls.completion, 0);
+});
+
+test("Complete does not downgrade an existing Completed request", async () => {
+    const existing = createTransaction();
+
+    const mock = createCompletionMock({
+        payment: {
+            status: {
+                developer_approved: true,
+                developer_completed: true
+            },
+            transaction: {
+                txid: TXID,
+                verified: true
+            }
+        },
+        request: {
+            order_status: "Completed"
+        },
+        existingPayment: existing
+    });
+
+    const result = await invoke(
+        completeHandler,
+        { paymentId: PAYMENT_ID, txid: TXID },
+        mock.fetch
+    );
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body.success, true);
+    assert.equal(result.body.alreadyCompleted, true);
+    assert.equal(result.body.request.order_status, "Completed");
+
+    assert.equal(mock.calls.requestUpdate, 1);
+    assert.equal(mock.calls.transactionInsert, 0);
+    assert.equal(mock.calls.completion, 0);
 });
 
 test("Complete rejects a TXID already registered to another transaction", async () => {

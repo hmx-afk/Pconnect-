@@ -11,6 +11,8 @@ import { isValidPaymentIdentifier, verifyPi } from "../lib/verifyPi.js";
 
 const PI_API = "https://api.minepi.com/v2";
 const EXPECTED_AMOUNT = 0.01;
+const APP_WALLET_ADDRESS =
+    "GB4XAB2DCULHBLUCWUANE57XWKDFOUYS5HJC2TH4SLEN7XKQ2UUPWVXU";
 const REQUEST_TIMEOUT = 10000;
 
 // ==========================================
@@ -322,6 +324,23 @@ function verifyPaymentDetails(payment, user, requestId) {
 }
 
 // ==========================================
+
+function verifyPaymentRoute(payment) {
+    return (
+        payment?.direction === "user_to_app" &&
+        payment?.network === "Pi Testnet" &&
+        payment?.to_address === APP_WALLET_ADDRESS
+    );
+}
+
+function verifyFinalPaymentRoute(payment) {
+    return (
+        verifyPaymentRoute(payment) &&
+        payment?.status?.transaction_verified === true &&
+        payment?.transaction?.verified === true
+    );
+}
+
 // PAYMENT CANCELLATION
 // ==========================================
 
@@ -496,6 +515,14 @@ export default async function handler(req, res) {
             });
         }
 
+        // Verify recipient and network BEFORE Pi completion.
+        if (!verifyPaymentRoute(payment)) {
+            return send(res, 409, {
+                success: false,
+                error: "Pi payment recipient or network is invalid."
+            });
+        }
+
         if (paymentCancelled(payment)) {
             return send(res, 409, {
                 success: false,
@@ -628,6 +655,14 @@ export default async function handler(req, res) {
         }
 
         // ==================================
+
+        if (!verifyFinalPaymentRoute(payment)) {
+            return send(res, 409, {
+                success: false,
+                error: "Pi payment recipient or blockchain verification is invalid."
+            });
+        }
+
         // 12. VERIFY FINAL TRANSACTION ID
         // ==================================
 

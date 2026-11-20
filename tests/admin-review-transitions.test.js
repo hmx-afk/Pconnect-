@@ -114,6 +114,70 @@ async function runScenario({
     };
 }
 
+
+/* APPROVE AND REJECT VALIDATION */
+
+test("Allow Pending request awaiting review to be approved", async () => {
+    const result = await runScenario({
+        action: "approve",
+        reviewStatus: "Waiting for review",
+        orderStatus: "Pending"
+    });
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body.success, true);
+    assert.equal(result.body.request.review_status, "Approved");
+    assert.equal(result.body.request.order_status, "Pending");
+
+    const patchUrl = new URL(result.calls[1].url);
+
+    assert.equal(
+        patchUrl.searchParams.get("review_status"),
+        "eq.Waiting for review"
+    );
+    assert.equal(
+        patchUrl.searchParams.get("order_status"),
+        "eq.Pending"
+    );
+});
+
+test("Allow Pending request awaiting review to be rejected", async () => {
+    const result = await runScenario({
+        action: "reject",
+        reviewStatus: "Waiting for review",
+        orderStatus: "Pending"
+    });
+
+    assert.equal(result.statusCode, 200);
+    assert.equal(result.body.success, true);
+    assert.equal(result.body.request.review_status, "Rejected");
+    assert.equal(result.body.request.order_status, "Pending");
+
+    const patchUrl = new URL(result.calls[1].url);
+
+    assert.equal(
+        patchUrl.searchParams.get("review_status"),
+        "eq.Waiting for review"
+    );
+    assert.equal(
+        patchUrl.searchParams.get("order_status"),
+        "eq.Pending"
+    );
+});
+
+test("Reject invalid admin action without calling Supabase", async () => {
+    const result = await runScenario({
+        action: "invalid_action",
+        reviewStatus: "Waiting for review",
+        orderStatus: "Pending"
+    });
+
+    assert.equal(result.statusCode, 400);
+    assert.equal(result.body.success, false);
+    assert.equal(result.body.error, "Invalid action.");
+    assert.equal(result.calls.length, 0);
+});
+
 /* IN PROGRESS VALIDATION */
 
 test("Reject In Progress when order is not Paid", async () => {

@@ -60,9 +60,13 @@ function createPayment(status = {}) {
         user_uid: UID,
         amount: 0.01,
         metadata: { request_id: REQUEST_ID },
+        direction: "user_to_app",
+        network: "Pi Testnet",
+        to_address: "GB4XAB2DCULHBLUCWUANE57XWKDFOUYS5HJC2TH4SLEN7XKQ2UUPWVXU",
         status: {
             developer_approved: false,
             developer_completed: false,
+            transaction_verified: true,
             ...status
         },
         transaction: null
@@ -222,7 +226,10 @@ function createCompletionMock() {
                 assert.equal(submitted.txid, TXID);
 
                 payment.status.developer_completed = true;
-                payment.transaction = { txid: TXID };
+                payment.transaction = {
+                    txid: TXID,
+                    verified: true
+                };
 
                 return response({ success: true });
             }
